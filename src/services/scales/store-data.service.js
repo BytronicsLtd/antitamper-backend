@@ -1,9 +1,12 @@
-const isJSONUtil = require("../../utils/isJSON.util");
+const isJSON = require("../../utils/isJSON.util");
 const { isThisYear, parse } = require("date-fns");
 const chalk = require("chalk");
 const ScaleAntiTamperModel = require("../../models/scale-anti-tamper.model")
-module.exports = async (payload) => {
+module.exports = async (message) => {
     try {
+        if (!isJSON(message)) return;
+        let payload = JSON.parse(message);
+
         let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_timestamp, gsm_datetime, ...others } = payload;
         let data = {
             ...others
