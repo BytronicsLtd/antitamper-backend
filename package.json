@@ -1,0 +1,27 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "cross-env DEV=true LOG_ROUTES=true nodemon src/main.js",
+    "production": "cross-env DEV= LOG_ROUTES= node src/main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@fastify/multipart": "^9.0.2",
+    "@fastify/static": "^8.0.4",
+    "chalk": "^3.0.0",
+    "cross-env": "^7.0.3",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "mongoose": "^8.9.5",
+    "mongoose-paginate-v2": "^1.9.0",
+    "mqtt": "^5.10.3",
+    "nodemon": "^3.1.9"
+  }
+}
