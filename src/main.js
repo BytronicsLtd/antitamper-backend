@@ -73,9 +73,11 @@ async function main() {
 main();
 function subscribeToTopics() {
     const isJSON = require("./utils/isJSON.util.js");
+    const storeDataService = require("./services/scales/store-data.service.js");
     mqttClient.onMessage(async (topic, message) => { 
         if (topic === "weighing-scale/payload") {
             console.log("topic : ", topic, " payload: ", isJSON(message) ? JSON.parse(message) : message.toString());
+            await  storeDataService(message)
         }
     })
 }
