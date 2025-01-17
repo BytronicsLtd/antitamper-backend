@@ -36,7 +36,7 @@ class MqttClient {
             })
 
             this.client.on('connect', () => {
-                console.log('Connected to MQTT broker');
+                console.log('Connected to MQTT broker', this.client?.options?.custom_name);
                 resolve();
                 this.client.subscribe(this.topic, (err) => {
                     if (err) {
