@@ -7,9 +7,9 @@ module.exports = async (message) => {
         if (!isJSON(message)) return;
         let payload = JSON.parse(message);
 
-        let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_timestamp, gsm_datetime, ...others } = payload;
+        let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_timestamp, gsm_datetime, } = payload;
         let data = {
-            ...others
+            ...payload
         }
         // gps location
         if (gps_lat && gps_lon) {
