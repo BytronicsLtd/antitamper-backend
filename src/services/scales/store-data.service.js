@@ -33,7 +33,7 @@ module.exports = async (message) => {
             data.gps_timestamp = parse(gps_timestamp, format_string, new Date());
         }
         // parse gsm timestamp
-        if (gsm_datetime != "null") {
+        if (gsm_datetime.length > 5) {
             const d = gps_timestamp.split(" ")[0]
             if (!isThisYear(d)) return;
             const format_string = "yyyy-MM-dd HH:mm:ss"; // Define the format of the input string
