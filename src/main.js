@@ -67,17 +67,15 @@ async function main() {
     app.listen({ port, host: "0.0.0.0" });
     console.log(chalk.yellow("server running on port", port));
     if (process.env.LOG_ROUTES) console.log(chalk.blue("Registered routes: "), all_routes);
-    subscribeToTopics()
+    // subscribeToTopics()
 }
 // 
 main();
 function subscribeToTopics() {
     const isJSON = require("./utils/isJSON.util.js");
-    const storeDataService = require("./services/scales/store-data.service.js");
     mqttClient.onMessage(async (topic, message) => { 
         if (topic === "weighing-scale/payload") {
             console.log("topic : ", topic, " payload: ", isJSON(message) ? JSON.parse(message) : message.toString());
-            await  storeDataService(message)
         }
     })
 }

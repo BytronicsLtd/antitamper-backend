@@ -6,6 +6,8 @@ const Schema = {
     //
     gsm_timestamp: Date,
     //
+    rtc_timestamp: Date,
+    //
     gps_location: {
         type: {
             type: String,

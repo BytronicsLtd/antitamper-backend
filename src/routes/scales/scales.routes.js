@@ -11,7 +11,7 @@ module.exports = ({ app }) => {
   });
   // logout
   app.post('/api/v1/scales/', { preHandler: [authenticate,] }, (req, res) => {
-    scalesController.create(req, res)
+    scalesController.updateScaleStatus(req, res)
   });
 
 }
