@@ -23,31 +23,35 @@ const controller = {
             }
             // base station location
             if (gsm_lat && gsm_lon) {
-                data.gps_location = {
+                data.gsm_location = {
                     type: 'Point',
                     coordinates: [gsm_lon, gsm_lat]
                 };
             }
             // parse gps timestamp
-            if (gps_datetime.length > 10) {
-                const iso_time = gps_datetime?.replace(' ', 'T') + 'Z'; // Replace space with 'T' and append 'Z'
-                data.gps_timestamp = iso_time
+            if (gps_datetime?.length > 10 ) {
+                const iso_time = new Date(gps_datetime);
+                data.gps_timestamp = iso_time;
+            }
+            else {
+                data.gps_timestamp = undefined
             }
             // parse gsm timestamp
             if (gsm_datetime.length > 10) {
-                const formatted_date = gsm_datetime.replace(/(\d{2})\/(\d{2})\/(\d{2}),(.*)\+\d{2}/, '20$3-$2-$1T$4');
-                const date = new Date(formatted_date); // Parse the formatted date                
-                const adjusted_date = new Date(date.getTime() - 3 * 60 * 60 * 1000); // Add 3 hours
-                data.gsm_timestamp = adjusted_date.toISOString()
-
+                // Extract parts from "25/01/22,15:40:07"
+                const [datePart, time] = gsm_datetime?.split(',');
+                const just_time = time.split('+')[0]
+                // Split and reverse date
+                const [d, m, y] = datePart.split('/').reverse();
+                const adjusted_date = new Date(`20${y}-${m}-${d} ${just_time}`)
+                data.gsm_timestamp = new Date(adjusted_date - 3 * 60 * 60 * 1000)
             }
             // parse RTC timestamp
-            if (rtc_time.length > 5) {
+            if (rtc_time?.length > 5) {
                 const formatted_date = rtc_time.replace(/(\d{2})\/(\d{2})\/(\d{2}),(.*)\+\d{2}/, '20$3-$2-$1T$4');
                 const date = new Date(formatted_date); // Parse the formatted date                
                 const adjusted_date = new Date(date.getTime() - 3 * 60 * 60 * 1000); // Add 3 hours
-                console.log("adjustedDate ======= ", adjusted_date.toISOString()); // Outputs in UTC
-                data.rtc_timestamp = adjusted_date.toISOString()
+                data.rtc_timestamp = adjusted_date
             }
 
 
@@ -142,18 +146,18 @@ const controller = {
             })
             results.docs = docs;
             // Add metadata for searchable parameters
-        const metadata = {
-            searchable_parameters: {
-                "device_id": "String",
-                "interrupt_occured": "Number [0,1]",
-                "start_datetime": "Date",
-                "end_datetime": "Date",
-                "search_term": "String"
-            }
-        };
+            const metadata = {
+                searchable_parameters: {
+                    "device_id": "String",
+                    "interrupt_occured": "Number [0,1]",
+                    "start_datetime": "Date",
+                    "end_datetime": "Date",
+                    "search_term": "String"
+                }
+            };
 
-        // Include metadata in the response
-        processResponse({ req, res, success: true, status: 200, results, extras:{metadata} });
+            // Include metadata in the response
+            processResponse({ req, res, success: true, status: 200, results, extras: { metadata } });
         } catch (error) {
             console.log(chalk.red("Error fetching scales"), error);
             processResponse({
