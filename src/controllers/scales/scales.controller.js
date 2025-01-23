@@ -10,7 +10,7 @@ const controller = {
         try {
             const payload = req.body;
             console.log("scale data payload ", payload)
-            let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_datetime, gsm_datetime, rtc_time } = payload;
+            let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_datetime, gsm_datetime, rtc_datetime } = payload;
             let data = {
                 ...payload
             }
@@ -47,8 +47,8 @@ const controller = {
                 data.gsm_timestamp = new Date(adjusted_date - 3 * 60 * 60 * 1000)
             }
             // parse RTC timestamp
-            if (rtc_time?.length > 5) {
-                const formatted_date = rtc_time.replace(/(\d{2})\/(\d{2})\/(\d{2}),(.*)\+\d{2}/, '20$3-$2-$1T$4');
+            if (rtc_datetime?.length > 5) {
+                const formatted_date = rtc_datetime.replace(/(\d{2})\/(\d{2})\/(\d{2}),(.*)\+\d{2}/, '20$3-$2-$1T$4');
                 const date = new Date(formatted_date); // Parse the formatted date                
                 const adjusted_date = new Date(date.getTime() - 3 * 60 * 60 * 1000); // Add 3 hours
                 data.rtc_timestamp = adjusted_date
