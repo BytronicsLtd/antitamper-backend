@@ -15,14 +15,14 @@ const controller = {
                 ...payload
             }
             // gps location
-            if (gps_lat && gps_lon) {
+            if (gps_lat?.length > 6  && gps_lon?.length > 6 ) {
                 data.gps_location = {
                     type: 'Point',
                     coordinates: [gps_lon, gps_lat]
                 };
             }
             // base station location
-            if (gsm_lat && gsm_lon) {
+            if (gsm_lat?.length > 6 && gsm_lon?.length > 6) {
                 data.gsm_location = {
                     type: 'Point',
                     coordinates: [gsm_lon, gsm_lat]
@@ -37,7 +37,7 @@ const controller = {
                 data.gps_timestamp = undefined
             }
             // parse gsm timestamp
-            if (gsm_datetime.length > 10) {
+            if (gsm_datetime?.length > 10) {
                 // Extract parts from "25/01/22,15:40:07"
                 const [datePart, time] = gsm_datetime?.split(',');
                 const just_time = time.split('+')[0]
