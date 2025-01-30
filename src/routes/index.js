@@ -1,7 +1,5 @@
+const scalesRoutes = require("./scales/Device.route");
 
-const scalesRoutes = require("./scales/scales.routes");
-
-module.exports = ({app}) =>{
-    scalesRoutes({app});
-
-}
+module.exports = ({ app }) => {
+    scalesRoutes({ app });
+};

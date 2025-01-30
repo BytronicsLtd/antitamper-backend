@@ -15,14 +15,14 @@ const controller = {
                 ...payload
             }
             // gps location
-            if (gps_lat?.length > 6  && gps_lon?.length > 6 ) {
+            if (gps_lat && gps_lon) {
                 data.gps_location = {
                     type: 'Point',
                     coordinates: [gps_lon, gps_lat]
                 };
             }
             // base station location
-            if (gsm_lat?.length > 6 && gsm_lon?.length > 6) {
+            if (gsm_lat && gsm_lon) {
                 data.gsm_location = {
                     type: 'Point',
                     coordinates: [gsm_lon, gsm_lat]
@@ -135,10 +135,17 @@ const controller = {
 
             });
             const docs = results.docs.map(result => {
+                if (result?.gsm_lat && result?.gsm_lon) {
+                    result = {
+                        ...result._doc,
+                        gsm_map_url: `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
+
+                    }
+                }
                 if (result?.gps_lat && result?.gps_lon) {
                     result = {
                         ...result._doc,
-                        map_url: `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
+                        gps_map_url: `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
 
                     }
                 }
@@ -171,4 +178,3 @@ const controller = {
 }
 
 module.exports = controller;
-
