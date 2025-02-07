@@ -1,3 +1,4 @@
+require('dotenv').config();
 const chalk = require("chalk");
 const mongoose = require("mongoose");
 
@@ -10,6 +11,7 @@ const connect = async () => {
     const db_name = process.env.DB_NAME;
     const rs_name = process.env.DB_RS_NAME;
     const host_0 = `${db_ip}:${db_port}`;
+
     const connection_string = `mongodb://${db_user}:${db_password}@${host_0}/`;
     console.log("connection string ", connection_string);
     //connect to database

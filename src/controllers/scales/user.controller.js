@@ -1,8 +1,7 @@
-import User from "../models/user.js";
-import { generateToken } from "../utils/auth.js";
+const User = require("../../models/user");
 
 // Create a new user
-export async function createUser(req, reply) {
+exports.createUser = async (req, reply) => {
   try {
     const user = new User(req.body);
     const savedUser = await user.save();
@@ -10,20 +9,20 @@ export async function createUser(req, reply) {
   } catch (err) {
     reply.status(400).send({ message: "Error creating user", error: err.message });
   }
-}
+};
 
 // Retrieve all users
-export async function getUsers(req, reply) {
+exports.getUsers = async (req, reply) => {
   try {
     const users = await User.find();
     reply.send(users);
   } catch (err) {
     reply.status(500).send({ message: "Error retrieving users", error: err.message });
   }
-}
+};
 
 // Retrieve a specific user by ID
-export async function getUserById(req, reply) {
+exports.getUserById = async (req, reply) => {
   try {
     const user = await User.findById(req.params.userId);
     if (!user) return reply.status(404).send({ message: "User not found" });
@@ -31,10 +30,10 @@ export async function getUserById(req, reply) {
   } catch (err) {
     reply.status(500).send({ message: "Error retrieving user", error: err.message });
   }
-}
+};
 
 // Update user details
-export async function updateUser(req, reply) {
+exports.updateUser = async (req, reply) => {
   try {
     const updatedUser = await User.findByIdAndUpdate(req.params.userId, req.body, { new: true });
     if (!updatedUser) return reply.status(404).send({ message: "User not found" });
@@ -42,10 +41,10 @@ export async function updateUser(req, reply) {
   } catch (err) {
     reply.status(500).send({ message: "Error updating user", error: err.message });
   }
-}
+};
 
 // Soft delete a user
-export async function deleteUser(req, reply) {
+exports.deleteUser = async (req, reply) => {
   try {
     const deletedUser = await User.findByIdAndUpdate(req.params.userId, { status: "Inactive" }, { new: true });
     if (!deletedUser) return reply.status(404).send({ message: "User not found" });
@@ -53,10 +52,10 @@ export async function deleteUser(req, reply) {
   } catch (err) {
     reply.status(500).send({ message: "Error deleting user", error: err.message });
   }
-}
+};
 
 // User login
-export async function userLogin(req, reply) {
+exports.userLogin = async (req, reply) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -70,4 +69,4 @@ export async function userLogin(req, reply) {
   } catch (err) {
     reply.status(500).send({ message: "Error logging in", error: err.message });
   }
-}
+};

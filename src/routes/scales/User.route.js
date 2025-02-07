@@ -1,29 +1,34 @@
-const userController = require("../../controllers/user/userController");
+const userController = require("../../controllers/scales/user.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
-const checkRole = require("../../middlewares/checkRole.middleware");
 
 module.exports = ({ app }) => {
-  app.post('/api/v1/users', { preHandler: [authenticate, checkRole] }, (req, res) => {
-    userController.createUser(req, res);
+  // Create a new user
+  app.post('/api/v1/users/', (req, reply) => {
+    userController.createUser(req, reply);
   });
 
-  app.get('/api/v1/users', { preHandler: [authenticate] }, (req, res) => {
-    userController.getUsers(req, res);
+  // Retrieve all users
+  app.get('/api/v1/users', (req, reply) => {
+    userController.getUsers(req, reply);
   });
 
-  app.get('/api/v1/users/:userId', { preHandler: [authenticate] }, (req, res) => {
-    userController.getUserById(req, res);
+  // Retrieve a specific user by ID
+  app.get('/api/v1/users/:userId', (req, reply) => {
+    userController.getUserById(req, reply);
   });
 
-  app.put('/api/v1/users/:userId', { preHandler: [authenticate, checkRole] }, (req, res) => {
-    userController.updateUser(req, res);
+  // Update a user by ID
+  app.put('/api/v1/users/:userId', (req, reply) => {
+    userController.updateUser(req, reply);
   });
 
-  app.delete('/api/v1/users/:userId', { preHandler: [authenticate, checkRole] }, (req, res) => {
-    userController.deleteUser(req, res);
+  // Delete a user by ID
+  app.delete('/api/v1/users/:userId', (req, reply) => {
+    userController.deleteUser(req, reply);
   });
 
-  app.post('/api/v1/login', (req, res) => {
-    userController.userLogin(req, res);
+  // User login (public route)
+  app.post('/api/v1/login', (req, reply) => {
+    userController.userLogin(req, reply);
   });
 };

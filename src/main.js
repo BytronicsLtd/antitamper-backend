@@ -6,6 +6,10 @@ const fastify = require('fastify')
 const cors = require('@fastify/cors');
 const chalk = require("chalk");
 const { format } = require("date-fns");
+const cron = require('node-cron');
+const { exec } = require("child_process");
+
+
 //http server
 const app = fastify();
 //setup cors
@@ -54,7 +58,7 @@ app.addHook('onResponse', (req, res, done) => {
 // routes
 require('./routes/index.js')({ app });
 async function main() {
-    const port = process.env.PORT || 3000
+    const port = process.env.PORT || 3001
     app.listen({ port, host: "0.0.0.0" });
     console.log(chalk.yellow("server running on port", port));
     if (process.env.LOG_ROUTES) console.log(chalk.blue("Registered routes: "), all_routes);
@@ -62,3 +66,16 @@ async function main() {
 }
 // 
 main();
+cron.schedule('*/10 * * * *', () => {
+    exec("bash /usr/local/bin/clearsyslog.sh", (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.error(`Stderr: ${stderr}`);
+            return;
+        }
+        console.log(`Output: ${stdout}`);
+    });
+});
