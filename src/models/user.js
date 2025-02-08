@@ -27,19 +27,22 @@ const schema = new Schema({
     required: true,
     validate: [{ validator: isPhoneNumber }],
   },
+  // set internally
   email_confirmed: {
     type: Boolean,
     default: false,
   },
+    // set internally
   confirmation_code: {
     type: String,
     default: null,
   },
+    // set internally
   confirmation_code_exp_time: {
     type: Date,
     default: null,
   },
-  // jwt token
+  // jwt token  set internally
   token: {
     type: String,
     default: null,
@@ -50,6 +53,7 @@ const schema = new Schema({
     enum: ['sys-admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
     required: true
   },
+  //user status
   status: {
     type: String,
     enum: ['active', 'inactive', 'suspended'],

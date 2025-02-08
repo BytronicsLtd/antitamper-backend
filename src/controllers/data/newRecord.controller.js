@@ -61,10 +61,23 @@ const controller = {
             }
             // parse RTC timestamp
             if (rtc_datetime?.length > 5) {
-                const formatted_date = rtc_datetime.replace(/(\d{2})\/(\d{2})\/(\d{2}),(.*)\+\d{2}/, '20$3-$2-$1T$4');
-                const date = new Date(formatted_date); // Parse the formatted date                
-                const adjusted_date = new Date(date.getTime() - 3 * 60 * 60 * 1000); // Add 3 hours
-                data.rtc_timestamp = adjusted_date
+                try {
+                    const formatted_date = rtc_datetime.replace(/(\d{2})\/(\d{2})\/(\d{2}),(.*)\+\d{2}/, '20$3-$2-$1T$4');
+                    const date = new Date(formatted_date);
+                    
+                    // Check if date is valid before proceeding
+                    if (date instanceof Date && !isNaN(date)) {
+                        const adjusted_date = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+                        data.rtc_timestamp = adjusted_date;
+                    } else {
+                        console.warn('Invalid date format:', rtc_datetime);
+                        // Optionally set a default or keep existing value
+                        data.rtc_timestamp = null;
+                    }
+                } catch (error) {
+                    console.warn('Error processing date:', rtc_datetime, error);
+                    data.rtc_timestamp = null;
+                }
             }
 
 

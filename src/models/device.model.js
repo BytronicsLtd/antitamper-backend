@@ -19,7 +19,7 @@ const Schema = {
         required: true,
         validate: [{ validator: isPhoneNumber }],
     },
-    //
+    // id of factory
     factory: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Factory',
@@ -27,11 +27,12 @@ const Schema = {
             return this.status !== 'unassigned';
         }
     },
-    //
+    // set internally
     factory_name: {
         type: String,
         default: null
     },
+    // set internally
     factory_location: {
         type: String,
         default: null
