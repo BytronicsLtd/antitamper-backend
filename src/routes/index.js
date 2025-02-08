@@ -1,4 +1,4 @@
-const deviceRoutes = require("./devices/Device.route");
+const deviceRoutes = require("./devices/device.route");
 const activityLogsRoutes = require("./activity/Activity.route");
 const factoryRoutes = require("./factories/factory.route");
 const userRoutes = require("./users/user.route");
