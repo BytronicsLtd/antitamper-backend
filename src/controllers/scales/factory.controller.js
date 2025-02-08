@@ -6,9 +6,9 @@ async function createFactory(req, reply) {
   try {
     const factory = new Factory(req.body);
     const savedFactory = await factory.save();
-    reply.code(201).json(savedFactory);
+    reply.status(201).send(savedFactory);
   } catch (err) {
-    reply.code(400).json({ message: 'Error creating factory', error: err.message });
+    reply.status(400).send({ message: 'Error creating factory', error: err.message });
   }
 }
 

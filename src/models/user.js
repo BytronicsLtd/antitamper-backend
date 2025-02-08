@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+const validator = require('validator');
+
+
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
@@ -9,11 +12,17 @@ const userSchema = new Schema({
   email: { 
     type: String, 
     required: true, 
-    unique: true 
+    unique: true ,
+    validate: {
+      validator: function(value) {
+        return validator.isEmail(value);
+      },
+      message: 'Please enter a valid email address'
+    }
   },
   role: { 
     type: String, 
-    enum: ['Manager', 'ICT Manager', 'FUM', 'FSC'], 
+    enum: ['sys-admin','Manager', 'ICT Manager', 'FUM', 'FSC'], 
     required: true 
   },
   status: { 
@@ -24,7 +33,9 @@ const userSchema = new Schema({
   factory: { 
     type: Schema.Types.ObjectId, 
     ref: 'Factory', 
-    required: true 
+    required: function() {
+      return this.role !== 'sys-admin';
+    }
   },
   password: { 
     type: String, 
