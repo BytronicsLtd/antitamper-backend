@@ -1,8 +1,7 @@
 const processResponse = require("../../utils/processResponse");
 const chalk = require("chalk");
-const { getYear, parse, parseISO } = require("date-fns");
-
 const DataModel = require("../../models/data.model")
+const emailSender = require("../../utils/communication/email/email.util")
 
 
 const controller = {
@@ -29,7 +28,7 @@ const controller = {
                 };
             }
             // parse gps timestamp
-            if (gps_datetime?.length > 10 ) {
+            if (gps_datetime?.length > 10) {
                 const iso_time = new Date(gps_datetime);
                 data.gps_timestamp = iso_time;
             }
@@ -56,7 +55,8 @@ const controller = {
 
 
             console.log("data to save ", data);
-            await DataModel.create(data)
+            await DataModel.create(data);
+            await checkAlert(data)
             res.status(201).send({ success: true, cmd: 15 })
         } catch (error) {
             console.log(chalk.red("Error in device status"), error);
@@ -178,3 +178,21 @@ const controller = {
 }
 
 module.exports = controller;
+// check for alerts
+async function checkAlert(data) {
+    try {
+        if (data.interrupt_type === 'none') return;
+        const recievers = ["gmnolkeri@gmail.com", "christopherbartonjo@gmail.com"]
+        console.log("check alert data ", data)
+        const result = await emailSender({
+            template: "alert.handlebars",
+            subject: "Alert!",
+            emails: recievers,
+            payload: data,
+        })
+        console.log("send email result ", result)
+    }
+    catch (error) {
+        console.log(chalk.red("Error checking alerts"), error);
+    }
+}
