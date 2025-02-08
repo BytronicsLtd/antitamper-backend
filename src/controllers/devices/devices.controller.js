@@ -29,24 +29,38 @@ const controller = {
                 sort: '-createdAt',
 
             });
-            res.status(200).send(results);
+            res.status(200).send({ success: true, results });
         } catch (error) {
             console.log(chalk.red("Error fetching devices"), error);
             res.status(500).send({ success: false })
         }
     },
     // fetch  device details
-    getOne: async (req,res) => {
+    getOne: async (req, res) => {
         try {
             const id = req.query.id
-            const factory = await DeviceModel.findById(id); // Use `findById` method
-            if (!factory) return res.status(404).send({ message: 'Factory not found' });
-            res.status(200).send(factory);
+            const device = await DeviceModel.findById(id); // Use `findById` method
+            if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
+            res.status(200).send({ success: true, results: device });
         } catch (error) {
             console.log(chalk.red("Error fetching device details"), error);
             res.status(500).send({ success: false })
         }
-    }
+    },
+    update: async (req, res) => {
+        try {
+            const id = req.body.id
+            let device = await DeviceModel.findById(id); // Use `findById` method
+            if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
+            device = await DeviceModel.findByIdAndUpdate(id, {
+                $set: req.body
+            }, { runValidators: true,new: true })
+            res.status(200).send({ success: true, results: device });
+        } catch (error) {
+            console.log(chalk.red("Error fetching device details"), error);
+            res.status(500).send({ success: false , error: error.message})
+        }
+    },
 }
 
 module.exports = controller;

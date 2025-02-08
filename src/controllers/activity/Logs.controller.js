@@ -18,7 +18,6 @@ const activityLogController = {
           $lte: end_datetime     // less than or equal to
         }
       }
-      //add  search term query
       // ---------------------- search query  ------------------------
       if (search_term) {
         query = {
@@ -49,18 +48,18 @@ const activityLogController = {
       };
       res.status(200).send({ success: true, results, metadata });
     } catch (error) {
-      res.status(500).send({ message: "Error fetching activity logs", error: error.message });
+      res.status(500).send({success: false, message: "Error fetching activity logs", error: error.message });
     }
   },
   // Get Activity Log by ID
   getActivityLogById: async (req, res) => {
     try {
-      const { logId } = req.params;
-      const log = await ActivityLog.findById(logId);
+      const { id } = req.query;
+      const log = await ActivityLog.findById(id);
       if (!log) return res.status(404).send({ message: "Log not found" });
-      res.status(200).send({ data: log });
+      res.status(200).send({success:true, results:log});
     } catch (error) {
-      res.status(500).send({ message: "Error fetching activity log", error: error.message });
+      res.status(500).send({ success:false, message: "Error fetching activity log", error: error.message });
     }
   },
 

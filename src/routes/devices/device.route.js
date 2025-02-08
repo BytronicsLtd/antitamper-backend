@@ -16,5 +16,10 @@ module.exports = ({ app }) => {
       deviceController.getOne(req,res);
     });
  
+    // fetch device details
+    app.patch('/api/v1/device/', { preHandler: [authenticate,] }, (req, res) => {
+      deviceController.update(req,res);
+    });
+ 
   
   }

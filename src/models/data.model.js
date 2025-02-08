@@ -7,6 +7,20 @@ const Schema = {
     gsm_timestamp: Date,
     //
     rtc_timestamp: Date,
+    // set internally to aid in filtering data by factory
+    factory: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Factory',
+    },
+    factory_name: {
+        type:String,
+        default:null
+    },
+    factory_location: {
+        type:String,
+        default:null
+    },
+
     //
     gps_location: {
         type: {

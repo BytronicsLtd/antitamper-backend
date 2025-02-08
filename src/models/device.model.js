@@ -4,7 +4,8 @@ const mongoosePaginate = require('mongoose-paginate-v2');
 const Schema = {
     device_id: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     // could be the scale serial number
     serial_number: {
@@ -30,7 +31,17 @@ const Schema = {
     status: {
         type: String,
         enum: ['unassigned', 'active', 'inactive'],
-        default: 'unassigned'
+        default: 'unassigned',
+        validate: {
+            validator: function (value) {                
+                // If factory is provided, status cannot be unassigned
+                if (this.factory && value === 'unassigned') {
+                    return false;
+                }
+                return true;
+            },
+            message: 'Status cannot be unassigned when factory is provided'
+        }
     },
     //
 }
@@ -47,6 +58,26 @@ schema.method("toJSON", function () {
     const { __v, _id, ...object } = this.toObject();
     object.id = _id;
     return object;
+});
+schema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], async function(next) {
+    const update = this.getUpdate();
+    const factory = update.factory || update.$set?.factory;
+    const status = update.status || update.$set?.status;
+    
+    // If factory is being set and status is unassigned
+    if (factory && status === 'unassigned') {
+        throw new Error('Status cannot be unassigned when factory is provided');
+    }
+    
+    // If status is being changed to unassigned, check if factory exists
+    if (status === 'unassigned') {
+        const doc = await this.model.findOne(this.getQuery());
+        if (doc && doc.factory) {
+            throw new Error('Status cannot be unassigned when factory is provided');
+        }
+    }
+    
+    next();
 });
 module.exports = mongoose.model('Device', schema, 'devices')
 
