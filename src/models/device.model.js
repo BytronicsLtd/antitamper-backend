@@ -28,12 +28,21 @@ const Schema = {
         }
     },
     //
+    factory_name: {
+        type: String,
+        default: null
+    },
+    factory_location: {
+        type: String,
+        default: null
+    },
+    //
     status: {
         type: String,
         enum: ['unassigned', 'active', 'inactive'],
         default: 'unassigned',
         validate: {
-            validator: function (value) {                
+            validator: function (value) {
                 // If factory is provided, status cannot be unassigned
                 if (this.factory && value === 'unassigned') {
                     return false;
@@ -59,16 +68,16 @@ schema.method("toJSON", function () {
     object.id = _id;
     return object;
 });
-schema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], async function(next) {
+schema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], async function (next) {
     const update = this.getUpdate();
     const factory = update.factory || update.$set?.factory;
     const status = update.status || update.$set?.status;
-    
+
     // If factory is being set and status is unassigned
     if (factory && status === 'unassigned') {
         throw new Error('Status cannot be unassigned when factory is provided');
     }
-    
+
     // If status is being changed to unassigned, check if factory exists
     if (status === 'unassigned') {
         const doc = await this.model.findOne(this.getQuery());
@@ -76,7 +85,7 @@ schema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], async function(next)
             throw new Error('Status cannot be unassigned when factory is provided');
         }
     }
-    
+
     next();
 });
 module.exports = mongoose.model('Device', schema, 'devices')

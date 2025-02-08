@@ -20,7 +20,6 @@ const Schema = {
         type:String,
         default:null
     },
-
     //
     gps_location: {
         type: {

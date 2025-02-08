@@ -14,17 +14,17 @@ module.exports = ({ app }) => {
   });
 
   // Get a specific factory by ID
-  app.get('/api/v1/factory/', { preHandler: [authenticate] }, (req,res) => {
+  app.get('/api/v1/factory/', { preHandler: [authenticate,] }, (req,res) => {
     factoriesController.getFactoryById(req,res);
   });
 
   // Update an existing factory (with role check)
-  app.put('/api/v1/factories/:factoryId', { preHandler: [authenticate, checkRole] }, (req,res) => {
+  app.put('/api/v1/factories/:factoryId', { preHandler: [authenticate] }, (req,res) => {
     factoriesController.updateFactory(req,res);
   });
 
   // Deactivate a factory (with role check)
-  app.delete('/api/v1/factories/:factoryId', { preHandler: [authenticate, checkRole] }, (req,res) => {
+  app.delete('/api/v1/factories/:factoryId', { preHandler: [authenticate] }, (req,res) => {
     factoriesController.deactivateFactory(req,res);
   });
 };

@@ -1,15 +1,5 @@
 const User = require("../../models/user");
-
-// Create a new user
-exports.createUser = async (req,res) => {
-  try {
-    const user = new User(req.body);
-    const savedUser = await user.save();
-    res.status(201).send(savedUser);
-  } catch (err) {
-    res.status(400).send({ message: "Error creating user", error: err.message });
-  }
-};
+const { default: mongoose } = require("mongoose");
 
 // Retrieve all users
 exports.getUsers = async (req,res) => {
@@ -26,7 +16,7 @@ exports.getUsers = async (req,res) => {
      });
      res.status(200).send(results);
   } catch (err) {
-    res.status(500).send({ message: "Error retrieving users", error: err.message });
+    res.status(500).send({ success:false, message: "Error retrieving users", error: err.message });
   }
 };
 

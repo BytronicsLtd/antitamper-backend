@@ -1,23 +1,73 @@
-const processResponse = require("../utils/processResponse");
+const jwt = require("jsonwebtoken");
+const UserModel = require("../models/user");
+const chalk = require("chalk");
 
-const authenticate = async (req, res) => {
+const authenticate = async (request, reply) => {
     try {
-       const ip =  req.ip;
-       console.log("request ip is ", ip);
-       const contentLength = req.headers['content-length'];
+        const authHeader = request.headers.authorization;
+        if (!authHeader) {
+            return reply.code(401).send({ 
+                success: false, 
+                results: { force_logout: true }, 
+                message: "Authorization header not provided" 
+            });
+        }
 
-       if (contentLength) {
-           const payloadSize = parseInt(contentLength, 10);
-           console.log(`Request payload size: ${payloadSize} bytes`);
-       } else {
-           console.log('No Content-Length header found');
-           return { error: 'No Content-Length header found' };
-       }
-       
+        // Check if it's a Bearer token and extract the token
+        if (!authHeader.startsWith('Bearer ')) {
+            return reply.code(401).send({ 
+                success: false, 
+                message: "Invalid token format. Must be Bearer token" 
+            });
+        }
+
+        // Extract the token (remove 'Bearer ' from the start)
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        const user = await UserModel.findById(decoded.id);
+        
+        if (!user) {
+            return reply.code(401).send({ 
+                success: false, 
+                results: { force_logout: true }, 
+                message: "Could not verify user" 
+            });
+        }
+        // Check if token is present and matches user's stored token
+        if (!user.token || user.token !== token) {
+            return reply.code(401).send({ 
+                success: false, 
+                message: "Invalid or expired token" 
+            });
+        }
+        request.user = user;
+        
     } catch (error) {
         console.log(chalk.red("Verify token error: "), error);
-        return processResponse({ req, res, success: false, status: 500, message: "Could not verify user", results: { force_logout: true }});
+        // Specific error for expired tokens
+        if (error instanceof jwt.TokenExpiredError) {
+            return reply.code(401).send({
+                success: false,
+                message: "Token has expired",
+                results: { force_logout: true }
+            });
+        }
+
+        // Generic error for other JWT verification failures
+        if (error instanceof jwt.JsonWebTokenError) {
+            return reply.code(401).send({
+                success: false,
+                message: "Invalid token",
+                results: { force_logout: true }
+            });
+        }
+
+        return reply.code(500).send({
+            success: false,
+            message: "Could not verify user",
+            results: { force_logout: true }
+        });
     }
-}
+};
 
 module.exports = authenticate;

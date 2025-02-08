@@ -1,19 +1,24 @@
 const userController = require("../../controllers/user/user.controller");
+const authController = require("../../controllers/user/auth.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
 
 module.exports = ({ app }) => {
   // Create a new user
-  app.post('/api/v1/users/', (req,res) => {
-    userController.createUser(req,res);
+  app.post('/api/v1/users/',{ preHandler: [authenticate,] }, (req,res) => {
+    authController.createUser(req,res);
+  });
+  // Create a new user
+  app.post('/api/v1/users/login/', (req,res) => {
+    authController.login(req,res);
   });
 
   // Retrieve all users
-  app.get('/api/v1/users/', (req,res) => {
+  app.get('/api/v1/users/',{ preHandler: [authenticate,] }, (req,res) => {
     userController.getUsers(req,res);
   });
 
   // Retrieve a specific user by ID
-  app.get('/api/v1/user/', (req,res) => {
+  app.get('/api/v1/user/',{ preHandler: [authenticate,] }, (req,res) => {
     userController.getUserById(req,res);
   });
 
