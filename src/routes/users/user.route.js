@@ -7,9 +7,17 @@ module.exports = ({ app }) => {
   app.post('/api/v1/users/',{ preHandler: [authenticate,] }, (req,res) => {
     authController.createUser(req,res);
   });
-  // Create a new user
+  // login user
   app.post('/api/v1/users/login/', (req,res) => {
     authController.login(req,res);
+  });
+    // login user
+    app.post('/api/v1/users/request-verification/', { preHandler: [] }, (req, res) => {
+      authController.requestVerification(req, res)
+    });
+  // verify user
+  app.post('/api/v1/users/verify/', (req,res) => {
+    authController.verifyUser(req,res);
   });
 
   // Retrieve all users

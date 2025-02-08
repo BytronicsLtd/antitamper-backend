@@ -1,10 +1,12 @@
 const chalk = require("chalk");
 const UserModel = require("../../models/user");
+const ActivityModel = require("../../models/activityLog");
 const jwt = require("jsonwebtoken"); // used to create, sign, and verify tokens
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const { default: mongoose } = require("mongoose");
 const passwordValidationUtil = require("../../utils/passwordValidate.util");
+const emailSender = require("../../utils/communication/email/email.util");
 const { addMinutes, format } = require("date-fns");
 
 
@@ -128,6 +130,161 @@ const controller = {
             console.log(chalk.red("Error logging in user "), error);
             res.status(500).send({ success: false, message: "Error retrieving users", error: error.message });
 
+        }
+    },
+    // request verification
+    requestVerification: async (req, res) => {
+        try {
+            const body = req.body;
+            const user = await UserModel.findOne({ email: body.email });
+
+            if (!user) {
+                return res.status(404).send({
+                    success: false,
+                    message: {
+                        en: "User with given email or phone number not found"
+                    }
+                });
+            }
+            // Generate verification code
+            const confirmation_code = crypto
+                .randomBytes(3)
+                .toString('hex')
+                .substring(0, 5)
+                .toUpperCase();
+
+            const confirmation_code_exp_time = addMinutes(new Date(), 30);
+            // Queue verification email
+            await emailSender({
+                template: "request-verification.handlebars",
+                subject: "Account verification",
+                emails: [body.email],
+                payload: {
+                    confirmation_code_exp_time: format(
+                        confirmation_code_exp_time,
+                        "yyyy-MM-dd HH:mm a"
+                    ),
+                    confirmation_code
+                },
+            });
+
+            // Update user
+            const updatedUser = await UserModel.findByIdAndUpdate(
+                user.id,
+                {
+                    $set: {
+                        confirmation_code,
+                        confirmation_code_exp_time
+                    }
+                },
+                { new: true }
+            );
+
+            // Log history
+            await ActivityModel.create({
+                action: "request-account-verification",
+                user: user.id,
+                email: user.email,
+                roles: user.roles,
+                timestamp: Date.now(),
+                model: "User",
+                affected_id: user.id,
+                deleted_data: null,
+                edited_data: updatedUser
+            });
+
+            return res.status(200).send({
+                success: true,
+                results: {
+                    id: user.id,
+                    confirmation_code,
+                    confirmation_code_exp_time
+                },
+                message: {
+                    en: "Reset code has been sent to your email"
+                }
+            });
+
+        } catch (error) {
+            console.log(chalk.red("Error requesting password reset "), error);
+            await ErrorModel.logError(req, error);
+            return res.status(500).send({
+                success: false,
+                message: {
+                    en: "An error occurred while requesting password reset"
+                }
+            });
+        }
+    },
+    // verify user
+    verifyUser: async (req, res) => {
+        try {
+            const { id, confirmation_code } = req.body;
+
+            let user = await UserModel.findById(id);
+            if (!user) {
+                return res.status(404).send({
+                    success: false,
+                    message: {
+                        en: "User not found"
+                    }
+                });
+            }
+
+            if (user.confirmation_code !== confirmation_code) {
+                return res.status(400).send({
+                    success: false,
+                    message: {
+                        en: "Invalid confirmation code"
+                    }
+                });
+            }
+
+            if (user.confirmation_code_exp_time < new Date()) {
+                return res.status(400).send({
+                    success: false,
+                    message: {
+                        en: "Confirmation code has expired"
+                    }
+                });
+            }
+
+            await UserModel.findByIdAndUpdate(id, {
+                $set: {
+                    email_confirmed: true,
+                    confirmation_code: null,
+                    confirmation_code_exp_time: null
+                }
+            });
+
+            await ActivityModel.create({
+                action: "user-verification",
+                user: user.id,
+                email: user.email,
+                roles: user.roles,
+                timestamp: Date.now(),
+                model: "User",
+                affected_id: user.id,
+                deleted_data: null,
+                edited_data: null,
+            });
+
+            return res.status(200).send({
+                success: true,
+                message: {
+                    en: "User verified successfully"
+                }
+            });
+
+        } catch (error) {
+            console.log(chalk.red("Error verifying user "), error);
+            await ErrorModel.logError(req, error);
+            return res.status(500).send({
+                success: false,
+                message: {
+                    en: "An error occurred while verifying user"
+                }
+            });
         }
     }
 }

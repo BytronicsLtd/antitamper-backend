@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <style>
+       .container {
+           max-width: 600px;
+           margin: 0 auto;
+           padding: 40px 20px;
+           font-family: Arial, sans-serif;
+           background-color: #f0f7ff;
+       }
+
+       .email-card {
+           background-color: white;
+           border-radius: 12px;
+           padding: 32px;
+           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+           border: 1px solid #e1e8f5;
+       }
+
+       .header {
+           text-align: center;
+           margin-bottom: 32px;
+       }
+
+       .title {
+           color: #1e3a8a;
+           font-size: 26px;
+           margin: 0;
+           font-weight: bold;
+       }
+
+       .confirmation-code {
+           background-color: #eff6ff;
+           border: 2px solid #bfdbfe;
+           border-radius: 8px;
+           padding: 24px;
+           text-align: center;
+           margin: 24px 0;
+       }
+
+       .code {
+           color: #1d4ed8;
+           font-size: 36px;
+           font-weight: bold;
+           letter-spacing: 6px;
+           margin: 0;
+           text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+       }
+
+       .expiry-text {
+           color: #475569;
+           font-size: 14px;
+           margin: 16px 0 0 0;
+       }
+
+       .footer {
+           text-align: center;
+           color: #64748b;
+           font-size: 12px;
+           margin-top: 32px;
+       }
+
+       .security-notice {
+           background-color: #f0f9ff;
+           border-left: 4px solid #3b82f6;
+           padding: 16px;
+           margin-top: 24px;
+           font-size: 14px;
+           color: #1e40af;
+           line-height: 1.5;
+       }
+
+       p {
+           color: #334155;
+           line-height: 1.6;
+           margin: 16px 0;
+       }
+   </style>
+</head>
+<body>
+   <div class="container">
+       <div class="email-card">
+           <div class="header">
+               <h1 class="title">Verify Your Account</h1>
+           </div>
+
+           <p>Hello! Please use the verification code below to complete your account verification. For security reasons, this code will expire soon.</p>
+
+           <div class="confirmation-code">
+               <p class="code">{{{confirmation_code}}}</p>
+               <p class="expiry-text">Code expires at: {{{confirmation_code_exp_time}}}</p>
+           </div>
+
+           <div class="security-notice">
+               For your security: If you didn't request this verification code, please ignore this email or contact our support team immediately if you notice any suspicious activity.
+           </div>
+
+           <div class="footer">
+               <p>This is an automated message. Please do not reply to this email.</p>
+               <p>© 2024 Your Company Name. All rights reserved.</p>
+           </div>
+       </div>
+   </div>
+</body>
+</html>
