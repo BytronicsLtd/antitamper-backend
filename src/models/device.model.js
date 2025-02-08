@@ -12,9 +12,11 @@ const Schema = {
         required: true
     },
     // 
+    // 
     phone_number: {
         type: String,
-        required: true
+        required: true,
+        validate: [{ validator: isPhoneNumber }],
     },
     //
     factory: {
@@ -27,7 +29,7 @@ const Schema = {
     //
     status: {
         type: String,
-        enum: [ 'unassigned', 'active', 'inactive'],
+        enum: ['unassigned', 'active', 'inactive'],
         default: 'unassigned'
     },
     //
@@ -47,3 +49,9 @@ schema.method("toJSON", function () {
     return object;
 });
 module.exports = mongoose.model('Device', schema, 'devices')
+
+function isPhoneNumber(value) {
+    const kenya_phone_regex = /^(?:254|\+254|0)?(?:(?:7(?:(?:[0-9][0-9])|(?:0[0-8])|(4[0-1]))[0-9]{6})|(?:1[0-9]{8}))$/;
+    const clean_phone = value.replace(/[\s\-()]/g, '');
+    if (!kenya_phone_regex.test(clean_phone)) throw new Error("Please enter a valid phone number.")
+}

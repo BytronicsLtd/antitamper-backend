@@ -21,6 +21,12 @@ const schema = new Schema({
       message: 'Please enter a valid email address'
     }
   },
+  // 
+  phone_number: {
+    type: String,
+    required: true,
+    validate: [{ validator: isPhoneNumber }],
+  },
   email_confirmed: {
     type: Boolean,
     default: false,
@@ -38,12 +44,7 @@ const schema = new Schema({
     type: String,
     default: null,
   },
-  // 
-  phone_number: {
-    type: String,
-    required: true,
-    validate: [{ validator: isPhoneNumber }],
-  },
+  //
   role: {
     type: String,
     enum: ['sys-admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],

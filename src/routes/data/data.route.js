@@ -1,15 +1,24 @@
 const dataController = require("../../controllers/data/data.controller");
+const alertsController = require("../../controllers/data/alerts.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
 const checkRole = require("../../middlewares/checkRole.middleware");
 
 module.exports = ({ app }) => {
     // 
+    app.post('/api/v1/data/', { preHandler: [authenticate,] }, (req, res) => {
+      dataController.updateScaleStatus(req, res)
+    });
+    // 
     app.get('/api/v1/data/', { preHandler: [authenticate,] }, (req, res) => {
       dataController.fetchMany(req,res);
     });
     // 
-    app.post('/api/v1/data/', { preHandler: [authenticate,] }, (req, res) => {
-      dataController.updateScaleStatus(req, res)
+    app.get('/api/v1/data/alerts/', { preHandler: [authenticate,] }, (req, res) => {
+      alertsController.fetchMany(req,res);
     });
-  
+    // 
+    app.get('/api/v1/data/details/', { preHandler: [authenticate,] }, (req, res) => {
+      dataController.fetchOne(req,res);
+    });
+
   }

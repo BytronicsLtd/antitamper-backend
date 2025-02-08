@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
+
 const Schema = mongoose.Schema;
 
-const logSchema = new Schema({
+const schema = new Schema({
   user: { 
     type: Schema.Types.ObjectId, 
     ref: 'User', 
@@ -37,10 +39,10 @@ const logSchema = new Schema({
 });
 
 // Create compound index for common queries
-logSchema.index({ user: 1, action: 1, timestamp: -1 });
+schema.index({ user: 1, action: 1, timestamp: -1 });
 
 // Static method to log activity
-logSchema.statics.logActivity = async function(userId, action, details) {
+schema.statics.logActivity = async function(userId, action, details) {
   try {
     return await this.create({
       user: userId,
@@ -54,13 +56,10 @@ logSchema.statics.logActivity = async function(userId, action, details) {
   }
 };
 
-// Static method to get recent activity for a user
-logSchema.statics.getRecentUserActivity = function(userId, limit = 10) {
-  return this.find({ user: userId })
-    .sort({ timestamp: -1 })
-    .limit(limit)
-    .populate('user', 'name email')
-    .exec();
-};
-
-module.exports = mongoose.model('ActivityLog', logSchema);
+schema.plugin(mongoosePaginate);
+schema.method("toJSON", function () {
+    const { __v, _id, ...object } = this.toObject();
+    object.id = _id;
+    return object;
+});
+module.exports = mongoose.model('ActivityLog', schema);

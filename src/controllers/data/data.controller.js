@@ -64,6 +64,7 @@ const controller = {
 
         }
     },
+    // fetch many data
     fetchMany: async (req, res) => {
         try {
             let = {
@@ -137,14 +138,14 @@ const controller = {
             const docs = results.docs.map(result => {
                 if (result?.gsm_lat && result?.gsm_lon) {
                     result = {
-                        ...result._doc,
+                        ...result.toJSON(),
                         gsm_map_url: `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
 
                     }
                 }
                 if (result?.gps_lat && result?.gps_lon) {
                     result = {
-                        ...result._doc,
+                        ...result.toJSON(),
                         gps_map_url: `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
 
                     }
@@ -174,6 +175,19 @@ const controller = {
                 },
             });
         }
+    },
+    //
+    // fetch one data point
+    fetchOne: async (req, res) => {
+        try {
+            const id = req.query.id
+            const result = await DataModel.findById(id); // Use `findById` method
+            if (!result) return res.status(404).send({ message: 'Record not found' });
+            res.status(200).send(result);
+        } catch (error) {
+            console.log(chalk.red("Error fetching data details"), error);
+            res.status(500).send({ success: false })
+        }
     }
 }
 
@@ -182,7 +196,8 @@ module.exports = controller;
 async function checkAlert(data) {
     try {
         if (data.interrupt_type === 'none') return;
-        const recievers = ["gmnolkeri@gmail.com", "christopherbartonjo@gmail.com"]
+        // "gmnolkeri@gmail.com"
+        const recievers = ["christopherbartonjo@gmail.com"]
         console.log("check alert data ", data)
         const result = await emailSender({
             template: "alert.handlebars",
