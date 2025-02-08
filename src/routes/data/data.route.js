@@ -14,7 +14,7 @@ module.exports = ({ app }) => {
       dataController.fetchMany(req,res);
     });
     // 
-    app.get('/api/v1/data/alerts/', { preHandler: [authenticate,] }, (req, res) => {
+    app.get('/api/v1/data/alerts/', { preHandler: [] }, (req, res) => {
       alertsController.fetchMany(req,res);
     });
     // 
