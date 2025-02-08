@@ -83,7 +83,7 @@ const controller = {
             console.log(chalk.red("Error creating  user "), error);
             await session.abortTransaction();
             session.endSession();
-            res.status(400).send({ message: "Error creating user", error: err.message });
+            res.status(400).send({ message: "Error creating user", error: error.message });
         }
     },
     // login user

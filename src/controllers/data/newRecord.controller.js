@@ -1,6 +1,6 @@
-const processResponse = require("../../utils/processResponse");
 const chalk = require("chalk");
 const DataModel = require("../../models/data.model");
+const UserModel = require("../../models/user");
 const DeviceModel = require("../../models/device.model");
 const emailSender = require("../../utils/communication/email/email.util")
 
@@ -17,8 +17,8 @@ const controller = {
             if(!device){
                 return res.status(404).send({success:false})
             }
-            console.log("device found ", device);
-            
+            //fetch users that belong to the same factory as the device
+            let users =  await UserModel.find({factory:device?.factory?.id}).select("-_id email phone_number")            
             //
             let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_datetime, gsm_datetime, rtc_datetime } = payload;
             let data = {
@@ -70,7 +70,7 @@ const controller = {
 
             // console.log("data to save ", data);
             await DataModel.create(data);
-            await checkAlert(data)
+            await checkAlert({data, users})
             res.status(201).send({ success: true, cmd: 15 })
         } catch (error) {
             console.log(chalk.red("Error in device status"), error);
@@ -84,16 +84,16 @@ const controller = {
 
 module.exports = controller;
 // check for alerts
-async function checkAlert(data) {
+async function checkAlert({data, users}) {
     try {
         if (data.interrupt_type === 'none') return;
         // "gmnolkeri@gmail.com"
-        const recievers = ["christopherbartonjo@gmail.com"]
-        console.log("check alert data ", data)
+        const receivers = users.map(user=>user.email)
+        console.log("email receivers ", receivers)
         const result = await emailSender({
             template: "alert.handlebars",
             subject: "Alert!",
-            emails: recievers,
+            emails: receivers,
             payload: data,
         })
         console.log("send email result ", result)

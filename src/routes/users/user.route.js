@@ -4,7 +4,7 @@ const authenticate = require("../../middlewares/authenticate.middleware");
 
 module.exports = ({ app }) => {
   // Create a new user
-  app.post('/api/v1/users/', { preHandler: [authenticate,] }, (req, res) => {
+  app.post('/api/v1/users/', { preHandler: [] }, (req, res) => {
     authController.createUser(req, res);
   });
   // login user
