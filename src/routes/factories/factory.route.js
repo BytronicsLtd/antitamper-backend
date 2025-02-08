@@ -1,4 +1,4 @@
-const factoriesController = require("../../controllers/scales/factory.controller");
+const factoriesController = require("../../controllers/factory/factory.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
 const checkRole = require("../../middlewares/checkRole.middleware");
 
@@ -9,12 +9,12 @@ module.exports = ({ app }) => {
   });
 
   // Get all factories
-  app.get('/api/v1/factories', { preHandler: [authenticate] }, (req, reply) => {
+  app.get('/api/v1/factories/', { preHandler: [authenticate] }, (req, reply) => {
     factoriesController.getFactories(req, reply);
   });
 
   // Get a specific factory by ID
-  app.get('/api/v1/factories/:factoryId', { preHandler: [authenticate] }, (req, reply) => {
+  app.get('/api/v1/factory/', { preHandler: [authenticate] }, (req, reply) => {
     factoriesController.getFactoryById(req, reply);
   });
 

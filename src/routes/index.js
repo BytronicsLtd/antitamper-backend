@@ -1,12 +1,14 @@
-const scalesRoutes = require("./scales/Device.route");
-const activityLogsRoutes = require("./scales/Activity.route");
-const FactoryRoutes = require("./scales/Factory.route");
-const UserRoutes = require("./scales/User.route");
+const deviceRoutes = require("./devices/Device.route");
+const activityLogsRoutes = require("./activity/Activity.route");
+const factoryRoutes = require("./factories/factory.route");
+const userRoutes = require("./users/user.route");
+const dataRoutes = require("./data/data.route");
 
 module.exports = ({ app }) => {
-    scalesRoutes({ app });
+    deviceRoutes({ app });
+    dataRoutes({ app });
     activityLogsRoutes({ app });
-    FactoryRoutes({ app });
-    UserRoutes({ app });
+    factoryRoutes({ app });
+    userRoutes({ app });
 };
   

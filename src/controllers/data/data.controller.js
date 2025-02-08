@@ -2,7 +2,7 @@ const processResponse = require("../../utils/processResponse");
 const chalk = require("chalk");
 const { getYear, parse, parseISO } = require("date-fns");
 
-const ScaleAntiTamperModel = require("../../models/scale-anti-tamper.model")
+const DataModel = require("../../models/data.model")
 
 
 const controller = {
@@ -56,7 +56,7 @@ const controller = {
 
 
             console.log("data to save ", data);
-            await ScaleAntiTamperModel.create(data)
+            await DataModel.create(data)
             res.status(201).send({ success: true, cmd: 15 })
         } catch (error) {
             console.log(chalk.red("Error in device status"), error);
@@ -128,7 +128,7 @@ const controller = {
             const { page, size } = req.query;
             const limit = size ? +size : 1000;
             const offset = page ? (page - 1) * limit : 0;
-            const results = await ScaleAntiTamperModel.paginate(query, {
+            const results = await DataModel.paginate(query, {
                 page, limit, offset,
                 select: ``,
                 sort: '-createdAt',

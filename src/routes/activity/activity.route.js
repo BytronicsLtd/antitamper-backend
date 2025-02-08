@@ -1,4 +1,4 @@
-const activityLogsController = require("../../controllers/scales/Logs.controller");
+const activityLogsController = require("../../controllers/activity/Logs.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
 const checkRole = require("../../middlewares/checkRole.middleware");
 

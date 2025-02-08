@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const mongoosePaginate = require('mongoose-paginate-v2');
 
-const factorySchema = new Schema({
+const schema = new Schema({
   name: { 
     type: String, 
     required: true 
@@ -24,14 +25,21 @@ const factorySchema = new Schema({
 });
 
 // Add index for better query performance
-factorySchema.index({ name: 1, location: 1 }, { unique: true });
+schema.index({ name: 1, location: 1 }, { unique: true });
 
 // Add any methods you might need
-factorySchema.methods.getActiveEmployees = function() {
+schema.methods.getActiveEmployees = function() {
   return this.model('User').find({
     _id: { $in: this.employees },
     status: 'active'
   });
 };
 
-module.exports = mongoose.model('Factory', factorySchema);
+schema.plugin(mongoosePaginate);
+
+schema.method('toJSON', function () {
+    const { __v, _id, ...object } = this.toObject();
+    object.id = _id;
+    return object;
+});
+module.exports = mongoose.model('Factory', schema, "factories");

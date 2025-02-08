@@ -14,8 +14,17 @@ exports.createUser = async (req, reply) => {
 // Retrieve all users
 exports.getUsers = async (req, reply) => {
   try {
-    const users = await User.find();
-    reply.send(users);
+     let query = {};
+     const { page, size } = req.query;
+     const limit = size ? +size : 100;
+     const offset = page ? (page - 1) * limit : 0;
+     const results = await User.paginate(query, {
+       page, limit, offset,
+       select: ``,
+       sort: '-createdAt',
+ 
+     });
+     reply.status(200).send(results);
   } catch (err) {
     reply.status(500).send({ message: "Error retrieving users", error: err.message });
   }
@@ -24,7 +33,8 @@ exports.getUsers = async (req, reply) => {
 // Retrieve a specific user by ID
 exports.getUserById = async (req, reply) => {
   try {
-    const user = await User.findById(req.params.userId);
+    const id = req.query.id
+    const user = await User.findById(id);
     if (!user) return reply.status(404).send({ message: "User not found" });
     reply.send(user);
   } catch (err) {

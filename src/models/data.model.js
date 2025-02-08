@@ -46,4 +46,4 @@ schema.method("toJSON", function () {
     object.id = _id;
     return object;
 });
-module.exports = mongoose.model('ScaleAntiTamper', schema, 'scale-anti-tamper')
+module.exports = mongoose.model('Data', schema, 'data')

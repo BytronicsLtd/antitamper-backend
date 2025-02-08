@@ -1,4 +1,4 @@
-const userController = require("../../controllers/scales/user.controller");
+const userController = require("../../controllers/user/user.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
 
 module.exports = ({ app }) => {
@@ -8,12 +8,12 @@ module.exports = ({ app }) => {
   });
 
   // Retrieve all users
-  app.get('/api/v1/users', (req, reply) => {
+  app.get('/api/v1/users/', (req, reply) => {
     userController.getUsers(req, reply);
   });
 
   // Retrieve a specific user by ID
-  app.get('/api/v1/users/:userId', (req, reply) => {
+  app.get('/api/v1/user/', (req, reply) => {
     userController.getUserById(req, reply);
   });
 

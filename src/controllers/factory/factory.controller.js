@@ -15,21 +15,31 @@ async function createFactory(req, reply) {
 // Retrieve all factories
 async function getFactories(req, reply) {
   try {
-    const factories = await Factory.find(); 
-    reply.code(200).json(factories);
+    let query = {};
+    const { page, size } = req.query;
+    const limit = size ? +size : 100;
+    const offset = page ? (page - 1) * limit : 0;
+    const results = await Factory.paginate(query, {
+      page, limit, offset,
+      select: ``,
+      sort: '-createdAt',
+
+    });
+    reply.status(200).send(results);
   } catch (err) {
-    reply.code(500).json({ message: 'Error retrieving factories', error: err.message });
+    reply.staus(500).send({ message: 'Error retrieving factories', error: err.message });
   }
 }
 
 // Retrieve a specific factory by ID
 async function getFactoryById(req, reply) {
   try {
-    const factory = await Factory.findById(req.params.factoryId); // Use `findById` method
-    if (!factory) return reply.code(404).json({ message: 'Factory not found' });
-    reply.code(200).json(factory);
+    const id = req.query.id
+    const factory = await Factory.findById(id); // Use `findById` method
+    if (!factory) return reply.status(404).send({ message: 'Factory not found' });
+    reply.status(200).send(factory);
   } catch (err) {
-    reply.code(500).send({ message: 'Error retrieving factory', error: err.message });
+    reply.status(500).send({ message: 'Error retrieving factory', error: err.message });
   }
 }
 
@@ -41,10 +51,10 @@ async function updateFactory(req, reply) {
       req.body,
       { new: true } // Return the updated document
     );
-    if (!updatedFactory) return reply.code(404).json({ message: 'Factory not found' });
-    reply.code(200).json(updatedFactory);
+    if (!updatedFactory) return reply.status(404).send({ message: 'Factory not found' });
+    reply.status(200).send(updatedFactory);
   } catch (err) {
-    reply.code(500).json({ message: 'Error updating factory', error: err.message });
+    reply.status(500).send({ message: 'Error updating factory', error: err.message });
   }
 }
 
@@ -56,10 +66,10 @@ async function deactivateFactory(req, reply) {
       { code: 'inactive' }, // Mark as inactive
       { new: true }
     );
-    if (!deactivatedFactory) return reply.code(404).json({ message: 'Factory not found' });
-    reply.code(200).json(deactivatedFactory);
+    if (!deactivatedFactory) return reply.status(404).send({ message: 'Factory not found' });
+    reply.status(200).send(deactivatedFactory);
   } catch (err) {
-    reply.code(500).json({ message: 'Error deactivating factory', error: err.message });
+    reply.status(500).send({ message: 'Error deactivating factory', error: err.message });
   }
 }
 
