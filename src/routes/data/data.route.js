@@ -10,7 +10,7 @@ module.exports = ({ app }) => {
       newRecordsController.updateScaleStatus(req, res)
     });
     // 
-    app.get('/api/v1/data/', { preHandler: [authenticate,] }, (req, res) => {
+    app.get('/api/v1/data/', { preHandler: [] }, (req, res) => {
       dataController.fetchMany(req,res);
     });
     // 
