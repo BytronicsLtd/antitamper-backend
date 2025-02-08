@@ -53,20 +53,3 @@ exports.deleteUser = async (req,res) => {
     res.status(500).send({ message: "Error deleting user", error: err.message });
   }
 };
-
-// User login
-exports.userLogin = async (req,res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).send({ message: "Invalid credentials" });
-    }
-
-    const token = generateToken(user);
-    res.send({ token });
-  } catch (err) {
-    res.status(500).send({ message: "Error logging in", error: err.message });
-  }
-};

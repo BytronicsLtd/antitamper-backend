@@ -286,6 +286,33 @@ const controller = {
                 }
             });
         }
-    }
+    },
+    //logout user
+    logout: async (req, res) => {
+        try {
+            const user = req.user;
+            await UserModel.findOneAndUpdate(
+                { email: user.email },
+                {
+                    $set: {
+                        token: null,
+                    },
+                }
+            );
+
+            // return success response
+            res.status(200).send({
+                success: true,
+                message: "User logged out successfully"
+            });
+        } catch (error) {
+            console.log(chalk.red("Error logging  out user "), error);
+            await ErrorModel.logError(req, error);
+            res.status(500).send({
+                success: false, message: "Error, could not log out user",
+
+            });
+        }
+    },
 }
 module.exports = controller;
