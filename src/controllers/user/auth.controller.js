@@ -117,7 +117,7 @@ const controller = {
             const { password, createdAt, updatedAt, ...user_data } = user.toJSON();
             //save web token to db
             await UserModel.findOneAndUpdate(
-                { email: body.email },
+                query,
                 {
                     $set: {
                         token: token,
