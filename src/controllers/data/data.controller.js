@@ -83,24 +83,30 @@ const controller = {
 
             });
             const docs = results.docs.map(result => {
+                let modifiedResult = {};
+                
                 if (result?.gsm_lat && result?.gsm_lon) {
-                    result = {
-                        ...result._doc,
-                        id: result?._doc?._id,
+                    // Destructure result._doc and rename _id to id
+                    const { _id, __v, ...rest } = result._doc;
+                    modifiedResult = {
+                        id: _id,
+                        ...rest,
                         gsm_map_url: `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
-
-                    }
+                    };
                 }
+                
                 if (result?.gps_lat && result?.gps_lon) {
-                    result = {
-                        ...result._doc,
-                        id: result?._doc?._id,
+                    // Destructure result._doc and rename _id to id
+                    const { _id, __v, ...rest } = result._doc;
+                    modifiedResult = {
+                        id: _id,
+                        ...rest,
                         gps_map_url: `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
-
-                    }
+                    };
                 }
-                return result
-            })
+                
+                return modifiedResult;
+            });
             results.docs = docs;
             // Add metadata for searchable parameters
             const metadata = {
