@@ -6,8 +6,7 @@ const fastify = require('fastify')
 const cors = require('@fastify/cors');
 const chalk = require("chalk");
 const { format } = require("date-fns");
-const cron = require('node-cron');
-const { exec } = require("child_process");
+
 
 
 //http server
@@ -66,6 +65,8 @@ async function main() {
 }
 // 
 main();
+// const cron = require('node-cron');
+// const { exec } = require("child_process");
 // cron.schedule('*/10 * * * *', () => {
 //     exec("bash /usr/local/bin/clearsyslog.sh", (error, stdout, stderr) => {
 //         if (error) {
