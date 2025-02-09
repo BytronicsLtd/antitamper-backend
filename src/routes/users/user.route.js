@@ -49,7 +49,7 @@ module.exports = ({ app }) => {
   });
 
   // Delete a user by ID
-  app.delete('/api/v1/users/:userId', (req, res) => {
+  app.delete('/api/v1/users/delete/', (req, res) => {
     userController.deleteUser(req, res);
   });
 

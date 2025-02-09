@@ -56,7 +56,7 @@ exports.updateUser = async (req,res) => {
 // Soft delete a user
 exports.deleteUser = async (req,res) => {
   try {
-    const deletedUser = await User.findByIdAndUpdate(req.params.userId, { status: "Inactive" }, { new: true });
+    const deletedUser = await User.findByIdAndUpdate(req.body.userId, { status: "Inactive" }, { new: true });
     if (!deletedUser) return res.status(404).send({ message: "User not found" });
     res.send(deletedUser);
   } catch (err) {
