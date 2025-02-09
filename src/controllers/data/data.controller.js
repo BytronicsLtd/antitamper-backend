@@ -85,14 +85,14 @@ const controller = {
             const docs = results.docs.map(result => {
                 if (result?.gsm_lat && result?.gsm_lon) {
                     result = {
-                        ...result.toJSON(),
+                        ...result?.toJSON(),
                         gsm_map_url: `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
 
                     }
                 }
                 if (result?.gps_lat && result?.gps_lon) {
                     result = {
-                        ...result.toJSON(),
+                        ...result?.toJSON(),
                         gps_map_url: `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
 
                     }
