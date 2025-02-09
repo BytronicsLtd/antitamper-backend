@@ -13,13 +13,17 @@ const controller = {
                 interrupt_occured,
                 start_datetime,
                 end_datetime,
-                search_term
+                search_term,
+                saved_to_sd
             } = req.query;
             // query builder
             let query = {};
             //check for device id
             if (device_id) {
                 query.device_id = device_id
+            }
+            if (saved_to_sd) {
+                query.saved_to_sd = saved_to_sd
             }
             // query by interrupt occurrence 
             if (interrupt_occured || interrupt_occured == 0) {
