@@ -35,7 +35,7 @@ module.exports = ({ app }) => {
   });
 
   // Update a user by ID
-  app.put('/api/v1/users/:userId', (req, res) => {
+  app.patch('/api/v1/user/', (req, res) => {
     userController.updateUser(req, res);
   });
 
