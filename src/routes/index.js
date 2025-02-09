@@ -3,6 +3,7 @@ const activityLogsRoutes = require("./activity/activity.route");
 const factoryRoutes = require("./factories/factory.route");
 const userRoutes = require("./users/user.route");
 const dataRoutes = require("./data/data.route");
+const globalRoutes = require("./globals.routes");
 
 module.exports = ({ app }) => {
     deviceRoutes({ app });
@@ -10,5 +11,6 @@ module.exports = ({ app }) => {
     activityLogsRoutes({ app });
     factoryRoutes({ app });
     userRoutes({ app });
+    globalRoutes({ app });
 };
   

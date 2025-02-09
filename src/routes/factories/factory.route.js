@@ -14,7 +14,7 @@ module.exports = ({ app }) => {
   });
 
   // Get a specific factory by ID
-  app.get('/api/v1/factory/', { preHandler: [authenticate,] }, (req,res) => {
+  app.get('/api/v1/factories/details/', { preHandler: [authenticate,] }, (req,res) => {
     factoriesController.getFactoryById(req,res);
   });
 

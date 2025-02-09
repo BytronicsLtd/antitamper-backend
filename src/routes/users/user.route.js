@@ -1,5 +1,6 @@
 const userController = require("../../controllers/user/user.controller");
 const authController = require("../../controllers/user/auth.controller");
+const passwordController = require("../../controllers/user/password.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
 
 module.exports = ({ app }) => {
@@ -19,6 +20,14 @@ module.exports = ({ app }) => {
   app.post('/api/v1/users/verify/', (req, res) => {
     authController.verifyUser(req, res);
   });
+  // request password rest
+  app.post('/api/v1/users/request-password-reset/', (req, res) => {
+    passwordController.requestReset(req, res);
+  });
+  // reset password
+  app.post('/api/v1/users/reset-password/', (req, res) => {
+    passwordController.resetPassword(req, res);
+  });
 
   // logout
   app.post('/api/v1/users/logout/', { preHandler: [authenticate] }, (req, res) => {
@@ -30,12 +39,12 @@ module.exports = ({ app }) => {
   });
 
   // Retrieve a specific user by ID
-  app.get('/api/v1/user/', { preHandler: [authenticate,] }, (req, res) => {
+  app.get('/api/v1/users/details/', { preHandler: [authenticate,] }, (req, res) => {
     userController.getUserById(req, res);
   });
 
   // Update a user by ID
-  app.patch('/api/v1/user/', (req, res) => {
+  app.patch('/api/v1/users/update/', (req, res) => {
     userController.updateUser(req, res);
   });
 

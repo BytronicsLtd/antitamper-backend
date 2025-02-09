@@ -12,12 +12,12 @@ module.exports = ({ app }) => {
       deviceController.fetchMany(req,res);
     });
     // fetch device details
-    app.get('/api/v1/device/', { preHandler: [authenticate,] }, (req, res) => {
+    app.get('/api/v1/devices/details/', { preHandler: [authenticate,] }, (req, res) => {
       deviceController.getOne(req,res);
     });
  
     // fetch device details
-    app.patch('/api/v1/device/', { preHandler: [authenticate,] }, (req, res) => {
+    app.patch('/api/v1/devices/update/', { preHandler: [authenticate,] }, (req, res) => {
       deviceController.update(req,res);
     });
  

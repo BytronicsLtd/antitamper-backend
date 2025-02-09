@@ -8,7 +8,7 @@ module.exports = ({ app }) => {
     activityLogsController.getAllActivityLogs(req, res);
   });
   //
-  app.get('/api/v1/activity-log/', (req, res) => {
+  app.get('/api/v1/activity-logs/details/', (req, res) => {
     activityLogsController.getActivityLogById(req, res);
   });
   //

@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken"); // used to create, sign, and verify tokens
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const { default: mongoose } = require("mongoose");
+const phoneNumberFormatter = require("../../utils/phoneNumberFormatter.util");
 const passwordValidationUtil = require("../../utils/passwordValidate.util");
 const emailSender = require("../../utils/communication/email/email.util");
 const { addMinutes, format } = require("date-fns");
@@ -21,7 +22,7 @@ const controller = {
             // check if user is already registered
             const query = {
                 $or: [
-                    { phone_number: body.phone_number },
+                    { phone_number: phoneNumberFormatter(body.phone_number) },
                     { email: body.email }
                 ]
             }
@@ -93,7 +94,7 @@ const controller = {
             const body = req.body;
             const query = {
                 $or: [
-                    { phone_number: body.email_or_phone_number },
+                    { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
                     { email: body.email_or_phone_number }
                 ]
             }
