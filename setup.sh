@@ -3,3 +3,4 @@
 npm i
 
 
+systemctl restart backend
