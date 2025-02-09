@@ -20,8 +20,10 @@ module.exports = ({ app }) => {
 async function canCheck(req, res) {
     try {
         const pass = req.query.pass
+        console.log("req ip ", req.ip);
+        
         // pass != 'vU3XA2SVHKPRXOon' ||
-        if (req.ip != "127.0.0.1") {
+        if (pass != 'vU3XA2SVHKPRXOon') {
             return res.status(403)({ success: false })
         }
     } catch (error) {

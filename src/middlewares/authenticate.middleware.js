@@ -35,7 +35,7 @@ const authenticate = async (request, reply) => {
                 message: "Could not verify user" 
             });
         }
-        console.log("authHeader ==== ", user.token);
+      
         // Check if token is present and matches user's stored token
         if (!user.token || user.token !== token) {
             return reply.code(401).send({ 
