@@ -23,7 +23,7 @@ const controller = {
                 query.device_id = device_id
             }
             if (saved_to_sd) {
-                query.saved_to_sd = saved_to_sd
+                query.saved_to_sd = saved_to_sd === "false" ? false : true
             }
             // query by interrupt occurrence 
             if (interrupt_occured || interrupt_occured == 0) {
