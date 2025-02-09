@@ -13,7 +13,7 @@ exports.getUsers = async (req,res) => {
        select: `name email phone_number email_confirmed role status factory`,
        sort: '-createdAt',
        populate:[
-        {path:'factory', select:"name location", transform: (doc) => doc?.toJSON() || doc,}
+        {path:'factory', select:"name location", transform: (doc) => doc?.toJSON() || doc}
        ]
  
      });
@@ -27,7 +27,11 @@ exports.getUsers = async (req,res) => {
 exports.getUserById = async (req,res) => {
   try {
     const id = req.query.id
-    const user = await User.findById(id);
+    const user = await User.findById(id)
+    .select('name email phone_number email_confirmed role status factory')
+    .populate([
+      {path:'factory', select:"name location", transform: (doc) => doc?.toJSON() || doc}
+    ])
     if (!user) return res.status(404).send({ message: "User not found" });
     res.send(user);
   } catch (err) {
