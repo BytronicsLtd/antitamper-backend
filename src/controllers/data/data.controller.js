@@ -107,7 +107,8 @@ const controller = {
                     "interrupt_occured": "Number [0,1]",
                     "start_datetime": "Date",
                     "end_datetime": "Date",
-                    "search_term": "String"
+                    "search_term": "String",
+                    "saved_to_sd": "true|false"
                 }
             };
 
