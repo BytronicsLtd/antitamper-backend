@@ -10,8 +10,11 @@ exports.getUsers = async (req,res) => {
      const offset = page ? (page - 1) * limit : 0;
      const results = await User.paginate(query, {
        page, limit, offset,
-       select: ``,
+       select: `name email phone_number email_confirmed role status factory`,
        sort: '-createdAt',
+       populate:[
+        {path:'factory', select:"name location", transform: (doc) => doc?.toJSON() || doc,}
+       ]
  
      });
      res.status(200).send(results);
