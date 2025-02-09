@@ -18,8 +18,8 @@ const controller = {
             // check if user is already registered
             const query = {
                 $or: [
-                    { phone_number: phoneNumberFormatter(body.phone_number) },
-                    { email: body.email }
+                    { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
+                    { email: body.email_or_phone_number }
                 ]
             }
             // if email already exists return error
@@ -68,7 +68,7 @@ const controller = {
             user = user.toJSON()
             //respond to user
             res.status(200).send({
-                success: true, results: { id: user.id, ...body },
+                success: true,
                 message: "Reset code has been sent to your email"
             });
         } catch (error) {
@@ -82,10 +82,17 @@ const controller = {
     resetPassword: async (req, res) => {
         try {
             const body = req.body;
-            let user = await UserModel.findById(body.id);
+            const query = {
+                $or: [
+                    { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
+                    { email: body.email_or_phone_number }
+                ]
+            }
+            let user = await UserModel.findOne(query);
             if (!user) {
                 return res.status(400).send({ success: false, message: "User with provided details not found" });
             }
+           
             // compare confirmation_code with user confirmation_code
             if (user.confirmation_code !== body.confirmation_code) {
                 return res.status(400).send({ success: false, message: "Invalid confirmation code" });
@@ -113,7 +120,7 @@ const controller = {
             const hash = await bcrypt.hash(body.password, salt);
             user.password = hash;
             // update user with $set
-            await UserModel.findByIdAndUpdate(body.id, { $set: user }, { runValidators: true });
+            await UserModel.findOneAndUpdate(query, { $set: user }, { runValidators: true });
             //
             await ActivityModel.create({
                 action: "password-reset", // edit, create, delete actions

@@ -137,14 +137,17 @@ const controller = {
     requestVerification: async (req, res) => {
         try {
             const body = req.body;
-            const user = await UserModel.findOne({ email: body.email });
+            const query = {
+                $or: [
+                    { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
+                    { email: body.email_or_phone_number }
+                ]
+            }
+            const user = await UserModel.findOne(query);
 
             if (!user) {
                 return res.status(404).send({
-                    success: false,
-                    message: {
-                        en: "User with given email or phone number not found"
-                    }
+                    success: false, message: "User with given email or phone number not found"
                 });
             }
             // Generate verification code
@@ -170,8 +173,8 @@ const controller = {
             });
 
             // Update user
-            const updatedUser = await UserModel.findByIdAndUpdate(
-                user.id,
+            const updatedUser = await UserModel.findOneAndUpdate(
+                query,
                 {
                     $set: {
                         confirmation_code,
@@ -196,33 +199,33 @@ const controller = {
 
             return res.status(200).send({
                 success: true,
-                results: {
-                    id: user.id,
-                    confirmation_code,
-                    confirmation_code_exp_time
-                },
-                message: {
-                    en: "Reset code has been sent to your email"
-                }
+                // results: {
+                //     id: user.id,
+                //     confirmation_code,
+                //     confirmation_code_exp_time
+                // },
+                message: "Reset code has been sent to your email"
             });
 
         } catch (error) {
             console.log(chalk.red("Error requesting password reset "), error);
             await ErrorModel.logError(req, error);
             return res.status(500).send({
-                success: false,
-                message: {
-                    en: "An error occurred while requesting password reset"
-                }
+                success: false, message: "An error occurred while requesting password reset"
             });
         }
     },
     // verify user
     verifyUser: async (req, res) => {
         try {
-            const { id, confirmation_code } = req.body;
-
-            let user = await UserModel.findById(id);
+            const body = req.body;
+            const query = {
+                $or: [
+                    { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
+                    { email: body.email_or_phone_number }
+                ]
+            }
+            let user = await UserModel.findOne(query);
             if (!user) {
                 return res.status(404).send({
                     success: false,
@@ -231,26 +234,16 @@ const controller = {
                     }
                 });
             }
-
-            if (user.confirmation_code !== confirmation_code) {
-                return res.status(400).send({
-                    success: false,
-                    message: {
-                        en: "Invalid confirmation code"
-                    }
-                });
+        
+            if (user.confirmation_code !== body.confirmation_code) {
+                return res.status(400).send({ success: false, message: "Invalid confirmation code" });
             }
 
             if (user.confirmation_code_exp_time < new Date()) {
-                return res.status(400).send({
-                    success: false,
-                    message: {
-                        en: "Confirmation code has expired"
-                    }
-                });
+                return res.status(400).send({ success: false, message: "Confirmation code has expired" });
             }
 
-            await UserModel.findByIdAndUpdate(id, {
+            await UserModel.findOneAndUpdate(query, {
                 $set: {
                     email_confirmed: true,
                     confirmation_code: null,
@@ -270,22 +263,12 @@ const controller = {
                 edited_data: null,
             });
 
-            return res.status(200).send({
-                success: true,
-                message: {
-                    en: "User verified successfully"
-                }
-            });
+            return res.status(200).send({ success: true, message: "User verified successfully" });
 
         } catch (error) {
             console.log(chalk.red("Error verifying user "), error);
             await ErrorModel.logError(req, error);
-            return res.status(500).send({
-                success: false,
-                message: {
-                    en: "An error occurred while verifying user"
-                }
-            });
+            return res.status(500).send({ success: false, message: "An error occurred while verifying user" });
         }
     },
     //logout user
