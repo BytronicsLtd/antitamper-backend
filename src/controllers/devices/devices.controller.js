@@ -1,5 +1,6 @@
 const chalk = require("chalk");
 const DeviceModel = require("../../models/device.model")
+const UserModel = require("../../models/user.js")
 const FactoryModel = require('../../models/factory.js');
 const ActivityModel = require('../../models/activityLog.js');
 const { default: mongoose } = require("mongoose");
@@ -59,9 +60,11 @@ const controller = {
     getOne: async (req, res) => {
         try {
             const id = req.query.id
-            const device = await DeviceModel.findById(id); // Use `findById` method
+            let device = await DeviceModel.findById(id)
+            device =  device.toJSON()
             if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
-            res.status(200).send({ success: true, results: device });
+             const users = await UserModel.find({factory: device.factory})
+            res.status(200).send({...device, users});
         } catch (error) {
             console.log(chalk.red("Error fetching device details"), error);
             res.status(500).send({ success: false })
@@ -76,10 +79,10 @@ const controller = {
             //fetch factory details if factory id is passed
             if (data.factory) {
                 const factory = await FactoryModel.findById(data.factory);
-                if (!factory) return res.status(404).send({ success: true, message:"Factory not found" });
-                data.factory =  factory.id;
+                if (!factory) return res.status(404).send({ success: true, message: "Factory not found" });
+                data.factory = factory.id;
                 data.factory_name = factory.name;
-                data.factory_location =  factory.location
+                data.factory_location = factory.location
             }
             device = await DeviceModel.findByIdAndUpdate(id, {
                 $set: data
