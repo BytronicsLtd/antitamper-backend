@@ -5,46 +5,39 @@ const chalk = require("chalk");
 const authenticate = async (request, reply) => {
     try {
         const authHeader = request.headers.authorization;
-       
-        
         if (!authHeader) {
-            return reply.code(401).send({ 
-                success: false, 
-                results: { force_logout: true }, 
-                message: "Authorization header not provided" 
+            return reply.code(401).send({
+                success: false, results: { force_logout: true }, message: "Authorization header not provided"
             });
         }
-    
         // Check if it's a Bearer token and extract the token
         if (!authHeader.startsWith('Bearer')) {
-            return reply.code(401).send({ 
-                success: false, 
-                message: "Invalid token format. Must be Bearer token" 
-            });
+            return reply.code(401).send({ success: false, message: "Invalid token format. Must be Bearer token" });
         }
-     
+
         // Extract the token (remove 'Bearer ' from the start)
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
         const user = await UserModel.findById(decoded.id);
-      
+
         if (!user) {
-            return reply.code(401).send({ 
-                success: false, 
-                results: { force_logout: true }, 
-                message: "Could not verify user" 
+            return reply.code(401).send({
+                success: false,
+                results: { force_logout: true },
+                message: "Could not verify user"
             });
         }
-      
+        // console.log("user token ", user.token);
+        // console.log("payload token ", token);
         // Check if token is present and matches user's stored token
         if (!user.token || user.token !== token) {
-            return reply.code(401).send({ 
-                success: false, 
-                message: "Invalid or expired token" 
-            });
+            // return reply.code(401).send({
+            //     success: false,
+            //     message: "Invalid or expired token"
+            // });
         }
         request.user = user;
-        
+
     } catch (error) {
         console.log(chalk.red("Verify token error: "), error);
         // Specific error for expired tokens

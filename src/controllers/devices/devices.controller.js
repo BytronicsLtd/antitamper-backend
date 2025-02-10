@@ -19,8 +19,8 @@ const controller = {
                 roles: req.user.roles, //role of the user performing the action
                 timestamp: Date.now(), // time the action was performed
                 model: "MessageThread", //data model affected by the action
-                affected_id: thread.id, //id of the item affected by the action
-                deleted_data: thread, // deleted data
+                affected_id: device.id, //id of the item affected by the action
+                deleted_data: device, // deleted data
                 edited_data: null, // edited data
                 created_data: null,// created data
             }], { session })
