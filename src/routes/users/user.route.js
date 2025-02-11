@@ -2,10 +2,11 @@ const userController = require("../../controllers/user/user.controller");
 const authController = require("../../controllers/user/auth.controller");
 const passwordController = require("../../controllers/user/password.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
+const checkRole = require("../../middlewares/checkRole.middleware");
 
 module.exports = ({ app }) => {
   // Create a new user
-  app.post('/api/v1/users/', { preHandler: [] }, (req, res) => {
+  app.post('/api/v1/users/', { preHandler: [authenticate, checkRole(['sys-admin'])] }, (req, res) => {
     authController.createUser(req, res);
   });
   // login user
@@ -48,12 +49,12 @@ module.exports = ({ app }) => {
   });
 
   // Update a user by ID
-  app.patch('/api/v1/users/update/', (req, res) => {
+  app.patch('/api/v1/users/update/', { preHandler: [authenticate,] }, (req, res) => {
     userController.updateUser(req, res);
   });
 
   // Delete a user by ID
-  app.delete('/api/v1/users/delete/', (req, res) => {
+  app.delete('/api/v1/users/delete/', { preHandler: [authenticate,] }, (req, res) => {
     userController.deleteUser(req, res);
   });
 

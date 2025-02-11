@@ -9,7 +9,7 @@ module.exports = ({ app }) => {
   });
 
   // Get all factories
-  app.get('/api/v1/factories/', { preHandler: [] }, (req,res) => {
+  app.get('/api/v1/factories/', { preHandler: [authenticate] }, (req,res) => {
     factoriesController.getFactories(req,res);
   });
 

@@ -31,10 +31,10 @@ const authenticate = async (request, reply) => {
         // console.log("payload token ", token);
         // Check if token is present and matches user's stored token
         if (!user.token || user.token !== token) {
-            // return reply.code(401).send({
-            //     success: false,
-            //     message: "Invalid or expired token"
-            // });
+            return reply.code(401).send({
+                success: false,
+                message: "Invalid or expired token"
+            });
         }
         request.user = user;
 
