@@ -2,7 +2,7 @@
 const Factory = require('../../models/factory.js');
 
 // Create a new factory
-async function createFactory(req,res) {
+async function createFactory(req, res) {
   try {
     const factory = new Factory(req.body);
     const savedFactory = await factory.save();
@@ -13,7 +13,7 @@ async function createFactory(req,res) {
 }
 
 // Retrieve all factories
-async function getFactories(req,res) {
+async function getFactories(req, res) {
   try {
     let query = {};
     const { page, size } = req.query;
@@ -25,26 +25,26 @@ async function getFactories(req,res) {
       sort: '-createdAt',
 
     });
-    res.status(200).send(results);
+    res.status(200).send({ success: true, results });
   } catch (err) {
-    res.staus(500).send({ message: 'Error retrieving factories', error: err.message });
+    res.staus(500).send({ success: false, message: 'Error retrieving factories', error: err.message });
   }
 }
 
 // Retrieve a specific factory by ID
-async function getFactoryById(req,res) {
+async function getFactoryById(req, res) {
   try {
     const id = req.query.id
     const factory = await Factory.findById(id); // Use `findById` method
     if (!factory) return res.status(404).send({ message: 'Factory not found' });
-    res.status(200).send(factory);
+    res.status(200).send({ success: true, results: factory });
   } catch (err) {
-    res.status(500).send({ message: 'Error retrieving factory', error: err.message });
+    res.status(500).send({ success: false, message: 'Error retrieving factory', error: err.message });
   }
 }
 
 // Update factory details
-async function updateFactory(req,res) {
+async function updateFactory(req, res) {
   try {
     const updatedFactory = await Factory.findByIdAndUpdate(
       req.params.factoryId,
@@ -52,14 +52,14 @@ async function updateFactory(req,res) {
       { new: true } // Return the updated document
     );
     if (!updatedFactory) return res.status(404).send({ message: 'Factory not found' });
-    res.status(200).send(updatedFactory);
+    res.status(200).send({ success: true, results: updatedFactory });
   } catch (err) {
-    res.status(500).send({ message: 'Error updating factory', error: err.message });
+    res.status(500).send({ success: false, message: 'Error updating factory', error: err.message });
   }
 }
 
 // Deactivate a factory
-async function deactivateFactory(req,res) {
+async function deactivateFactory(req, res) {
   try {
     const deactivatedFactory = await Factory.findByIdAndUpdate(
       req.params.factoryId,
@@ -67,9 +67,9 @@ async function deactivateFactory(req,res) {
       { new: true }
     );
     if (!deactivatedFactory) return res.status(404).send({ message: 'Factory not found' });
-    res.status(200).send(deactivatedFactory);
+    res.status(200).send({ success: true, results: deactivatedFactory });
   } catch (err) {
-    res.status(500).send({ message: 'Error deactivating factory', error: err.message });
+    res.status(500).send({ success: false, message: 'Error deactivating factory', error: err.message });
   }
 }
 

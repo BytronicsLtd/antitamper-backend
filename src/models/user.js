@@ -63,7 +63,7 @@ const schema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Factory',
     required: function () {
-      return this.role !== 'sys-admin';
+      return this.role !== 'sys-admin' && this.isNew; // required for non sys admin role
     }
   },
   password: {
@@ -79,6 +79,18 @@ schema.method("toJSON", function () {
   const { __v, _id, ...object } = this.toObject();
   object.id = _id;
   return object;
+});
+schema.pre('save', function(next) {
+  if (this.isNew) {
+    // Create operation
+    if (this.role !== 'sys-admin' && !this.factory) {
+      next(new Error('Factory is required for non-admin users during creation'));
+    }
+  } else {
+    // Update operation
+    // Your update-specific logic here
+  }
+  next();
 });
 module.exports = mongoose.model('User', schema, 'users');
 

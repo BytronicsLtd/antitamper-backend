@@ -69,9 +69,9 @@ const activityLogController = {
       const result = await ActivityLog.deleteMany({
         createdAt: { $lt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) }, // Example: logs older than 1 year
       });
-      res.status(200).send({ message: `${result.deletedCount} old logs deleted successfully` });
+      res.status(200).send({ success:true, message: `${result.deletedCount} old logs deleted successfully` });
     } catch (error) {
-      res.status(500).send({ message: "Error deleting old logs", error: error.message });
+      res.status(500).send({success:false, message: "Error deleting old logs", error: error.message });
     }
   },
 };

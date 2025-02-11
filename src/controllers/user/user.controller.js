@@ -17,12 +17,26 @@ exports.getUsers = async (req,res) => {
        ]
  
      });
-     res.status(200).send(results);
+     res.status(200).send({success:true, results});
   } catch (err) {
     res.status(500).send({ success:false, message: "Error retrieving users", error: err.message });
   }
 };
-
+// get me
+exports.getMe = async(req,res)=>{
+  try {
+    const id = req.user.id
+    const user = await User.findById(id)
+    .select('-password -token')
+    .populate([
+      {path:'factory', select:"name location", transform: (doc) => doc?.toJSON() || doc}
+    ])
+    if (!user) return res.status(404).send({ message: "User not found" });
+    res.status(200).send({success:true, results:user});
+  } catch (err) {
+    res.status(500).send({success:false, message: "Error retrieving your details", error: err.message });
+  }
+}
 // Retrieve a specific user by ID
 exports.getUserById = async (req,res) => {
   try {
@@ -32,10 +46,10 @@ exports.getUserById = async (req,res) => {
     .populate([
       {path:'factory', select:"name location", transform: (doc) => doc?.toJSON() || doc}
     ])
-    if (!user) return res.status(404).send({ message: "User not found" });
-    res.send(user);
+    if (!user) return res.status(404).send({success:false, message: "User not found" });
+    res.status(200).send({success:true, results:user});
   } catch (err) {
-    res.status(500).send({ message: "Error retrieving user", error: err.message });
+    res.status(500).send({success:false, message: "Error retrieving user", error: err.message });
   }
 };
 
@@ -46,10 +60,10 @@ exports.updateUser = async (req,res) => {
     const updatedUser = await User.findByIdAndUpdate(id, {
       $set: rest
     }, { new: true });
-    if (!updatedUser) return res.status(404).send({ message: "User not found" });
-    res.send(updatedUser);
+    if (!updatedUser) return res.status(404).send({success:false, message: "User not found" });
+    res.status(404).send({success:false, results:updatedUser});
   } catch (err) {
-    res.status(500).send({ message: "Error updating user", error: err.message });
+    res.status(500).send({success:false, message: "Error updating user", error: err.message });
   }
 };
 
@@ -58,7 +72,7 @@ exports.deleteUser = async (req,res) => {
   try {
     const deletedUser = await User.findByIdAndUpdate(req.body.userId, { status: "Inactive" }, { new: true });
     if (!deletedUser) return res.status(404).send({ message: "User not found" });
-    res.send(deletedUser);
+    res.status(200).send({success:true, results:deletedUser, message: "User successfully deactived"});
   } catch (err) {
     res.status(500).send({ message: "Error deleting user", error: err.message });
   }

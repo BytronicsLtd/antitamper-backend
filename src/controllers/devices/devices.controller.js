@@ -61,10 +61,10 @@ const controller = {
         try {
             const id = req.query.id
             let device = await DeviceModel.findById(id)
-            device =  device.toJSON()
+            device = device.toJSON()
             if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
-             const users = await UserModel.find({factory: device.factory})
-            res.status(200).send({...device, users});
+            const users = await UserModel.find({ factory: device.factory })
+            res.status(200).send({ success: true, results: { device, users } });
         } catch (error) {
             console.log(chalk.red("Error fetching device details"), error);
             res.status(500).send({ success: false })

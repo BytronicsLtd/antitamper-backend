@@ -6,12 +6,12 @@ module.exports = ({ app }) => {
     app.get("/api/v1/system/routes/", { preHandler: [canCheck] }, (req, res) => {
         const show_system_routes = req.query['show-system'];
         const show_admin_routes = req.query['show-admin-routes'];
-        res.send(getRoutes({ show_system_routes, show_admin_routes }));
+        res.status(200).send(getRoutes({ show_system_routes, show_admin_routes }));
     });
     // about api routes
     app.get("/api/v1/system/models/", { preHandler: [canCheck] }, (req, res) => {
         const show_system_models = req.query['show-system'];
-        res.send(getModels({ show_system_models }));
+        res.status(200).send(getModels({ show_system_models }));
     });
 
 

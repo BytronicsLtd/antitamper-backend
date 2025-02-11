@@ -42,6 +42,10 @@ module.exports = ({ app }) => {
   app.get('/api/v1/users/details/', { preHandler: [authenticate,] }, (req, res) => {
     userController.getUserById(req, res);
   });
+  // Retrieve a specific user by ID
+  app.get('/api/v1/users/me/', { preHandler: [authenticate,] }, (req, res) => {
+    userController.getMe(req, res);
+  });
 
   // Update a user by ID
   app.patch('/api/v1/users/update/', (req, res) => {
