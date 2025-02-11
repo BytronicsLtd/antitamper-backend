@@ -7,7 +7,7 @@ const authenticate = async (request, reply) => {
         const authHeader = request.headers.authorization;
         if (!authHeader) {
             return reply.code(401).send({
-                success: false, results: { force_logout: true }, message: "Authorization  details required"
+                success: false, results: { force_logout: true }, message: "Authorization details required"
             });
         }
         // Check if it's a Bearer token and extract the token
