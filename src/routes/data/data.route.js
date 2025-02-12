@@ -6,7 +6,7 @@ const checkRole = require("../../middlewares/checkRole.middleware");
 
 module.exports = ({ app }) => {
     // 
-    app.post('/api/v1/data/', { preHandler: [authenticate] }, (req, res) => {
+    app.post('/api/v1/data/', { preHandler: [] }, (req, res) => {
       newRecordsController.updateScaleStatus(req, res)
     });
     // 
