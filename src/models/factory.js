@@ -12,10 +12,11 @@ const schema = new Schema({
     type: String,
     required: true
   },
-  employees: [{
-    type: Schema.Types.ObjectId,
-    ref: 'User'
-  }],
+  region: {
+    type: String,
+    required: true,
+    index: true
+  },
   status: {
     type: String,
     enum: ['active', 'inactive'],

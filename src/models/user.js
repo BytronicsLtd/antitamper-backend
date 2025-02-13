@@ -66,6 +66,12 @@ const schema = new Schema({
       return this.role !== 'sys-admin' && this.isNew; // required for non sys admin role
     }
   },
+  //region the factory belongs to
+  region: {
+    type: String,
+    required: true,
+    index: true
+  },
   password: {
     type: String,
     required: true
