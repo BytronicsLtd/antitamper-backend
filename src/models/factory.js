@@ -12,6 +12,7 @@ const schema = new Schema({
     type: String,
     required: true
   },
+  // region the factory belongs to
   region: {
     type: String,
     required: true,
