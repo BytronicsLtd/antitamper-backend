@@ -69,7 +69,6 @@ const schema = new Schema({
   //region the factory belongs to
   region: {
     type: String,
-    required: true,
     index: true
   },
   password: {
