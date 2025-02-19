@@ -82,7 +82,10 @@ const controller = {
 
 
             // console.log("data to save ", data);
-            await DataModel.create(data);
+            if(Object.keys(data).length > 1){
+                await DataModel.create(data);
+            }
+            
             await checkAlert({data, users})
             res.status(201).send({ success: true, cmd: 15 })
         } catch (error) {
