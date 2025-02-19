@@ -13,7 +13,6 @@ const Schema = {
         required: true
     },
     // 
-    // 
     phone_number: {
         type: String,
         required: true,
@@ -37,6 +36,12 @@ const Schema = {
         type: String,
         default: null
     },
+    // set internally
+    region: {
+        type: String,
+        default: null,
+        index: true
+      },
     //
     status: {
         type: String,

@@ -53,6 +53,12 @@ const schema = new Schema({
     enum: ['sys-admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
     required: true
   },
+  //
+  level: {
+    type: String,
+    enum: ['factory', 'region','national','system'],
+    required: true
+  },
   //user status
   status: {
     type: String,
@@ -65,6 +71,12 @@ const schema = new Schema({
     required: function () {
       return this.role !== 'sys-admin' && this.isNew; // required for non sys admin role
     }
+  },
+  //region the factory belongs to
+  region: {
+    type: String,
+    default: null,
+    index: true
   },
   password: {
     type: String,
