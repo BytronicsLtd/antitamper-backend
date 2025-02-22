@@ -10,22 +10,22 @@ const controller = {
         try {
             const payload = req.body;
             // find device details
-            const device =  await DeviceModel.findOne({device_id:payload.device_id})
-            .populate([
-                {path:'factory', transform: (doc) => doc?.toJSON() || doc,}
-            ])
-            if(!device){
-                return res.status(404).send({success:false})
+            const device = await DeviceModel.findOne({ device_id: payload.device_id })
+                .populate([
+                    { path: 'factory', transform: (doc) => doc?.toJSON() || doc, }
+                ])
+            if (!device) {
+                return res.status(404).send({ success: false })
             }
             //fetch users that belong to the same factory as the device
-            let users =  await UserModel.find({factory:device?.factory?.id}).select("-_id email phone_number")            
+            let users = await UserModel.find({ factory: device?.factory?.id }).select("-_id email phone_number")
             //
             let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_datetime, gsm_datetime, rtc_datetime } = payload;
             let data = {
                 ...payload,
                 factory: device?.factory?.id,
-                factory_name:device?.factory?.name,
-                factory_location:device?.factory?.location,
+                factory_name: device?.factory?.name,
+                factory_location: device?.factory?.location,
             }
             // gps location
             if (gps_lat && gps_lon) {
@@ -64,7 +64,7 @@ const controller = {
                 try {
                     const formatted_date = rtc_datetime.replace(/(\d{2})\/(\d{2})\/(\d{2}),(.*)\+\d{2}/, '20$3-$2-$1T$4');
                     const date = new Date(formatted_date);
-                    
+
                     // Check if date is valid before proceeding
                     if (date instanceof Date && !isNaN(date)) {
                         const adjusted_date = new Date(date.getTime() - 3 * 60 * 60 * 1000);
@@ -79,14 +79,17 @@ const controller = {
                     data.rtc_timestamp = null;
                 }
             }
-
-
+            data.status = data.calib_switch ? "on" :"off";
             // console.log("data to save ", data);
-            if(Object.keys(data).length > 1){
+            if (Object.keys(data).length > 1) {
                 await DataModel.create(data);
+                //check alert
+                try {
+                    await checkAlert({ data, users })
+                } catch (error) {
+                    console.log("error checking alert", error);
+                }
             }
-            
-            await checkAlert({data, users})
             res.status(201).send({ success: true, cmd: 15 })
         } catch (error) {
             console.log(chalk.red("Error in device status"), error);
@@ -100,11 +103,11 @@ const controller = {
 
 module.exports = controller;
 // check for alerts
-async function checkAlert({data, users}) {
+async function checkAlert({ data, users }) {
     try {
         if (data.interrupt_type === 'none') return;
         // "gmnolkeri@gmail.com"
-        const receivers = users.map(user=>user.email)
+        const receivers = users.map(user => user.email)
         console.log("email receivers ", receivers)
         const result = await emailSender({
             template: "alert.handlebars",

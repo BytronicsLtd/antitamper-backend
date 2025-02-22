@@ -40,6 +40,11 @@ const Schema = {
             // required: true
         }
     },
+    // on or off
+    status:{
+        type:String,
+        index:true,
+    },
     //
     gsm_location: {
         type: {
