@@ -119,8 +119,9 @@ const controller = {
             const salt = await bcrypt.genSalt(10);
             const hash = await bcrypt.hash(body.password, salt);
             user.password = hash;
+            console.log("user ====== ", user)
             // update user with $set
-            await UserModel.findOneAndUpdate(query, { $set: user }, { runValidators: true });
+            await UserModel.findOneAndUpdate(query, { $set: user }, { runValidators: false });
             //
             await ActivityModel.create({
                 action: "password-reset", // edit, create, delete actions
