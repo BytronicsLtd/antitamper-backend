@@ -32,12 +32,12 @@ const schema = new Schema({
     type: Boolean,
     default: false,
   },
-    // set internally
+  // set internally
   confirmation_code: {
     type: String,
     default: null,
   },
-    // set internally
+  // set internally
   confirmation_code_exp_time: {
     type: Date,
     default: null,
@@ -56,8 +56,10 @@ const schema = new Schema({
   //
   level: {
     type: String,
-    enum: ['factory', 'region','national','system'],
-    required: true
+    enum: ['factory', 'region', 'national'],
+    required: function () {
+      return this.role !== 'sys-admin' && this.isNew; // required for non sys admin role
+    }
   },
   //user status
   status: {
@@ -92,7 +94,7 @@ schema.method("toJSON", function () {
   object.id = _id;
   return object;
 });
-schema.pre('save', function(next) {
+schema.pre('save', function (next) {
   if (this.isNew) {
     // Create operation
     if (this.role !== 'sys-admin' && !this.factory) {
