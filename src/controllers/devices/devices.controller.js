@@ -17,9 +17,9 @@ const controller = {
                 action: "delete", // edit, create, delete actions
                 user: req.user.id, //user id performing the action
                 email: req.user.email, //email of the user performinng the action
-                roles: req.user.roles, //role of the user performing the action
+                role: req.user.role, //role of the user performing the action
                 timestamp: Date.now(), // time the action was performed
-                model: "MessageThread", //data model affected by the action
+                model: "Device", //data model affected by the action
                 affected_id: device.id, //id of the item affected by the action
                 deleted_data: device, // deleted data
                 edited_data: null, // edited data
@@ -87,12 +87,48 @@ const controller = {
             device = await DeviceModel.findByIdAndUpdate(id, {
                 $set: data
             }, { runValidators: true, new: true })
-            res.status(200).send({ success: true, results: device });
+            clearTimeout
         } catch (error) {
             console.log(chalk.red("Error fetching device details"), error);
             res.status(500).send({ success: false, error: error.message })
         }
     },
+    // remove 
+    remove: async (req, res) => {
+        const session = await mongoose.startSession();
+        try {
+            const id = req.body.id;
+            const device = await DeviceModel.findById(id);
+            console.log("Found device to delete ", device);
+            session.startTransaction();
+            if (!device) {
+                return res.status(404).send({ success: false, message: "Device with given ID not found" })
+            }
+          
+            await ActivityModel.create([{
+                action: "delete", // edit, create, delete actions
+                user: req.user.id, //user id performing the action
+                email: req.user.email, //email of the user performinng the action
+                role: req.user.role, //role of the user performing the action
+                timestamp: Date.now(), // time the action was performed
+                model: "Device", //data model affected by the action
+                affected_id: device.id, //id of the item affected by the action
+                deleted_data: device, // deleted data
+                edited_data: null, // edited data
+                created_data: null,// created data
+            }], { session })
+            // delete
+            await DeviceModel.findByIdAndDelete(id).session(session);
+            await session.commitTransaction();
+            session.endSession();
+            res.status(200).send({ success: true, message: "Device successfully deleted" })
+        } catch (error) {
+            console.log(chalk.red("Error deleting device"), error);
+            await session.abortTransaction();
+            session.endSession();
+            res.status(500).send({ success: false, error: error.message })
+        }
+    }
 }
 
 module.exports = controller;

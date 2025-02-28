@@ -58,7 +58,7 @@ const controller = {
                 action: "request-password-reset", // edit, create, delete actions
                 user: user.id, //user id performing the action
                 email: user.email, //email of the user performinng the action
-                roles: user.roles, //role of the user performing the action
+                role: user.role, //role of the user performing the action
                 timestamp: Date.now(), // time the action was performed
                 model: "User", //data model affected by the action
                 affected_id: user.id, //id of the item affected by the action
@@ -127,7 +127,7 @@ const controller = {
                 action: "password-reset", // edit, create, delete actions
                 user: user.id, //user id performing the action
                 email: user.email, //email of the user performinng the action
-                roles: user.roles, //role of the user performing the action
+                role: user.role, //role of the user performing the action
                 timestamp: Date.now(), // time the action was performed
                 model: "User", //data model affected by the action
                 affected_id: user.id, //id of the item affected by the action

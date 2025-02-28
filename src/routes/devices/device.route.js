@@ -20,6 +20,10 @@ module.exports = ({ app }) => {
     app.patch('/api/v1/devices/update/', { preHandler: [authenticate,] }, (req, res) => {
       deviceController.update(req,res);
     });
+    // fetch device details
+    app.delete('/api/v1/device/remove/', { preHandler: [authenticate,checkRole(["sys-admin"])] }, (req, res) => {
+      deviceController.remove(req,res);
+    });
  
   
   }
