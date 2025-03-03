@@ -56,10 +56,8 @@ const schema = new Schema({
   //
   level: {
     type: String,
-    enum: ['factory', 'region', 'national'],
-    required: function () {
-      return this.role !== 'sys-admin' && this.isNew; // required for non sys admin role
-    }
+    enum: ['factory', 'region', 'national','overall'],
+    required: true
   },
   //user status
   status: {
