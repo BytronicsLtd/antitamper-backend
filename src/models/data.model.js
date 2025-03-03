@@ -40,8 +40,8 @@ const Schema = {
             // required: true
         }
     },
-    // on or off
-    status:{
+    // on or off scale state 
+    state:{
         type:String,
         index:true,
     },

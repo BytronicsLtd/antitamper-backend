@@ -56,7 +56,7 @@ const schema = new Schema({
   //
   level: {
     type: String,
-    enum: ['factory', 'region', 'national','overall'],
+    enum: ['factory', 'region', 'national','global'],
     required: true
   },
   //user status
