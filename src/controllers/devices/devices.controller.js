@@ -40,7 +40,9 @@ const controller = {
     //fetch many devices
     fetchMany: async (req, res) => {
         try {
-            let query = {};
+            let query = {
+                soft_deleted:{$ne: true}
+            };
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
@@ -73,7 +75,7 @@ const controller = {
     update: async (req, res) => {
         try {
             const id = req.body.id
-            let data = req.body
+            let { soft_deleted, ...data } = req.body
             let device = await DeviceModel.findById(id); // Use `findById` method
             if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
             //fetch factory details if factory id is passed
@@ -87,7 +89,6 @@ const controller = {
             device = await DeviceModel.findByIdAndUpdate(id, {
                 $set: data
             }, { runValidators: true, new: true })
-            clearTimeout
         } catch (error) {
             console.log(chalk.red("Error fetching device details"), error);
             res.status(500).send({ success: false, error: error.message })
@@ -98,13 +99,13 @@ const controller = {
         const session = await mongoose.startSession();
         try {
             const id = req.body.id;
-            const device = await DeviceModel.findById(id);
+            let device = await DeviceModel.findById(id);
             console.log("Found device to delete ", device);
             session.startTransaction();
             if (!device) {
                 return res.status(404).send({ success: false, message: "Device with given ID not found" })
             }
-          
+
             await ActivityModel.create([{
                 action: "delete", // edit, create, delete actions
                 user: req.user.id, //user id performing the action
@@ -118,10 +119,14 @@ const controller = {
                 created_data: null,// created data
             }], { session })
             // delete
-            await DeviceModel.findByIdAndDelete(id).session(session);
+            device = await DeviceModel.findByIdAndUpdate(id, {
+                $set: {
+                    soft_deleted: true
+                }
+            }, { runValidators: true, new: true }).session(session)
             await session.commitTransaction();
             session.endSession();
-            res.status(200).send({ success: true, message: "Device successfully deleted" })
+            res.status(200).send({ success: true, message: "Device successfully deleted", results: device })
         } catch (error) {
             console.log(chalk.red("Error deleting device"), error);
             await session.abortTransaction();

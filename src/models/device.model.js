@@ -41,11 +41,11 @@ const Schema = {
         type: String,
         default: null,
         index: true
-      },
+    },
     //
     status: {
         type: String,
-        enum: ['unassigned', 'active', 'inactive'],
+        enum: ['unassigned', 'active', 'inactive',],
         default: 'unassigned',
         validate: {
             validator: function (value) {
@@ -59,6 +59,10 @@ const Schema = {
         }
     },
     //
+    soft_deleted: {
+        type: Boolean,
+        default: false
+    }
 }
 
 const schema = new mongoose.Schema(
