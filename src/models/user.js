@@ -65,6 +65,10 @@ const schema = new Schema({
     enum: ['active', 'inactive', 'suspended'],
     default: 'active'
   },
+  soft_deleted: {
+    type: Boolean,
+    default: false
+  },
   factory: {
     type: Schema.Types.ObjectId,
     ref: 'Factory',

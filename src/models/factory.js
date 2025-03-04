@@ -22,6 +22,10 @@ const schema = new Schema({
     type: String,
     enum: ['active', 'inactive'],
     default: 'active'
+  },
+  soft_deleted: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
@@ -29,14 +33,6 @@ const schema = new Schema({
 
 // Add index for better query performance
 schema.index({ name: 1, location: 1 }, { unique: true });
-
-// Add any methods you might need
-schema.methods.getActiveEmployees = function () {
-  return this.model('User').find({
-    _id: { $in: this.employees },
-    status: 'active'
-  });
-};
 
 schema.plugin(mongoosePaginate);
 

@@ -54,8 +54,8 @@ module.exports = ({ app }) => {
   });
 
   // Delete a user by ID
-  app.delete('/api/v1/users/delete/', { preHandler: [authenticate,] }, (req, res) => {
-    userController.deleteUser(req, res);
+  app.delete('/api/v1/users/remove/', { preHandler: [authenticate,] }, (req, res) => {
+    userController.remove(req, res);
   });
 
 

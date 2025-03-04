@@ -18,13 +18,13 @@ module.exports = ({ app }) => {
     factoriesController.getFactoryById(req,res);
   });
 
-  // Update an existing factory (with role check)
-  app.put('/api/v1/factories/:factoryId', { preHandler: [authenticate] }, (req,res) => {
+  // Update an existing factory 
+  app.patch('/api/v1/actories/update/', { preHandler: [authenticate,checkRole(['sys-admin'])] }, (req,res) => {
     factoriesController.updateFactory(req,res);
   });
 
   // Deactivate a factory (with role check)
-  app.delete('/api/v1/factories/:factoryId', { preHandler: [authenticate] }, (req,res) => {
-    factoriesController.deactivateFactory(req,res);
+  app.delete('/api/v1/factories/remove/', { preHandler: [authenticate, checkRole(['sys-admin'])] }, (req,res) => {
+    factoriesController.remove(req,res);
   });
 };

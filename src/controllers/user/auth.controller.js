@@ -72,6 +72,19 @@ const controller = {
             })
 
             await user.save({ session });
+            //
+            await ActivityModel.create([{
+                action: "create", // edit, create, delete actions
+                user: req.user.id, //user id performing the action
+                email: req.user.email, //email of the user performinng the action
+                role: req.user.role, //role of the user performing the action
+                timestamp: Date.now(), // time the action was performed
+                model: "User", //data model affected by the action
+                affected_id: user.id, //id of the item affected by the action
+                deleted_data: null, // deleted data
+                edited_data: null, // edited data
+                created_data: user,// created data
+            }], { session })
             await session.commitTransaction();
             session.endSession();
 
@@ -234,7 +247,7 @@ const controller = {
                     }
                 });
             }
-        
+
             if (user.confirmation_code !== body.confirmation_code) {
                 return res.status(400).send({ success: false, message: "Invalid confirmation code" });
             }
