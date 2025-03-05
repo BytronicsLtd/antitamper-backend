@@ -29,7 +29,7 @@ exports.getMe = async(req,res)=>{
     const user = await UserModel.findById(id)
     .select('-password -token')
     .populate([
-      {path:'user', select:"name location", transform: (doc) => doc?.toJSON() || doc}
+      {path:'factory', select:"name location", transform: (doc) => doc?.toJSON() || doc}
     ])
     if (!user) return res.status(404).send({ message: "UserModel not found" });
     res.status(200).send({success:true, results:user});
