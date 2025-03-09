@@ -50,13 +50,13 @@ const schema = new Schema({
   //
   role: {
     type: String,
-    enum: ['sys-admin','admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
+    enum: ['sys-admin', 'admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
     required: true
   },
   //
   level: {
     type: String,
-    enum: ['factory', 'region', 'national','global'],
+    enum: ['factory', 'region', 'national', 'global'],
     required: true
   },
   //user status
@@ -66,6 +66,16 @@ const schema = new Schema({
     default: 'active'
   },
   soft_deleted: {
+    type: Boolean,
+    default: false
+  },
+  // check if user can receive email alerts
+  can_receive_email_alerts: {
+    type: Boolean,
+    default: false
+  },
+  // check if user can receive sms alerts
+  can_receive_sms_alerts: {
     type: Boolean,
     default: false
   },

@@ -4,12 +4,12 @@ const UserModel = require("../../models/user");
 const DeviceModel = require("../../models/device.model");
 const emailSender = require("../../utils/communication/email/email.util")
 const MQTTClient = require("../../config/mqtt.conf")
-const mqtt_client =  new MQTTClient({})
+const mqtt_client = new MQTTClient({})
 const controller = {
     updateScaleStatus: async (req, res) => {
         try {
             const payload = req.body;
-            
+
             // find device details
             const device = await DeviceModel.findOne({ device_id: payload.device_id })
                 .populate([
@@ -19,7 +19,13 @@ const controller = {
                 return res.status(404).send({ success: false })
             }
             //fetch users that belong to the same factory as the device
-            let users = await UserModel.find({ factory: device?.factory?.id }).select("-_id email phone_number")
+            let users = await UserModel.find({
+                factory: device?.factory?.id,
+                $or: [
+                    { can_receive_email_alerts:true},
+                    { can_receive_sms_alerts:true }
+                ]
+            }).select("-_id email phone_number")
             //
             let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_datetime, gsm_datetime, rtc_datetime } = payload;
             let data = {
@@ -45,7 +51,7 @@ const controller = {
             // parse gps timestamp
             if (gps_datetime) {
                 try {
-                    const iso_time = new Date(Number(gps_datetime)*1000);
+                    const iso_time = new Date(Number(gps_datetime) * 1000);
                     data.gps_timestamp = iso_time;
                 } catch (error) {
                     data.gps_timestamp = undefined;
@@ -57,7 +63,7 @@ const controller = {
             // parse gsm timestamp
             if (gsm_datetime) {
                 try {
-                    const iso_time = new Date(Number(gsm_datetime)*1000);
+                    const iso_time = new Date(Number(gsm_datetime) * 1000);
                     data.gsm_timestamp = iso_time;
                 } catch (error) {
                     data.gsm_timestamp = null;
@@ -66,7 +72,7 @@ const controller = {
             // parse RTC timestamp
             if (rtc_datetime) {
                 try {
-                    const iso_time = new Date(Number(rtc_datetime)*1000);
+                    const iso_time = new Date(Number(rtc_datetime) * 1000);
                     data.rtc_timestamp = iso_time;
                 } catch (error) {
                     data.rtc_timestamp = null;
@@ -99,9 +105,8 @@ module.exports = controller;
 async function checkAlert({ data, users }) {
     try {
         if (data.interrupt_type === 'none') return;
-        // "gmnolkeri@gmail.com"
-        // const receivers = users.map(user => user.email)
-        const receivers = ["note5mn@gmail.com"]
+        const receivers = users.filter(user=> user.can_receive_email_alerts).map(user => user.email)
+        // const receivers = ["note5mn@gmail.com"]
         console.log("email receivers ", receivers)
         const result = await emailSender({
             template: "alert.handlebars",
