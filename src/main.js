@@ -60,7 +60,7 @@ async function main() {
     app.listen({ port, host: "0.0.0.0" });
     console.log(chalk.yellow("server running on port", port));
     const { setRoutes } = require("./globals/variables.globals.js");
- 
+
     setRoutes(all_routes);
     if (process.env.LOG_ROUTES) console.log(chalk.blue("Registered routes: "), all_routes);
 
@@ -69,9 +69,9 @@ async function main() {
 
 main();
 
-function setupMQTT(){
-    const mqtt =  require("./config/mqtt.conf.js")
-    const mqtt_instance =  new mqtt({
+function setupMQTT() {
+    const mqtt = require("./config/mqtt.conf.js")
+    const mqtt_instance = new mqtt({
         topic: "#",
         host: process.env.MQTT_HOST,
         port: process.env.MQTT_PORT,
@@ -80,4 +80,13 @@ function setupMQTT(){
         password: "",
     });
     mqtt_instance.connect()
+    mqtt_instance.onMessage((topic, message) => {
+        if (topic === "scale-antitamper/data") {
+            console.log(topic, "message ", JSON.parse(message));
+        }
+
+    })
 }
+
+console.log("1741543461 ", new Date("1741543461000"));
+

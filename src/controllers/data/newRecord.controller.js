@@ -45,7 +45,7 @@ const controller = {
             // parse gps timestamp
             if (gps_datetime) {
                 try {
-                    const iso_time = new Date(Number(gps_datetime));
+                    const iso_time = new Date(Number(gps_datetime)*1000);
                     data.gps_timestamp = iso_time;
                 } catch (error) {
                     data.gps_timestamp = undefined;
@@ -57,16 +57,16 @@ const controller = {
             // parse gsm timestamp
             if (gsm_datetime) {
                 try {
-                    const iso_time = new Date(Number(gsm_datetime));
+                    const iso_time = new Date(Number(gsm_datetime)*1000);
                     data.gsm_timestamp = iso_time;
                 } catch (error) {
                     data.gsm_timestamp = null;
                 }
             }
             // parse RTC timestamp
-            if (rtc_datetime?.length) {
+            if (rtc_datetime) {
                 try {
-                    const iso_time = new Date(Number(rtc_datetime));
+                    const iso_time = new Date(Number(rtc_datetime)*1000);
                     data.rtc_timestamp = iso_time;
                 } catch (error) {
                     data.rtc_timestamp = null;
