@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <style>
@@ -9,7 +10,7 @@
             padding: 20px;
             background-color: #f5f7fa;
         }
-        
+
         .alert-container {
             max-width: 600px;
             margin: 0 auto;
@@ -18,7 +19,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
-        
+
         .alert-header {
             background: #dc2626;
             color: white;
@@ -28,28 +29,36 @@
         }
 
         @keyframes pulse {
-            0% { background-color: #dc2626; }
-            50% { background-color: #991b1b; }
-            100% { background-color: #dc2626; }
+            0% {
+                background-color: #dc2626;
+            }
+
+            50% {
+                background-color: #991b1b;
+            }
+
+            100% {
+                background-color: #dc2626;
+            }
         }
-        
+
         .alert-header h1 {
             margin: 0;
             font-size: 18px;
             font-weight: 600;
         }
-        
+
         .device-info {
             background: #1e3a8a;
             color: white;
             padding: 15px 20px;
             font-size: 14px;
         }
-        
+
         .status-grid {
             padding: 20px;
         }
-        
+
         .status-item {
             display: flex;
             align-items: center;
@@ -60,7 +69,7 @@
             background: #f8fafc;
             border: 1px solid #e2e8f0;
         }
-        
+
         .status-icon {
             width: 24px;
             height: 24px;
@@ -71,28 +80,28 @@
             font-weight: bold;
             flex-shrink: 0;
         }
-        
+
         .icon-success {
             background: #22c55e;
             color: white;
         }
-        
+
         .icon-error {
             background: #dc2626;
             color: white;
             animation: pulse 2s infinite;
         }
-        
+
         .status-label {
             font-weight: 500;
             color: #1e293b;
         }
-        
+
         .status-value {
             font-family: monospace;
             color: #475569;
         }
-        
+
         .status-alert {
             color: #dc2626;
             font-weight: 600;
@@ -105,56 +114,68 @@
         }
     </style>
 </head>
+
 <body>
     <div class="alert-container">
         <div class="alert-header">
             <h1>
                 {{#ifEquals interrupt_type "calibration switch"}}
-                    ⚠️ SECURITY ALERT: Calibration Switch Tampering Detected
+                ⚠️ SECURITY ALERT: Calibration Switch Tampering Detected
                 {{/ifEquals}}
                 {{#ifEquals interrupt_type "enclosure"}}
-                    ⚠️ SECURITY ALERT: Enclosure Tampering Detected
+                ⚠️ SECURITY ALERT: Enclosure Tampering Detected
                 {{/ifEquals}}
-                {{#ifEquals interrupt_type "rtc_alarm"}}
-                    ⏰ ALERT: RTC Alarm Triggered
+                {{#ifEquals interrupt_type "state"}}
+                ⏰ ALERT: Weighing scale state has changed
                 {{/ifEquals}}
-                {{#unless interrupt_type}}
-                    ⚠️ DEVICE STATUS ALERT
-                {{/unless}}
+
             </h1>
         </div>
-        
+
         <div class="device-info">
             <div>Device ID: {{device_id}}</div>
-            <div class="timestamp">{{rtc_timestamp}}</div>
+            <div class="timestamp">{{rtc_timestamp || gsm_timestamp}}</div>
             {{#if interrupt_type}}
-                <div class="timestamp">Interrupt Type: {{interrupt_type}}</div>
+            <div class="timestamp">Interrupt Type: {{interrupt_type}}</div>
             {{/if}}
         </div>
-        
+
         <div class="status-grid">
+            {{!-- state --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals enclosure 0}}icon-success{{else}}icon-error{{/ifEquals}}">
-                    {{#ifEquals enclosure 0}}✓{{else}}!{{/ifEquals}}
+                <div class="status-icon {{#ifEquals state " on"}}icon-success{{else}}icon-error{{/ifEquals}}">
+                    {{#ifEquals state "off"}}✓{{else}}!{{/ifEquals}}
+                </div>
+                <div>
+                    <div class="status-label">State</div>
+                    <div class="status-value">{{#ifEquals state "off"}}OFF{{else}}ON{{/ifEquals}}
+                        ({{state}})</div>
+                </div>
+            </div>
+            {{!-- enclosure --}}
+            <div class="status-item">
+                <div class="status-icon {{#ifEquals enclosure " closed"}}icon-success{{else}}icon-error{{/ifEquals}}">
+                    {{#ifEquals enclosure "closed"}}✓{{else}}!{{/ifEquals}}
                 </div>
                 <div>
                     <div class="status-label">Enclosure</div>
-                    <div class="status-value">{{#ifEquals enclosure 0}}CLOSED{{else}}OPEN{{/ifEquals}} ({{enclosure}})</div>
+                    <div class="status-value">{{#ifEquals enclosure "closed"}}CLOSED{{else}}OPEN{{/ifEquals}}
+                        ({{enclosure}})</div>
                 </div>
             </div>
-
+            {{!-- calibration switch --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals calib_switch 0}}icon-error{{else}}icon-success{{/ifEquals}}">
-                    {{#ifEquals calib_switch 0}}!{{else}}✓{{/ifEquals}}
+                <div class="status-icon {{#ifEquals calib_switch " on"}}icon-error{{else}}icon-success{{/ifEquals}}">
+                    {{#ifEquals calib_switch "off"}}!{{else}}✓{{/ifEquals}}
                 </div>
                 <div>
                     <div class="status-label">Calibration Switch</div>
-                    <div class="status-value {{#ifEquals calib_switch 0}}status-alert{{/ifEquals}}">
-                        {{#ifEquals calib_switch 1}}OFF{{else}}ON{{/ifEquals}} ({{calib_switch}})
+                    <div class="status-value {{#ifEquals calib_switch " on"}}status-alert{{/ifEquals}}">
+                        {{#ifEquals calib_switch "off"}}OFF{{else}}ON{{/ifEquals}} ({{calib_switch}})
                     </div>
                 </div>
             </div>
-
+            {{!-- sd card available --}}
             <div class="status-item">
                 <div class="status-icon {{#if sd_card_available}}icon-success{{else}}icon-error{{/if}}">
                     {{#if sd_card_available}}✓{{else}}!{{/if}}
@@ -167,4 +188,5 @@
         </div>
     </div>
 </body>
+
 </html>
