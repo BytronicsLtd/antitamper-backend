@@ -3,12 +3,13 @@ const DataModel = require("../../models/data.model");
 const UserModel = require("../../models/user");
 const DeviceModel = require("../../models/device.model");
 const emailSender = require("../../utils/communication/email/email.util")
-
-
+const MQTTClient = require("../../config/mqtt.conf")
+const mqtt_client =  new MQTTClient({})
 const controller = {
     updateScaleStatus: async (req, res) => {
         try {
             const payload = req.body;
+            mqtt_client.publish("scale-antitamper", payload)
             // find device details
             const device = await DeviceModel.findOne({ device_id: payload.device_id })
                 .populate([
@@ -42,7 +43,7 @@ const controller = {
                 };
             }
             // parse gps timestamp
-            if (gps_datetime?.length) {
+            if (gps_datetime) {
                 try {
                     const iso_time = new Date(Number(gps_datetime));
                     data.gps_timestamp = iso_time;
@@ -54,7 +55,7 @@ const controller = {
                 data.gps_timestamp = undefined
             }
             // parse gsm timestamp
-            if (gsm_datetime?.length) {
+            if (gsm_datetime) {
                 try {
                     const iso_time = new Date(Number(gsm_datetime));
                     data.gsm_timestamp = iso_time;

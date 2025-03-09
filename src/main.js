@@ -19,7 +19,8 @@ app.register(require('@fastify/multipart'), {
 
 //connect to database
 const dbConnect = require("./config/db.config.js");
-const { subscribe } = require('diagnostics_channel');
+
+setupMQTT();
 dbConnect();
 //register models
 require("./models/index")
@@ -59,18 +60,24 @@ async function main() {
     app.listen({ port, host: "0.0.0.0" });
     console.log(chalk.yellow("server running on port", port));
     const { setRoutes } = require("./globals/variables.globals.js");
+ 
     setRoutes(all_routes);
     if (process.env.LOG_ROUTES) console.log(chalk.blue("Registered routes: "), all_routes);
 
 }
 // 
+
 main();
 
 function setupMQTT(){
     const mqtt =  require("./config/mqtt.conf.js")
     const mqtt_instance =  new mqtt({
-        host:'',
-        port:"",
-        topic:"sca"
-    })
+        topic: "#",
+        host: process.env.MQTT_HOST,
+        port: process.env.MQTT_PORT,
+        custom_name: process.env.MQTT_CUSTOM_NAME,
+        username: "",
+        password: "",
+    });
+    mqtt_instance.connect()
 }
