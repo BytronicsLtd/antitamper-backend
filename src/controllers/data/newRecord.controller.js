@@ -9,7 +9,7 @@ const controller = {
     updateScaleStatus: async (req, res) => {
         try {
             const payload = req.body;
-            mqtt_client.publish("scale-antitamper", payload)
+            
             // find device details
             const device = await DeviceModel.findOne({ device_id: payload.device_id })
                 .populate([
@@ -72,7 +72,7 @@ const controller = {
                     data.rtc_timestamp = null;
                 }
             }
-
+            mqtt_client.publish("scale-antitamper/data", JSON.stringify(data))
             // console.log("data to save ", data);
             if (Object.keys(data).length > 1) {
                 await DataModel.create(data);
