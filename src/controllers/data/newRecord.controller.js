@@ -42,19 +42,19 @@ const controller = {
                 };
             }
             // parse gps timestamp
-            if (gps_datetime?.length > 10) {
+            if (gps_datetime?.length) {
                 try {
                     const iso_time = new Date(gps_datetime);
                     data.gps_timestamp = iso_time;
                 } catch (error) {
-                    data.gps_timestamp = null;
+                    data.gps_timestamp = undefined;
                 }
             }
             else {
                 data.gps_timestamp = undefined
             }
             // parse gsm timestamp
-            if (gsm_datetime?.length > 10) {
+            if (gsm_datetime?.length) {
                 try {
                     const iso_time = new Date(gsm_datetime);
                     data.gsm_timestamp = iso_time;
@@ -63,7 +63,7 @@ const controller = {
                 }
             }
             // parse RTC timestamp
-            if (rtc_datetime?.length > 5) {
+            if (rtc_datetime?.length) {
                 try {
                     const iso_time = new Date(rtc_datetime);
                     data.rtc_timestamp = iso_time;
