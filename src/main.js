@@ -7,8 +7,6 @@ const cors = require('@fastify/cors');
 const chalk = require("chalk");
 const { format } = require("date-fns");
 
-
-
 //http server
 const app = fastify();
 //setup cors
@@ -67,3 +65,12 @@ async function main() {
 }
 // 
 main();
+
+function setupMQTT(){
+    const mqtt =  require("./config/mqtt.conf.js")
+    const mqtt_instance =  new mqtt({
+        host:'',
+        port:"",
+        topic:"sca"
+    })
+}

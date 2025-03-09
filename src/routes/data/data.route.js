@@ -9,12 +9,12 @@ module.exports = ({ app }) => {
     app.post('/api/v1/data/', { preHandler: [] }, (req, res) => {
       newRecordsController.updateScaleStatus(req, res)
     });
-    // 
-    app.get('/api/v1/data/', { preHandler: [authenticate] }, (req, res) => {
+    // authenticate
+    app.get('/api/v1/data/', { preHandler: [] }, (req, res) => {
       dataController.fetchMany(req,res);
     });
-    // 
-    app.get('/api/v1/data/alerts/', { preHandler: [authenticate] }, (req, res) => {
+    // authenticate
+    app.get('/api/v1/data/alerts/', { preHandler: [] }, (req, res) => {
       alertsController.fetchMany(req,res);
     });
     // 

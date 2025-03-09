@@ -1,4 +1,4 @@
-// MqttClient.js
+
 const chalk = require('chalk');
 const mqtt = require('mqtt');
 
