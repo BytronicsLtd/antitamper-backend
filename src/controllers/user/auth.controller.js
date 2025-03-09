@@ -137,7 +137,7 @@ const controller = {
                 query,
                 {
                     $set: {
-                        token: token,
+                        token: new_token,
                     },
                 },
             );
