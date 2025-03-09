@@ -40,9 +40,27 @@ const controller = {
     //fetch many devices
     fetchMany: async (req, res) => {
         try {
+            let = {
+                search_term,
+            } = req.query;
             let query = {
                 soft_deleted: { $ne: true }
             };
+            // ---------------------- search query  ------------------------
+            if (search_term) {
+                query = {
+                    ...query,
+                    $or: [
+                        { device_id: { $regex: new RegExp(search_term, "i") } },
+                        { factory_name: { $regex: new RegExp(search_term, "i") } },
+                        { region: { $regex: new RegExp(search_term, "i") } },
+                        { serial_number: { $regex: new RegExp(search_term, "i") } },
+                        { phone_number: { $regex: new RegExp(search_term, "i") } },
+                        { status: { $regex: new RegExp(search_term, "i") } },
+                    ],
+                };
+            }
+
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
@@ -55,7 +73,7 @@ const controller = {
             // Add metadata for searchable parameters
             const metadata = {
                 searchable_parameters: {
-                    "device_id": "String",
+                    "search_term": "String",
                     "serial_number": "String",
                     "phone_number": "String",
                     "factory_name": "String",

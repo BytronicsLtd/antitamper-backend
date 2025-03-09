@@ -4,9 +4,31 @@ const UserModel = require("../../models/user");
 // Retrieve all users
 exports.getUsers = async (req, res) => {
   try {
+    let = {
+      email_confirmed,
+      search_term,
+    } = req.query;
     let query = {
       soft_deleted: { $ne: true }
     };
+    // ---------------------- search query  ------------------------
+    if (search_term) {
+      query = {
+        ...query,
+        $or: [
+          { name: { $regex: new RegExp(search_term, "i") } },
+          { email: { $regex: new RegExp(search_term, "i") } },
+          { region: { $regex: new RegExp(search_term, "i") } },
+          { phone_number: { $regex: new RegExp(search_term, "i") } },
+          { status: { $regex: new RegExp(search_term, "i") } },
+          { role: { $regex: new RegExp(search_term, "i") } },
+          { level: { $regex: new RegExp(search_term, "i") } },
+        ],
+      };
+    }
+    if (email_confirmed) {
+      query.email_confirmed = email_confirmed === "false" ? false : true
+    }
     const { page, size } = req.query;
     const limit = size ? +size : 100;
     const offset = page ? (page - 1) * limit : 0;
