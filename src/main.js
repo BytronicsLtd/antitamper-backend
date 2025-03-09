@@ -88,5 +88,4 @@ function setupMQTT() {
     })
 }
 
-console.log("1741543461 ", new Date(1741534111000));
 
