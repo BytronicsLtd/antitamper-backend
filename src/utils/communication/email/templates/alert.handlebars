@@ -143,7 +143,7 @@
         <div class="status-grid">
             {{!-- state --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals state " on"}}icon-success{{else}}icon-error{{/ifEquals}}">
+                <div class="status-icon {{#ifEquals state "on"}}icon-success{{else}}icon-error{{/ifEquals}}">
                     {{#ifEquals state "off"}}✓{{else}}!{{/ifEquals}}
                 </div>
                 <div>
@@ -154,7 +154,7 @@
             </div>
             {{!-- enclosure --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals enclosure " closed"}}icon-success{{else}}icon-error{{/ifEquals}}">
+                <div class="status-icon {{#ifEquals enclosure "closed"}}icon-success{{else}}icon-error{{/ifEquals}}">
                     {{#ifEquals enclosure "closed"}}✓{{else}}!{{/ifEquals}}
                 </div>
                 <div>
@@ -165,12 +165,12 @@
             </div>
             {{!-- calibration switch --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals calib_switch " on"}}icon-error{{else}}icon-success{{/ifEquals}}">
+                <div class="status-icon {{#ifEquals calib_switch "on"}}icon-error{{else}}icon-success{{/ifEquals}}">
                     {{#ifEquals calib_switch "off"}}!{{else}}✓{{/ifEquals}}
                 </div>
                 <div>
                     <div class="status-label">Calibration Switch</div>
-                    <div class="status-value {{#ifEquals calib_switch " on"}}status-alert{{/ifEquals}}">
+                    <div class="status-value {{#ifEquals calib_switch "on"}}status-alert{{/ifEquals}}">
                         {{#ifEquals calib_switch "off"}}OFF{{else}}ON{{/ifEquals}} ({{calib_switch}})
                     </div>
                 </div>
