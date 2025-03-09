@@ -43,43 +43,35 @@ const controller = {
             }
             // parse gps timestamp
             if (gps_datetime?.length > 10) {
-                const iso_time = new Date(gps_datetime);
-                data.gps_timestamp = iso_time;
+                try {
+                    const iso_time = new Date(gps_datetime);
+                    data.gps_timestamp = iso_time;
+                } catch (error) {
+                    data.gps_timestamp = null;
+                }
             }
             else {
                 data.gps_timestamp = undefined
             }
             // parse gsm timestamp
             if (gsm_datetime?.length > 10) {
-                // Extract parts from "25/01/22,15:40:07"
-                const [datePart, time] = gsm_datetime?.split(',');
-                const just_time = time.split('+')[0]
-                // Split and reverse date
-                const [d, m, y] = datePart.split('/').reverse();
-                const adjusted_date = new Date(`20${y}-${m}-${d} ${just_time}`)
-                data.gsm_timestamp = new Date(adjusted_date - 3 * 60 * 60 * 1000)
+                try {
+                    const iso_time = new Date(gsm_datetime);
+                    data.gsm_timestamp = iso_time;
+                } catch (error) {
+                    data.gsm_timestamp = null;
+                }
             }
             // parse RTC timestamp
             if (rtc_datetime?.length > 5) {
                 try {
-                    const formatted_date = rtc_datetime.replace(/(\d{2})\/(\d{2})\/(\d{2}),(.*)\+\d{2}/, '20$3-$2-$1T$4');
-                    const date = new Date(formatted_date);
-
-                    // Check if date is valid before proceeding
-                    if (date instanceof Date && !isNaN(date)) {
-                        const adjusted_date = new Date(date.getTime() - 3 * 60 * 60 * 1000);
-                        data.rtc_timestamp = adjusted_date;
-                    } else {
-                        console.warn('Invalid date format:', rtc_datetime);
-                        // Optionally set a default or keep existing value
-                        data.rtc_timestamp = null;
-                    }
+                    const iso_time = new Date(rtc_datetime);
+                    data.rtc_timestamp = iso_time;
                 } catch (error) {
-                    console.warn('Error processing date:', rtc_datetime, error);
                     data.rtc_timestamp = null;
                 }
             }
-            data.status = data.calib_switch ? "on" :"off";
+
             // console.log("data to save ", data);
             if (Object.keys(data).length > 1) {
                 await DataModel.create(data);
