@@ -112,7 +112,9 @@ async function checkAlert({ data, users }) {
             template: "alert.handlebars",
             subject: "Alert!",
             emails: receivers,
-            payload: data,
+            payload: {...data,
+                timestamp: data.rtc_timestamp || data.gsm_timestamp || data.gps_timestamp
+            },
         })
         console.log("send email result ", result)
     }
