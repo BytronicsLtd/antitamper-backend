@@ -83,28 +83,21 @@ const controller = {
 
             });
             const docs = results.docs.map(result => {
-                let modifiedResult = {};
-                
+                // Destructure result._doc and rename _id to id
+                const { _id, __v, ...rest } = result._doc;
+                let modifiedResult = {
+                    id: _id,
+                    ...rest,
+                };
+
                 if (result?.gsm_lat && result?.gsm_lon) {
-                    // Destructure result._doc and rename _id to id
-                    const { _id, __v, ...rest } = result._doc;
-                    modifiedResult = {
-                        id: _id,
-                        ...rest,
-                        gsm_map_url: `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
-                    };
+                    modifiedResult.gsm_map_url = `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
                 }
-                
+
                 if (result?.gps_lat && result?.gps_lon) {
-                    // Destructure result._doc and rename _id to id
-                    const { _id, __v, ...rest } = result._doc;
-                    modifiedResult = {
-                        id: _id,
-                        ...rest,
-                        gps_map_url: `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
-                    };
+                    modifiedResult.gps_map_url = `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
                 }
-                
+
                 return modifiedResult;
             });
             results.docs = docs;
@@ -138,8 +131,8 @@ const controller = {
         try {
             const id = req.query.id
             const results = await DataModel.findById(id); // Use `findById` method
-            if (!results) return res.status(404).send({ success:false, message: 'Record not found' });
-            res.status(200).send({success:true, results});
+            if (!results) return res.status(404).send({ success: false, message: 'Record not found' });
+            res.status(200).send({ success: true, results });
         } catch (error) {
             console.log(chalk.red("Error fetching data details"), error);
             res.status(500).send({ success: false })
