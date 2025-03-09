@@ -12,12 +12,22 @@ exports.getUsers = async (req, res) => {
     const offset = page ? (page - 1) * limit : 0;
     const results = await UserModel.paginate(query, {
       page, limit, offset,
-      select: `name email phone_number email_confirmed role status user`,
+      select: `name email phone_number email_confirmed role status`,
       sort: '-createdAt',
-
-
     });
-    res.status(200).send({ success: true, results });
+    // Add metadata for searchable parameters
+    const metadata = {
+      searchable_parameters: {
+        "name": "String",
+        "email": "String",
+        "phone_number": "String",
+        "email_confirmed": "true|false",
+        "role": "String",
+        "status": "String",
+        "level": "String",
+      }
+    };
+    res.status(200).send({ success: true, metadata, results });
   } catch (err) {
     res.status(500).send({ success: false, message: "Error retrieving users", error: err.message });
   }

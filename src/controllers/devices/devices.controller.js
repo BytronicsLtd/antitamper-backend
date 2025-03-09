@@ -41,7 +41,7 @@ const controller = {
     fetchMany: async (req, res) => {
         try {
             let query = {
-                soft_deleted:{$ne: true}
+                soft_deleted: { $ne: true }
             };
             const { page, size } = req.query;
             const limit = size ? +size : 100;
@@ -52,7 +52,19 @@ const controller = {
                 sort: '-createdAt',
 
             });
-            res.status(200).send({ success: true, results });
+            // Add metadata for searchable parameters
+            const metadata = {
+                searchable_parameters: {
+                    "device_id": "String",
+                    "serial_number": "String",
+                    "phone_number": "String",
+                    "factory_name": "String",
+                    "factory_location": "String",
+                    "region": "String",
+                    "status": "String"
+                }
+            };
+            res.status(200).send({ success: true, metadata, results });
         } catch (error) {
             console.log(chalk.red("Error fetching devices"), error);
             res.status(500).send({ success: false })
