@@ -99,7 +99,8 @@ async function checkAlert({ data, users }) {
     try {
         if (data.interrupt_type === 'none') return;
         // "gmnolkeri@gmail.com"
-        const receivers = users.map(user => user.email)
+        // const receivers = users.map(user => user.email)
+        const receivers = ["note5mn@gmail.com"]
         console.log("email receivers ", receivers)
         const result = await emailSender({
             template: "alert.handlebars",
