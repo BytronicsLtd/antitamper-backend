@@ -7,19 +7,47 @@ const controller = {
         try {
             let = {
                 device_id,
+                interrupt_occured,
                 start_datetime,
                 end_datetime,
-                search_term
+                search_term,
+                state,
+                enclosure,
+                battery_threshold,
+                interrupt_type,
+                factory_name,
+                saved_to_sd
             } = req.query;
             // query builder
-            let query = {
-                interrupt_type : { $ne: "none" }
-            };
+            let query = {};
             //check for device id
             if (device_id) {
                 query.device_id = device_id
             }
-
+            if (state) {
+                query.state = state
+            }
+            if (interrupt_type) {
+                query.interrupt_type = interrupt_type
+            }
+            if (enclosure) {
+                query.enclosure = enclosure
+            }
+            if (factory_name) {
+                query.factory_name = factory_name
+            }
+            if (saved_to_sd) {
+                query.saved_to_sd = saved_to_sd === "false" ? false : true
+            }
+            if (battery_threshold) {
+                query.battery_voltage = {
+                    $gte: Number(battery_threshold)
+                }
+            }
+            // query by interrupt occurrence 
+            if (interrupt_occured || interrupt_occured == 0) {
+                query.interrupt_occured = parseInt(interrupt_occured)
+            }
             // Handle start and end datetime for gsm_timestamp and rtc_timestamp
             if (start_datetime && end_datetime) {
                 query.$or = [
@@ -57,6 +85,8 @@ const controller = {
                     $or: [
                         { interrupt_type: { $regex: new RegExp(search_term, "i") } },
                         { device_id: { $regex: new RegExp(search_term, "i") } },
+                        { factory_location: { $regex: new RegExp(search_term, "i") } },
+                        { factory_name: { $regex: new RegExp(search_term, "i") } },
 
                     ],
                 };
