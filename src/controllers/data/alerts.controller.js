@@ -72,22 +72,23 @@ const controller = {
 
             });
             const docs = results.docs.map(result => {
+                // Destructure result._doc and rename _id to id
+                const { _id, __v, ...rest } = result._doc;
+                let modifiedResult = {
+                    id: _id,
+                    ...rest,
+                };
+
                 if (result?.gsm_lat && result?.gsm_lon) {
-                    result = {
-                        ...result.toJSON(),
-                        gsm_map_url: `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
-
-                    }
+                    modifiedResult.gsm_map_url = `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
                 }
+
                 if (result?.gps_lat && result?.gps_lon) {
-                    result = {
-                        ...result.toJSON(),
-                        gps_map_url: `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
-
-                    }
+                    modifiedResult.gps_map_url = `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
                 }
-                return result
-            })
+
+                return modifiedResult;
+            });
             results.docs = docs;
             // Add metadata for searchable parameters
             const metadata = {
