@@ -34,7 +34,7 @@ exports.getUsers = async (req, res) => {
     const offset = page ? (page - 1) * limit : 0;
     const results = await UserModel.paginate(query, {
       page, limit, offset,
-      select: `name email phone_number email_confirmed role status`,
+      select: `name email phone_number email_confirmed role status can_receive_sms_alerts can_receive_email_alerts`,
       sort: '-createdAt',
     });
     // Add metadata for searchable parameters
