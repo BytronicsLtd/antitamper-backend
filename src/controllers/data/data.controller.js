@@ -14,6 +14,11 @@ const controller = {
                 start_datetime,
                 end_datetime,
                 search_term,
+                state,
+                enclosure,
+                battery_threshold,
+                interrupt_type,
+                factory_name,
                 saved_to_sd
             } = req.query;
             // query builder
@@ -22,8 +27,25 @@ const controller = {
             if (device_id) {
                 query.device_id = device_id
             }
+            if (state) {
+                query.state = state
+            }
+            if (interrupt_type) {
+                query.interrupt_type = interrupt_type
+            }
+            if (enclosure) {
+                query.enclosure = enclosure
+            }
+            if (factory_name) {
+                query.factory_name = factory_name
+            }
             if (saved_to_sd) {
                 query.saved_to_sd = saved_to_sd === "false" ? false : true
+            }
+            if (battery_threshold) {
+                query.battery_voltage = {
+                    $gte: Number(battery_threshold)
+                }
             }
             // query by interrupt occurrence 
             if (interrupt_occured || interrupt_occured == 0) {
