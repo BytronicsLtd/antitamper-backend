@@ -21,7 +21,7 @@ module.exports = ({ app }) => {
       deviceController.update(req,res);
     });
     // fetch device details
-    app.delete('/api/v1/device/remove/', { preHandler: [authenticate,checkRole(["sys-admin"])] }, (req, res) => {
+    app.delete('/api/v1/devices/remove/', { preHandler: [authenticate,checkRole(["sys-admin"])] }, (req, res) => {
       deviceController.remove(req,res);
     });
  

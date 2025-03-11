@@ -76,7 +76,7 @@ exports.getUserById = async (req, res) => {
     const user = await UserModel.findById(id)
       .select('name email phone_number email_confirmed role status user')
       .populate([
-        { path: 'user', select: "name location", transform: (doc) => doc?.toJSON() || doc }
+        { path: 'factory', select: "name location", transform: (doc) => doc?.toJSON() || doc }
       ])
     if (!user) return res.status(404).send({ success: false, message: "UserModel not found" });
     res.status(200).send({ success: true, results: user });
@@ -130,7 +130,7 @@ exports.remove = async (req, res) => {
     }, { runValidators: true, new: true }).session(session)
     await session.commitTransaction();
     session.endSession();
-    res.status(200).send({ success: true, message: "Device successfully deleted", results: device })
+    res.status(200).send({ success: true, message: "User successfully deleted", results: device })
   } catch (error) {
     console.log(chalk.red("Error deleting device"), error);
     await session.abortTransaction();
