@@ -8,7 +8,6 @@ const checkAlert = async ({ data, users }) => {
     
         let receivers = users.filter(user => user.can_receive_email_alerts)
         receivers = receivers.map(user => user.email)
-        // const receivers = ["note5mn@gmail.com"]
         if (!receivers.length) return;
         const result = await emailSender({
             template: "alert.handlebars",
