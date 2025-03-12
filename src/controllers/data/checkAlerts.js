@@ -3,9 +3,7 @@ const emailSender = require("../../utils/communication/email/email.util")
 // check for alerts
 const checkAlert = async ({ data, users }) => {
     try {
-        console.log("data.interrupt_type ", data);
         if (data.interrupt_type === 'none') return;
-    
         let receivers = users.filter(user => user.can_receive_email_alerts)
         receivers = receivers.map(user => user.email)
         if (!receivers.length) return;
