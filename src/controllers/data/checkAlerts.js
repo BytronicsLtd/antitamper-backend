@@ -10,7 +10,6 @@ const checkAlert = async ({ data, users }) => {
         receivers = receivers.map(user => user.email)
         // const receivers = ["note5mn@gmail.com"]
         if (!receivers.length) return;
-        receivers = ["hisiceh292@oziere.com"]
         const result = await emailSender({
             template: "alert.handlebars",
             subject: "Alert!",
