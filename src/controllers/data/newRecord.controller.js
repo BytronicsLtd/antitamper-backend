@@ -2,8 +2,9 @@ const chalk = require("chalk");
 const DataModel = require("../../models/data.model");
 const UserModel = require("../../models/user");
 const DeviceModel = require("../../models/device.model");
-const emailSender = require("../../utils/communication/email/email.util")
-const MQTTClient = require("../../config/mqtt.conf")
+
+const MQTTClient = require("../../config/mqtt.conf");
+const { checkAlert } = require("./checkAlerts.js")
 const mqtt_client = new MQTTClient({})
 const controller = {
     updateScaleStatus: async (req, res) => {
@@ -22,10 +23,12 @@ const controller = {
             let users = await UserModel.find({
                 factory: device?.factory?.id,
                 $or: [
-                    { can_receive_email_alerts:true},
-                    { can_receive_sms_alerts:true }
+                    { can_receive_email_alerts: true },
+                    { can_receive_sms_alerts: true }
                 ]
-            }).select("-_id email phone_number")
+            }).select("-_id email phone_number can_receive_email_alerts can_receive_sms_alerts")
+            const last_entry = await DataModel.findOne({ device_id: payload.device_id }).sort({ createdAt: -1 });
+
             //
             let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_datetime, gsm_datetime, rtc_datetime } = payload;
             let data = {
@@ -78,13 +81,14 @@ const controller = {
                     data.rtc_timestamp = null;
                 }
             }
-            mqtt_client.publish("scale-antitamper/data", JSON.stringify(data))
+            // mqtt_client.publish("scale-antitamper/data", JSON.stringify(data))
             // console.log("data to save ", data);
             if (Object.keys(data).length > 1) {
-                await DataModel.create(data);
-                //check alert
                 try {
-                    await checkAlert({ data, users })
+                    //check alert
+                    const new_data = validateInterrupts({ data, last_entry })
+                    // await DataModel.create(new_data);
+                    await checkAlert({ data: new_data, users })
                 } catch (error) {
                     console.log("error checking alert", error);
                 }
@@ -101,24 +105,42 @@ const controller = {
 }
 
 module.exports = controller;
-// check for alerts
-async function checkAlert({ data, users }) {
+
+// check valid interrupts
+function validateInterrupts({ data, last_entry }) {
+    let new_data = { ...data }
     try {
-        if (data.interrupt_type === 'none') return;
-        const receivers = users.filter(user=> user.can_receive_email_alerts).map(user => user.email)
-        // const receivers = ["note5mn@gmail.com"]
-        console.log("email receivers ", receivers)
-        const result = await emailSender({
-            template: "alert.handlebars",
-            subject: "Alert!",
-            emails: receivers,
-            payload: {...data,
-                timestamp: data.rtc_timestamp || data.gsm_timestamp || data.gps_timestamp
-            },
-        })
-        console.log("send email result ", result)
-    }
-    catch (error) {
-        console.log(chalk.red("Error checking alerts"), error);
+        // Define priority order explicitly
+        const priority_order = ["calibration switch", "enclosure", "status"];
+        const availableTypes = data.interrupt_types.split(",").map(type => type.trim());
+
+        // Check each type in priority order
+        for (const priority_type of priority_order) {
+            // Only process if this interrupt type is available for this device
+            if (availableTypes.includes(priority_type)) {
+                // Calibration switch check (highest priority)
+                if (priority_type === "calibration switch" && data.calib_switch === "on") {
+                    new_data.interrupt_type = "calibration switch";
+                    break;
+                }
+
+                // Enclosure check (second priority)
+                if (priority_type === "enclosure" && data.enclosure === "open" ) {
+                    new_data.interrupt_type = "enclosure";
+                    break;
+                }
+
+                // Status check (lowest priority)
+                if (priority_type === "status" && data.interrupt_type === "status") {
+                    new_data.interrupt_type = "none";
+                    break;
+                }
+            }
+        }
+
+        return new_data;
+    } catch (error) {
+        console.error("Error validating interrupts:", error);
+        return new_data;
     }
 }
