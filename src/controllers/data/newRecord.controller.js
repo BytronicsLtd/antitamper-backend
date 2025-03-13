@@ -81,7 +81,7 @@ const controller = {
                     data.rtc_timestamp = null;
                 }
             }
-            // mqtt_client.publish("scale-antitamper/data", JSON.stringify(data))
+     
        
             if (Object.keys(data).length > 1) {
                 try {
@@ -91,8 +91,10 @@ const controller = {
                     console.log("data to save ", data_to_save);
                     if (!data.test_data) {
                         await data_to_save.save(new_data);
+                        mqtt_client.publish("scale-antitamper/data", JSON.stringify(data))
+                        await checkAlert({ data: data_to_save, users })
                     }
-                    await checkAlert({ data: data_to_save, users })
+                  
                 } catch (error) {
                     console.log("error checking alert", error);
                 }
