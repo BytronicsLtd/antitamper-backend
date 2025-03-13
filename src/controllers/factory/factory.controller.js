@@ -78,7 +78,7 @@ async function updateFactory(req, res) {
       },
       { new: true } // Return the updated document
     ).session(session);
-    if (!factory) return res.status(404).send({ message: 'FactoryModel not found' });
+    if (!factory) return res.status(404).send({ message: 'factory not found' });
     await ActivityModel.create([{
       action: "edit", // edit, create, delete actions
       user: req.user.id, //user id performing the action
