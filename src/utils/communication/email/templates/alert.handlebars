@@ -144,7 +144,7 @@
             {{!-- state --}}
             <div class="status-item">
                 <div class="status-icon {{#ifEquals state "on"}}icon-success{{else}}icon-error{{/ifEquals}}">
-                    {{#ifEquals state "off"}}✓{{else}}!{{/ifEquals}}
+                    {{#ifEquals state "on"}}✓{{else}}!{{/ifEquals}}
                 </div>
                 <div>
                     <div class="status-label">State</div>
@@ -155,7 +155,7 @@
             {{!-- enclosure --}}
             <div class="status-item">
                 <div class="status-icon {{#ifEquals enclosure "closed"}}icon-success{{else}}icon-error{{/ifEquals}}">
-                    {{#ifEquals enclosure "closed"}}✓{{else}}!{{/ifEquals}}
+                    {{#ifEquals enclosure "closed"}}<div>✓</div>{{else}}<div>!</div>{{/ifEquals}}
                 </div>
                 <div>
                     <div class="status-label">Enclosure</div>

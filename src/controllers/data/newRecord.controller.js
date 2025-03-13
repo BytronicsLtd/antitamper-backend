@@ -26,7 +26,7 @@ const controller = {
                     { can_receive_email_alerts: true },
                     { can_receive_sms_alerts: true }
                 ]
-            }).select("-_id email phone_number can_receive_email_alerts can_receive_sms_alerts")
+            }).select("-_id email phone_number can_receive_email_alerts can_receive_sms_alerts role")
             const last_entry = await DataModel.findOne({ device_id: payload.device_id }).sort({ createdAt: -1 });
 
             //
@@ -82,13 +82,17 @@ const controller = {
                 }
             }
             // mqtt_client.publish("scale-antitamper/data", JSON.stringify(data))
-            // console.log("data to save ", data);
+       
             if (Object.keys(data).length > 1) {
                 try {
                     //check alert
                     const new_data = validateInterrupts({ data, last_entry })
-                    // await DataModel.create(new_data);
-                    await checkAlert({ data: new_data, users })
+                    const data_to_save = new DataModel(new_data);
+                    console.log("data to save ", data_to_save);
+                    if (!data.test_data) {
+                        await data_to_save.save(new_data);
+                    }
+                    await checkAlert({ data: data_to_save, users })
                 } catch (error) {
                     console.log("error checking alert", error);
                 }
@@ -108,7 +112,8 @@ module.exports = controller;
 
 // check valid interrupts
 function validateInterrupts({ data, last_entry }) {
-    let new_data = { ...data }
+    let new_data = { ...data };
+    new_data.interrupt_type = "none"; // set it to none initially
     try {
         // Define priority order explicitly
         const priority_order = ["calibration switch", "enclosure", "status"];
@@ -125,7 +130,7 @@ function validateInterrupts({ data, last_entry }) {
                 }
 
                 // Enclosure check (second priority)
-                if (priority_type === "enclosure" && data.enclosure === "open" ) {
+                if (priority_type === "enclosure" && data.enclosure === "open") {
                     new_data.interrupt_type = "enclosure";
                     break;
                 }
