@@ -44,7 +44,7 @@ const controller = {
                 search_term,
             } = req.query;
             let query = {
-                soft_deleted: { $ne: true }
+                // soft_deleted: { $ne: true }
             };
             // ---------------------- search query  ------------------------
             if (search_term) {
@@ -119,7 +119,7 @@ const controller = {
             device = await DeviceModel.findByIdAndUpdate(id, {
                 $set: data
             }, { runValidators: true, new: true })
-            res.status(200).send({ success: true, message:"Device updated successfully" })
+            res.status(200).send({ success: true, message: "Device updated successfully" })
         } catch (error) {
             console.log(chalk.red("Error fetching device details"), error);
             res.status(500).send({ success: false, error: error.message })
@@ -150,11 +150,7 @@ const controller = {
                 created_data: null,// created data
             }], { session })
             // delete
-            device = await DeviceModel.findByIdAndUpdate(id, {
-                $set: {
-                    soft_deleted: true
-                }
-            }, { runValidators: true, new: true }).session(session)
+            device = await DeviceModel.findOneAndDelete(id).session(session)
             await session.commitTransaction();
             session.endSession();
             res.status(200).send({ success: true, message: "Device successfully deleted", results: device })

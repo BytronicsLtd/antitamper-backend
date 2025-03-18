@@ -109,13 +109,16 @@ const controller = {
                 $or: [
                     { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
                     { email: body.email_or_phone_number }
-                ]
+                ],
+                soft_deleted: { $ne: true }
             }
+            console.log("login  ", query);
+
             // if email already exists return error
             let user = await UserModel.findOne(query)
-            .populate([
-              {path:'factory', select:"name location", transform: (doc) => doc?.toJSON() || doc}
-            ])
+                .populate([
+                    { path: 'factory', select: "name location", transform: (doc) => doc?.toJSON() || doc }
+                ])
             if (!user) {
                 return res.status(404).send({ success: true, message: "User with given email or phone number not found", });
             }
@@ -131,7 +134,7 @@ const controller = {
             const new_token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
                 expiresIn: 2592000, // 30 days
             });
-            const { password, createdAt,token,  updatedAt, ...user_data } = user.toJSON();
+            const { password, createdAt, token, updatedAt, ...user_data } = user.toJSON();
             //save web token to db
             await UserModel.findOneAndUpdate(
                 query,
@@ -141,7 +144,7 @@ const controller = {
                     },
                 },
             );
-            res.status(200).send({ success: true, message: "Successfully logged in", results: user_data, token:new_token });
+            res.status(200).send({ success: true, message: "Successfully logged in", results: user_data, token: new_token });
 
         } catch (error) {
             console.log(chalk.red("Error logging in user "), error);
