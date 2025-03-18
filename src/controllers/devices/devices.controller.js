@@ -119,6 +119,7 @@ const controller = {
             device = await DeviceModel.findByIdAndUpdate(id, {
                 $set: data
             }, { runValidators: true, new: true })
+            res.status(200).send({ success: true, message:"Device updated successfully" })
         } catch (error) {
             console.log(chalk.red("Error fetching device details"), error);
             res.status(500).send({ success: false, error: error.message })

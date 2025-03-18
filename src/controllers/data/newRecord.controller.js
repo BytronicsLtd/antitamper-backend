@@ -88,7 +88,7 @@ const controller = {
                     //check alert
                     const new_data = validateInterrupts({ data, last_entry })
                     const data_to_save = new DataModel(new_data);
-                    console.log("data to save ", data_to_save);
+                    // console.log("data to save ", data_to_save);
                     if (!data.test_data) {
                         await data_to_save.save(new_data);
                         mqtt_client.publish("scale-antitamper/data", JSON.stringify(data))
