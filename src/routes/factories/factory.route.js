@@ -19,7 +19,7 @@ module.exports = ({ app }) => {
   });
 
   // Update an existing factory 
-  app.patch('/api/v1/actories/update/', { preHandler: [authenticate,checkRole(['sys-admin'])] }, (req,res) => {
+  app.patch('/api/v1/factories/update/', { preHandler: [authenticate,checkRole(['sys-admin'])] }, (req,res) => {
     factoriesController.updateFactory(req,res);
   });
 
