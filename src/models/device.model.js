@@ -5,9 +5,11 @@ const Schema = {
     device_id: {
         type: String,
         required: true,
-        unique: function(){
-            
-        }
+        unique: true,
+    },
+    // Bws....
+    company_id: {
+        type: String,
     },
     // could be the scale serial number
     serial_number: {
