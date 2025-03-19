@@ -11,7 +11,6 @@ const controller = {
         try {
             session.startTransaction();
             const payload = req.body;
-            console.log("device  payload ", payload)
             const device = new DeviceModel(payload)
             await ActivityModel.create([{
                 action: "delete", // edit, create, delete actions
