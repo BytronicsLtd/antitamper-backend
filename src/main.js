@@ -82,7 +82,7 @@ function setupMQTT() {
     mqtt_instance.connect()
     mqtt_instance.onMessage((topic, message) => {
         if (topic === "scale-antitamper/data") {
-            console.log(topic, "message ", JSON.parse(message));
+            // console.log(topic, "message ", JSON.parse(message));
         }
 
     })

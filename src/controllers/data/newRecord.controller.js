@@ -19,14 +19,25 @@ const controller = {
             if (!device) {
                 return res.status(404).send({ success: false })
             }
+
+
             //fetch users that belong to the same factory as the device
             let users = await UserModel.find({
-                factory: device?.factory?.id,
                 $or: [
-                    { can_receive_email_alerts: true },
-                    { can_receive_sms_alerts: true }
+                    { role: "sys-admin" },
+                    {
+                        $and: [
+                            { factory: device?.factory?.id },
+                            {
+                                $or: [
+                                    { can_receive_email_alerts: true },
+                                    { can_receive_sms_alerts: true }
+                                ]
+                            }
+                        ]
+                    }
                 ]
-            }).select("-_id email phone_number can_receive_email_alerts can_receive_sms_alerts role")
+            }).select("-_id email phone_number can_receive_email_alerts can_receive_sms_alerts role factory");
             const last_entry = await DataModel.findOne({ device_id: payload.device_id }).sort({ createdAt: -1 });
 
             //
@@ -81,8 +92,8 @@ const controller = {
                     data.rtc_timestamp = null;
                 }
             }
-     
-       
+
+
             if (Object.keys(data).length > 1) {
                 try {
                     //check alert
@@ -94,7 +105,7 @@ const controller = {
                         mqtt_client.publish("scale-antitamper/data", JSON.stringify(data))
                         await checkAlert({ data: data_to_save, users })
                     }
-                  
+
                 } catch (error) {
                     console.log("error checking alert", error);
                 }
