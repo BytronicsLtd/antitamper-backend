@@ -143,7 +143,7 @@ function validateInterrupts({ data, last_entry }) {
                 }
 
                 // Enclosure check (second priority)
-                if (priority_type === "enclosure" && data.enclosure === "open") {
+                if (priority_type === "enclosure" && data.enclosure === "opened") {
                     new_data.interrupt_type = "enclosure";
                     break;
                 }
