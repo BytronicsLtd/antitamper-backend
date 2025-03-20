@@ -126,7 +126,7 @@ module.exports = controller;
 // check valid interrupts
 function validateInterrupts({ data, last_entry }) {
     let new_data = { ...data };
-    new_data.interrupt_type = "none"; // set it to none initially
+    // new_data.interrupt_type = "none"; // set it to none initially
     try {
         // Define priority order explicitly
         const priority_order = ["calibration switch", "enclosure", "status"];
