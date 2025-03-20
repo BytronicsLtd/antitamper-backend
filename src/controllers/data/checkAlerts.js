@@ -6,7 +6,7 @@ const AlertModel = require("../../models/alerts.model.js")
 // check for alerts
 const checkAlert = async ({ data, users }) => {
     try {
-        console.log("users  in check alert ", users);
+        console.log( data, " ===== users  in check alert==== ", users);
         
         if (data.interrupt_type === 'none') return;
         // get email receivers
