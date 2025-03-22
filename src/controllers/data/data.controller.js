@@ -127,7 +127,6 @@ const controller = {
             const metadata = {
                 searchable_parameters: {
                     "device_id": "String",
-                    "interrupt_occured": "Number [0,1]",
                     "start_datetime": "Date",
                     "end_datetime": "Date",
                     "search_term": "String",
