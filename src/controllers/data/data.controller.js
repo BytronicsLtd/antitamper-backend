@@ -1,7 +1,8 @@
 const processResponse = require("../../utils/processResponse");
 const chalk = require("chalk");
 const DataModel = require("../../models/data.model")
-const emailSender = require("../../utils/communication/email/email.util")
+const emailSender = require("../../utils/communication/email/email.util");
+const { addHours } = require("date-fns");
 
 
 const controller = {
@@ -111,6 +112,14 @@ const controller = {
                     id: _id,
                     ...rest,
                 };
+                // 
+                if (rest.rtc_timestamp) {
+                    modifiedResult.rtc_timestamp = addHours(rest.rtc_timestamp, 3)
+                }
+                // 
+                if (!isWithinCurrentYear(rest.gsm_timestamp)) {
+                    modifiedResult.gsm_timestamp = modifiedResult.rtc_timestamp
+                }
 
                 if (result?.gsm_lat && result?.gsm_lon) {
                     modifiedResult.gsm_map_url = `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
@@ -162,3 +171,11 @@ const controller = {
 }
 
 module.exports = controller;
+
+//
+function isWithinCurrentYear(time) {
+    const timestamp = time instanceof Date ? time : new Date(time);
+    const now = new Date();
+
+    return isSameYear(timestamp, now);
+}
