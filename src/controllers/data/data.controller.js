@@ -20,11 +20,15 @@ const controller = {
                 battery_threshold,
                 interrupt_type,
                 factory_name,
-                saved_to_sd
+                saved_to_sd,
+                has_gp_coords,
             } = req.query;
             // query builder
             let query = {};
             //check for device id
+            if (has_gp_coords === "true") {
+                query["gps_location.coordinates"] = { $not: { $size: 0 } };
+            }
             if (device_id) {
                 query.device_id = device_id
             }
@@ -139,7 +143,8 @@ const controller = {
                     "start_datetime": "Date",
                     "end_datetime": "Date",
                     "search_term": "String",
-                    "saved_to_sd": "true|false"
+                    "saved_to_sd": "true|false",
+                    "has_gp_coords": "true|false"
                 }
             };
 
