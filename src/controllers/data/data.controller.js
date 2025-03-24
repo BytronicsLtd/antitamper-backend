@@ -113,9 +113,9 @@ const controller = {
                     ...rest,
                 };
                 // 
-                if (rest.rtc_timestamp) {
-                    modifiedResult.rtc_timestamp = addHours(rest.rtc_timestamp, 3)
-                }
+                // if (rest.rtc_timestamp) {
+                //     modifiedResult.rtc_timestamp = addHours(rest.rtc_timestamp, 3)
+                // }
                 // 
                 if (!isWithinCurrentYear(rest.gsm_timestamp)) {
                     modifiedResult.gsm_timestamp = modifiedResult.rtc_timestamp
