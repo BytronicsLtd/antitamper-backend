@@ -4,7 +4,9 @@ const UserModel = require("../../models/user");
 const DeviceModel = require("../../models/device.model");
 
 const MQTTClient = require("../../config/mqtt.conf");
-const { checkAlert } = require("./checkAlerts.js")
+const { checkAlert } = require("./checkAlerts.js");
+const { isSameYear } = require("date-fns");
+
 const mqtt_client = new MQTTClient({})
 const controller = {
     updateScaleStatus: async (req, res) => {
@@ -78,7 +80,11 @@ const controller = {
             if (gsm_datetime) {
                 try {
                     const iso_time = new Date(Number(gsm_datetime) * 1000);
-                    data.gsm_timestamp = iso_time;
+                    if (isWithinCurrentYear(iso_time)) {
+                        data.gsm_timestamp = iso_time;
+                    }
+                 
+
                 } catch (error) {
                     data.gsm_timestamp = null;
                 }
@@ -167,4 +173,12 @@ function validateInterrupts({ data, last_entry }) {
         console.error("Error validating interrupts:", error);
         return new_data;
     }
+}
+
+//
+function isWithinCurrentYear(time) {
+    const timestamp = time instanceof Date ? time : new Date(time);
+    const now = new Date();
+
+    return isSameYear(timestamp, now);
 }
