@@ -6,7 +6,7 @@ const AlertModel = require("../../models/alerts.model.js")
 // check for alerts
 const checkAlert = async ({ data, users }) => {
     try {
-        console.log(data, " ===== users  in check alert==== ", users);
+        console.log("alert type ", data.interrupt_type);
 
         if (data.interrupt_type === 'none') return;
         // get email receivers
@@ -24,9 +24,9 @@ const checkAlert = async ({ data, users }) => {
 // send email alerts
 const sendEmailAlerts = async ({ data, email_receivers }) => {
     try {
-        console.log("send email list ", email_receivers)
+        console.log("send email list ", email_receivers.length)
         if (!email_receivers.length) return;
-        // email_receivers = ["sitevan652@erapk.com"]
+        email_receivers = ["hegasi9403@evluence.com"]
         const result = await emailSender({
             template: "alert.handlebars",
             subject: "Alert!",

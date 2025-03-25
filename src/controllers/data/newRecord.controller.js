@@ -12,7 +12,7 @@ const controller = {
     updateScaleStatus: async (req, res) => {
         try {
             const payload = req.body;
-
+            mqtt_client.publish("scale-antitamper/data", JSON.stringify(payload))
             // find device details
             const device = await DeviceModel.findOne({ device_id: payload.device_id })
                 .populate([
@@ -128,7 +128,6 @@ const controller = {
                     // console.log("data to save ", data_to_save);
                     if (!data.test_data) {
                         await data_to_save.save(new_data);
-                        mqtt_client.publish("scale-antitamper/data", JSON.stringify(data))
                         await checkAlert({ data: data_to_save, users })
                     }
 
