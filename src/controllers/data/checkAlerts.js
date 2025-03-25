@@ -26,7 +26,7 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
     try {
         console.log("send email list ", email_receivers.length)
         if (!email_receivers.length) return;
-        email_receivers = ["hegasi9403@evluence.com"]
+        // email_receivers = ["hegasi9403@evluence.com"]
         const result = await emailSender({
             template: "alert.handlebars",
             subject: "Alert!",
