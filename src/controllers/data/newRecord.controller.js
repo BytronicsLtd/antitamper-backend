@@ -5,7 +5,7 @@ const DeviceModel = require("../../models/device.model");
 
 const MQTTClient = require("../../config/mqtt.conf");
 const { checkAlert } = require("./checkAlerts.js");
-const { isSameYear } = require("date-fns");
+const { isSameYear, addHours } = require("date-fns");
 
 const mqtt_client = new MQTTClient({})
 const controller = {
@@ -76,12 +76,26 @@ const controller = {
             else {
                 data.gps_timestamp = undefined
             }
+            const now = new Date();
+            const utcDate = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate(),
+                now.getUTCHours(),
+                now.getUTCMinutes(),
+                now.getUTCSeconds()
+            ));
             // parse gsm timestamp
             if (gsm_datetime) {
                 try {
                     const iso_time = new Date(Number(gsm_datetime) * 1000);
                     if (isWithinCurrentYear(iso_time)) {
                         data.gsm_timestamp = iso_time;
+                    }
+                    else {
+                        if (data.saved_to_sd === false) {
+                            data.gsm_timestamp = addHours(utcDate, 3)
+                        }
                     }
 
                 } catch (error) {
@@ -92,7 +106,15 @@ const controller = {
             if (rtc_datetime) {
                 try {
                     const iso_time = new Date(Number(rtc_datetime) * 1000);
-                    data.rtc_timestamp = iso_time;
+
+                    if (isWithinCurrentYear(iso_time)) {
+                        data.rtc_timestamp = iso_time;
+                    }
+                    else {
+                        if (data.saved_to_sd === false) {
+                            data.rtc_timestamp = addHours(utcDate, 3)
+                        }
+                    }
                 } catch (error) {
                     data.rtc_timestamp = null;
                 }
