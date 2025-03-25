@@ -83,7 +83,6 @@ const controller = {
                     if (isWithinCurrentYear(iso_time)) {
                         data.gsm_timestamp = iso_time;
                     }
-                 
 
                 } catch (error) {
                     data.gsm_timestamp = null;
@@ -98,7 +97,6 @@ const controller = {
                     data.rtc_timestamp = null;
                 }
             }
-
 
             if (Object.keys(data).length > 1) {
                 try {

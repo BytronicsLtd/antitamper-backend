@@ -6,8 +6,8 @@ const AlertModel = require("../../models/alerts.model.js")
 // check for alerts
 const checkAlert = async ({ data, users }) => {
     try {
-        console.log( data, " ===== users  in check alert==== ", users);
-        
+        console.log(data, " ===== users  in check alert==== ", users);
+
         if (data.interrupt_type === 'none') return;
         // get email receivers
         let email_receivers = users.filter(user => user.can_receive_email_alerts)
@@ -92,22 +92,20 @@ function getValidTimestamp(data) {
     const isValidDate = (timestamp) => {
         return timestamp instanceof Date && !isNaN(timestamp.getTime());
     };
-
     // Function to convert UTC to Kenyan time (UTC+3)
     const convertToKenyanTime = (timestamp) => {
         if (!isValidDate(timestamp)) return null;
         return new Date(timestamp.getTime() + (3 * 60 * 60 * 1000));
     };
-
     // Check each timestamp in order of preference
     if (data?.gsm_timestamp && isValidDate(data.gsm_timestamp)) {
         return data.gsm_timestamp;
     }
-
+    // 
     if (data?.rtc_timestamp && isValidDate(data.rtc_timestamp)) {
-        return data.rtc_timestamp;
+        return convertToKenyanTime(data.rtc_timestamp);
     }
-
+    // 
     if (data?.gps_timestamp && isValidDate(data.gps_timestamp)) {
         return convertToKenyanTime(data.gps_timestamp);
     }
