@@ -14,7 +14,10 @@ const Schema = {
     // could be the scale serial number
     serial_number: {
         type: String,
-        required: true
+    },
+    // SIM card attached to device
+    device_sim_card: {
+        type: String,
     },
     // 
     phone_number: {
