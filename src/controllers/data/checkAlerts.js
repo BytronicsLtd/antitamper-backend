@@ -1,7 +1,7 @@
 const chalk = require("chalk");
 const emailSender = require("../../utils/communication/email/email.util");
 const { sendSMS } = require("../../utils/communication/sms/sendSMS.util");
-const { format } = require("date-fns");
+const { format, addHours } = require("date-fns");
 const AlertModel = require("../../models/alerts.model.js")
 // check for alerts
 const checkAlert = async ({ data, users }) => {
@@ -26,14 +26,15 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
     try {
         console.log("send email list ", email_receivers.length)
         if (!email_receivers.length) return;
-        // email_receivers = ["hegasi9403@evluence.com"]
+        email_receivers = ["note5mn@gmail.com"]
         const result = await emailSender({
             template: "alert.handlebars",
             subject: "Alert!",
             emails: email_receivers,
             payload: {
                 ...data,
-                timestamp: format(getValidTimestamp(data), "dd/MM/yyy HH:mm")
+                // timestamp: format(getValidTimestamp(data), "dd/MM/yyyy HH:mm")
+                timestamp: getValidTimestamp(data)
             },
         })
         console.log("send email result ", result)
@@ -95,7 +96,7 @@ function getValidTimestamp(data) {
     // Function to convert UTC to Kenyan time (UTC+3)
     const convertToKenyanTime = (timestamp) => {
         if (!isValidDate(timestamp)) return null;
-        return new Date(timestamp.getTime() + (3 * 60 * 60 * 1000));
+        return addHours(timestamp, 3);
     };
     // Check each timestamp in order of preference
     if (data?.gsm_timestamp && isValidDate(data.gsm_timestamp)) {
@@ -103,7 +104,8 @@ function getValidTimestamp(data) {
     }
     // 
     if (data?.rtc_timestamp && isValidDate(data.rtc_timestamp)) {
-        return convertToKenyanTime(data.rtc_timestamp);
+        return data.gsm_timestamp;
+        // return convertToKenyanTime(data.rtc_timestamp);
     }
     // 
     if (data?.gps_timestamp && isValidDate(data.gps_timestamp)) {
