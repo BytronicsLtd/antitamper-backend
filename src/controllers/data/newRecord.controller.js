@@ -170,6 +170,7 @@ function validateInterrupts({ data, last_entry }) {
                 // Calibration switch check (highest priority)
                 if (priority_type === "calibration switch" && data.calib_sw_interrupt_sequence.includes("on")) {
                     new_data.interrupt_type = "calibration switch";
+                    new_data.calib_switch = "on"
                     break;
                 }
 
