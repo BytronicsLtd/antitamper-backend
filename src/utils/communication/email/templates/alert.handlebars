@@ -2,191 +2,240 @@
 <html>
 
 <head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f7fa;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Alert</title>
+  
+  <!-- Quasar UMD CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/quasar@2.12.7/dist/quasar.prod.css" rel="stylesheet" type="text/css">
+  
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css?family=Material+Icons" rel="stylesheet">
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet" type="text/css">
+  
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f7fa;
+    }
 
-        .alert-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
+    .alert-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
 
-        .alert-header {
-            background: #dc2626;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            animation: pulse 2s infinite;
-        }
+    .alert-header {
+      background: #dc2626;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      animation: pulse 2s infinite;
+    }
 
-        @keyframes pulse {
-            0% {
-                background-color: #dc2626;
-            }
+    @keyframes pulse {
+      0% {
+        background-color: #dc2626;
+      }
 
-            50% {
-                background-color: #991b1b;
-            }
+      50% {
+        background-color: #991b1b;
+      }
 
-            100% {
-                background-color: #dc2626;
-            }
-        }
+      100% {
+        background-color: #dc2626;
+      }
+    }
 
-        .alert-header h1 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-        }
+    .alert-header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
 
-        .device-info {
-            background: #1e3a8a;
-            color: white;
-            padding: 15px 20px;
-            font-size: 14px;
-        }
+    .device-info {
+      background: #1e3a8a;
+      color: white;
+      padding: 15px 20px;
+      font-size: 14px;
+    }
 
-        .status-grid {
-            padding: 20px;
-        }
+    .status-grid {
+      padding: 20px;
+    }
 
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-        }
-
-        .status-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        .icon-success {
-            background: #22c55e;
-            color: white;
-        }
-
-        .icon-error {
-            background: #dc2626;
-            color: white;
-            animation: pulse 2s infinite;
-        }
-
-        .status-label {
-            font-weight: 500;
-            color: #1e293b;
-        }
-
-        .status-value {
-            font-family: monospace;
-            color: #475569;
-        }
-
-        .status-alert {
-            color: #dc2626;
-            font-weight: 600;
-        }
-
-        .timestamp {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 13px;
-            margin-top: 5px;
-        }
-    </style>
+    .timestamp {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 13px;
+      margin-top: 5px;
+    }
+  </style>
 </head>
 
 <body>
+  <div id="app">
     <div class="alert-container">
-        <div class="alert-header">
-            <h1>
-                {{#ifEquals interrupt_type "calibration switch"}}
-                ⚠️ ALERT: Calibration Switch Tampering Detected
-                {{/ifEquals}}
-                {{#ifEquals interrupt_type "enclosure"}}
-                ⚠️ ALERT: Enclosure Tampering Detected
-                {{/ifEquals}}
-                {{#ifEquals interrupt_type "state"}}
-                ⏰ ALERT: Weighing scale state has changed
-                {{/ifEquals}}
+      <div class="alert-header" :class="{ 'q-bg-warning': interrupt_type === 'state', 'q-bg-negative': interrupt_type !== 'state' }">
+        <h1 class="q-my-none">
+          {{#ifEquals interrupt_type "calibration switch"}}
+          ⚠️ ALERT: Calibration Switch Tampering Detected
+          {{/ifEquals}}
+          {{#ifEquals interrupt_type "enclosure"}}
+          ⚠️ ALERT: Enclosure Tampering Detected
+          {{/ifEquals}}
+          {{#ifEquals interrupt_type "state"}}
+          ⏰ ALERT: Weighing scale state has changed
+          {{/ifEquals}}
+        </h1>
+      </div>
 
-            </h1>
-        </div>
+      <div class="device-info q-bg-primary">
+        <div>Device ID: {{device_id}}</div>
+        <div class="timestamp">{{timestamp}}</div>
+        {{#if interrupt_type}}
+        <div class="timestamp">Interrupt Type: {{interrupt_type}}</div>
+        {{/if}}
+      </div>
 
-        <div class="device-info">
-            <div>Device ID: {{device_id}}</div>
-            <div class="timestamp">{{timestamp}}</div>
-            {{#if interrupt_type}}
-            <div class="timestamp">Interrupt Type: {{interrupt_type}}</div>
-            {{/if}}
-        </div>
+      <div class="q-pa-md">
+        <q-list bordered separator>
+          <!-- State -->
+          <q-item class="q-my-sm q-pa-md">
+            <q-item-section avatar>
+              <q-avatar :color="state === 'on' ? 'positive' : 'negative'" text-color="white">
+                {{#ifEquals state "on"}}
+                  <i class="material-icons">check</i>
+                {{else}}
+                  <i class="material-icons">close</i>
+                {{/ifEquals}}
+              </q-avatar>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>State</q-item-label>
+              <q-item-label caption :class="{ 'text-negative': state === 'off' }">
+                {{#ifEquals state "off"}}OFF{{else}}ON{{/ifEquals}}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
 
-        <div class="status-grid">
-            {{!-- state --}}
-            <div class="status-item">
-                <div class="status-icon {{#ifEquals state "on"}}icon-success{{else}}icon-error{{/ifEquals}}">
-                    {{#ifEquals state "on"}}✓{{else}}!{{/ifEquals}}
-                </div>
-                <div>
-                    <div class="status-label">State</div>
-                    <div class="status-value">{{#ifEquals state "off"}}OFF{{else}}ON{{/ifEquals}}
-                      </div>
-                </div>
-            </div>
-            {{!-- enclosure --}}
-            <div class="status-item">
-                <div class="status-icon {{#ifEquals enclosure "closed"}}icon-success{{else}}icon-error{{/ifEquals}}">
-                    {{#ifEquals enclosure "closed"}}<div>✓</div>{{else}}<div>!</div>{{/ifEquals}}
-                </div>
-                <div>
-                    <div class="status-label">Enclosure</div>
-                    <div class="status-value">{{#ifEquals enclosure "closed"}}CLOSED{{else}}OPEN{{/ifEquals}}
-                        </div>
-                </div>
-            </div>
-            {{!-- calibration switch --}}
-            <div class="status-item">
-                <div class="status-icon {{#ifEquals calib_switch "on"}}icon-error{{else}}icon-success{{/ifEquals}}">
-                    {{#ifEquals calib_switch "off"}}✓{{else}}!{{/ifEquals}}
-                </div>
-                <div>
-                    <div class="status-label">Calibration Switch</div>
-                    <div class="status-value {{#ifEquals calib_switch "on"}}status-alert{{/ifEquals}}">
-                        {{#ifEquals calib_switch "off"}}OFF{{else}}ON{{/ifEquals}} 
-                    </div>
-                </div>
-            </div>
-            {{!-- sd card available --}}
-            <div class="status-item">
-                <div class="status-icon {{#if sd_card_available}}icon-success{{else}}icon-error{{/if}}">
-                    {{#if sd_card_available}}✓{{else}}!{{/if}}
-                </div>
-                <div>
-                    <div class="status-label">SD Card</div>
-                    <div class="status-value">{{#if sd_card_available}}Available{{else}}Not Available{{/if}}</div>
-                </div>
-            </div>
-        </div>
+          <!-- Enclosure -->
+          <q-item class="q-my-sm q-pa-md">
+            <q-item-section avatar>
+              <q-avatar :color="enclosure === 'closed' ? 'positive' : 'negative'" text-color="white">
+                {{#ifEquals enclosure "closed"}}
+                  <i class="material-icons">check</i>
+                {{else}}
+                  <i class="material-icons">warning</i>
+                {{/ifEquals}}
+              </q-avatar>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Enclosure</q-item-label>
+              <q-item-label caption :class="{ 'text-negative text-weight-bold': enclosure === 'open' }">
+                {{#ifEquals enclosure "closed"}}CLOSED{{else}}OPEN{{/ifEquals}}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <!-- Calibration Switch -->
+          <q-item class="q-my-sm q-pa-md">
+            <q-item-section avatar>
+              <q-avatar :color="calib_switch === 'off' ? 'positive' : 'negative'" text-color="white">
+                {{#ifEquals calib_switch "off"}}
+                  <i class="material-icons">check</i>
+                {{else}}
+                  <i class="material-icons">warning</i>
+                {{/ifEquals}}
+              </q-avatar>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Calibration Switch</q-item-label>
+              <q-item-label caption :class="{ 'text-negative text-weight-bold': calib_switch === 'on' }">
+                {{#ifEquals calib_switch "off"}}OFF{{else}}ON{{/ifEquals}}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <!-- SD Card Available -->
+          <q-item class="q-my-sm q-pa-md">
+            <q-item-section avatar>
+              <q-avatar :color="sd_card_available ? 'positive' : 'negative'" text-color="white">
+                {{#if sd_card_available}}
+                  <i class="material-icons">check</i>
+                {{else}}
+                  <i class="material-icons">warning</i>
+                {{/if}}
+              </q-avatar>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>SD Card</q-item-label>
+              <q-item-label caption :class="{ 'text-negative': !sd_card_available }">
+                {{#if sd_card_available}}Available{{else}}Not Available{{/if}}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </div>
     </div>
+  </div>
+
+  <!-- Scripts -->
+  <!-- Vue.js -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  
+  <!-- Quasar UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/quasar@2.12.7/dist/quasar.umd.prod.js"></script>
+  
+  <script>
+    // This script enables Vue/Quasar to enhance the server-rendered Handlebars template
+    // It will run in the email client if JavaScript is enabled, but the email will
+    // still display correctly without JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create Vue app with Quasar and pass the same data from Handlebars to Vue
+      const app = Vue.createApp({
+        // Mount to existing elements
+        setup() {
+          // Initialize with the same data that was used in Handlebars
+          return {
+            device_id: "{{device_id}}",
+            timestamp: "{{timestamp}}",
+            interrupt_type: "{{interrupt_type}}",
+            state: "{{state}}",
+            enclosure: "{{enclosure}}",
+            calib_switch: "{{calib_switch}}",
+            sd_card_available: {{#if sd_card_available}}true{{else}}false{{/if}}
+          };
+        }
+      });
+      
+      // Use Quasar
+      app.use(Quasar, {
+        config: {
+          brand: {
+            primary: '#1e3a8a',
+            secondary: '#26A69A',
+            accent: '#9C27B0',
+            positive: '#22c55e',
+            negative: '#dc2626',
+            warning: '#F2C037',
+            info: '#31CCEC'
+          }
+        }
+      });
+      
+      // Mount app if element exists
+      if (document.getElementById('app')) {
+        app.mount('#app');
+      }
+    });
+  </script>
 </body>
 
 </html>

@@ -12,7 +12,6 @@ handlebars.registerHelper("ifEquals", function (arg1, arg2, options) {
 });
 
 const emailSender = async ({ template, emails, subject, text, payload, attachments }) => {
-console.log("send email payload ", payload);
 
   try {
     const source = fs.readFileSync(path.join(template_path, template), "utf8");
