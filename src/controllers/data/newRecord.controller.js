@@ -167,14 +167,14 @@ function validateInterrupts({ data, last_entry }) {
         for (const priority_type of priority_order) {
             // Only process if this interrupt type is available for this device
             if (availableTypes.includes(priority_type)) {
-                // Calibration switch check (highest priority)
-                if (priority_type === "calibration switch" && data.calib_switch === "on") {
+                // Calibration switch check (highest priority) && data.calib_switch === "on"
+                if (priority_type === "calibration switch" ) {
                     new_data.interrupt_type = "calibration switch";
                     break;
                 }
 
-                // Enclosure check (second priority)
-                if (priority_type === "enclosure" && data.enclosure === "opened") {
+                // Enclosure check (second priority) && data.enclosure === "opened"
+                if (priority_type === "enclosure" ) {
                     new_data.interrupt_type = "enclosure";
                     break;
                 }
