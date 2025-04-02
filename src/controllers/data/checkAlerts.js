@@ -6,9 +6,9 @@ const AlertModel = require("../../models/alerts.model.js")
 // check for alerts
 const checkAlert = async ({ data, users }) => {
     try {
-        console.log("alert type ", data.interrupt_type);
+        console.log("alert type ", data);
 
-        if (data.interrupt_type === 'none') return;
+        if (!data.alert_types.length) return;
         // get email receivers
         let email_receivers = users.filter(user => user.can_receive_email_alerts)
         email_receivers = email_receivers.map(user => user.email)
@@ -26,14 +26,13 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
     try {
         console.log("send email list ", email_receivers.length)
         if (!email_receivers.length) return;
-        // email_receivers = ["note5mn@gmail.com"]
+        email_receivers = ["note5mn@gmail.com"]
         const result = await emailSender({
             template: "alert.handlebars",
             subject: "Alert!",
             emails: email_receivers,
             payload: {
                 ...data,
-                // timestamp: format(getValidTimestamp(data), "dd/MM/yyyy HH:mm")
                 timestamp: getValidTimestamp(data)
             },
         })
@@ -99,18 +98,18 @@ function getValidTimestamp(data) {
         return addHours(timestamp, 3);
     };
     // Check each timestamp in order of preference
-    if (data?.gsm_timestamp && isValidDate(data.gsm_timestamp)) {
-        return data.gsm_timestamp;
-    }
+    // if (data?.gsm_timestamp && isValidDate(data.gsm_timestamp)) {
+    //     return data.gsm_timestamp;
+    // }
     // 
     if (data?.rtc_timestamp && isValidDate(data.rtc_timestamp)) {
-        return data.gsm_timestamp;
+        return data.rtc_timestamp;
         // return convertToKenyanTime(data.rtc_timestamp);
     }
     // 
-    if (data?.gps_timestamp && isValidDate(data.gps_timestamp)) {
-        return convertToKenyanTime(data.gps_timestamp);
-    }
+    // if (data?.gps_timestamp && isValidDate(data.gps_timestamp)) {
+    //     return convertToKenyanTime(data.gps_timestamp);
+    // }
 
     // If no valid timestamp is found, return null or a default value
     return null;

@@ -3,6 +3,17 @@
 
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=battery_1_bar" />
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+    </style>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -24,7 +35,6 @@
             background: #dc2626;
             color: white;
             padding: 20px;
-            text-align: center;
             animation: pulse 2s infinite;
         }
 
@@ -46,6 +56,8 @@
             margin: 0;
             font-size: 18px;
             font-weight: 600;
+            text-align: left;
+            margin: 10px 0px;
         }
 
         .device-info {
@@ -62,7 +74,7 @@
         .status-item {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px 20px;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 10px;
@@ -79,6 +91,14 @@
             justify-content: center;
             font-weight: bold;
             flex-shrink: 0;
+        }
+
+        .battery-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .icon-success {
@@ -118,60 +138,54 @@
 <body>
     <div class="alert-container">
         <div class="alert-header">
-            <h1>
-                {{#ifEquals interrupt_type "calibration switch"}}
-                ⚠️ ALERT: Calibration Switch Tampering Detected
-                {{/ifEquals}}
-                {{#ifEquals interrupt_type "enclosure"}}
-                ⚠️ ALERT: Enclosure Tampering Detected
-                {{/ifEquals}}
-                {{#ifEquals interrupt_type "state"}}
-                ⏰ ALERT: Weighing scale state has changed
-                {{/ifEquals}}
-
-            </h1>
+            {{#includes alert_types "calibration-switch"}}
+            <h1>⚠️ ALERT: Calibration Switch Tampering Detected </h1>
+            {{/includes}}
+            {{#includes alert_types "enclosure"}}
+            <h1> ⚠️ ALERT: Enclosure Tampering Detected <br> </h1>
+            {{/includes}}
+            {{#includes alert_types "battery-voltage"}}
+            <h1> ⏰ ALERT: Low battery voltage <br> </h1>
+            {{/includes}}
         </div>
 
         <div class="device-info">
             <div>Device ID: {{device_id}}</div>
             <div class="timestamp">{{timestamp}}</div>
-            {{#if interrupt_type}}
-            <div class="timestamp">Interrupt Type: {{interrupt_type}}</div>
-            {{/if}}
         </div>
 
         <div class="status-grid">
             {{!-- state --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals state "on"}}icon-success{{else}}icon-error{{/ifEquals}}">
+                <div class="status-icon {{#ifEquals state " on"}}icon-success{{else}}icon-error{{/ifEquals}}">
                     {{#ifEquals state "on"}}✓{{else}}!{{/ifEquals}}
                 </div>
-                <div>
+                <div style="margin: 0px 0px  0px 10px;">
                     <div class="status-label">State</div>
                     <div class="status-value">{{#ifEquals state "off"}}OFF{{else}}ON{{/ifEquals}}
-                      </div>
+                    </div>
                 </div>
             </div>
             {{!-- enclosure --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals enclosure "closed"}}icon-success{{else}}icon-error{{/ifEquals}}">
+                <div class="status-icon {{#ifEquals enclosure " closed"}}icon-success{{else}}icon-error{{/ifEquals}}">
                     {{#ifEquals enclosure "closed"}}<div>✓</div>{{else}}<div>!</div>{{/ifEquals}}
                 </div>
-                <div>
+                <div style="margin: 0px 0px  0px 10px;">
                     <div class="status-label">Enclosure</div>
                     <div class="status-value">{{#ifEquals enclosure "closed"}}CLOSED{{else}}OPEN{{/ifEquals}}
-                        </div>
+                    </div>
                 </div>
             </div>
             {{!-- calibration switch --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals calib_switch "on"}}icon-error{{else}}icon-success{{/ifEquals}}">
+                <div class="status-icon {{#ifEquals calib_switch " on"}}icon-error{{else}}icon-success{{/ifEquals}}">
                     {{#ifEquals calib_switch "off"}}✓{{else}}!{{/ifEquals}}
                 </div>
-                <div>
+                <div style="margin: 0px 0px  0px 10px;">
                     <div class="status-label">Calibration Switch</div>
-                    <div class="status-value {{#ifEquals calib_switch "on"}}status-alert{{/ifEquals}}">
-                        {{#ifEquals calib_switch "off"}}OFF{{else}}ON{{/ifEquals}} 
+                    <div class="status-value {{#ifEquals calib_switch " on"}}status-alert{{/ifEquals}}">
+                        {{#ifEquals calib_switch "off"}}OFF{{else}}ON{{/ifEquals}}
                     </div>
                 </div>
             </div>
@@ -180,9 +194,20 @@
                 <div class="status-icon {{#if sd_card_available}}icon-success{{else}}icon-error{{/if}}">
                     {{#if sd_card_available}}✓{{else}}!{{/if}}
                 </div>
-                <div>
+                <div style="margin: 0px 0px  0px 10px;">
                     <div class="status-label">SD Card</div>
                     <div class="status-value">{{#if sd_card_available}}Available{{else}}Not Available{{/if}}</div>
+                </div>
+            </div>
+            {{!-- Battery voltage --}}
+            <div class="status-item">
+                <div>
+                    <img src="https://i.fbcd.co/products/resized/resized-750-500/9d63762998e6beae228599b41ec88c805b6daf681cdad4ea0771439c41254e46.webp"
+                        alt="" class="battery-icon">
+                </div>
+                <div style="margin: 0px 0px  0px 10px;">
+                    <div class="status-label">Battery voltage</div>
+                    <div class="status-value">{{battery_voltage}}</div>
                 </div>
             </div>
         </div>

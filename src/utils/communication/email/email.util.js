@@ -10,6 +10,19 @@ const template_path = require("./templates/index");
 handlebars.registerHelper("ifEquals", function (arg1, arg2, options) {
   return arg1 === arg2 ? options.fn(this) : options.inverse(this);
 });
+// add includes
+handlebars.registerHelper("includes", function (array, value, options) {
+  // Check if the array exists and is actually an array
+  if (array && Array.isArray(array)) {
+    return array.includes(value) ? options.fn(this) : options.inverse(this);
+  }
+  // Handle string includes case
+  if (typeof array === 'string') {
+    return array.includes(value) ? options.fn(this) : options.inverse(this);
+  }
+  // Default to false if not an array or string
+  return options.inverse(this);
+});
 
 const emailSender = async ({ template, emails, subject, text, payload, attachments }) => {
 

@@ -157,10 +157,11 @@ module.exports = controller;
 // check valid interrupts
 function validateInterrupts({ data, last_entry }) {
     let new_data = { ...data };
-    new_data.interrupt_type = "none"; // set it to none initially
+
+    new_data.alert_types = []; // set it to [] initially
     try {
         // Define priority order explicitly
-        const priority_order = ["calibration switch", "enclosure", "status"];
+        const priority_order = ["calibration switch", "enclosure"];
         const availableTypes = data.interrupt_types.split(",").map(type => type.trim());
 
         // Check each type in priority order
@@ -168,22 +169,19 @@ function validateInterrupts({ data, last_entry }) {
             // Only process if this interrupt type is available for this device
             if (availableTypes.includes(priority_type)) {
                 // Calibration switch check (highest priority)
-                if (priority_type === "calibration switch" && data.calib_sw_interrupt_sequence.includes("on")) {
-                    new_data.interrupt_type = "calibration switch";
+                if (priority_type === "calibration switch" && data.calib_sw_interrupt_events.includes(" on ")) {
+                    new_data.alert_types.push("calibration-switch");
                     new_data.calib_switch = "on"
-                    break;
                 }
 
                 // Enclosure check (second priority) 
-                if (priority_type === "enclosure" && data.enclosure_interrupt_sequence.includes("opened")) {
-                    new_data.interrupt_type = "enclosure";
-                    break;
+                if (priority_type === "enclosure" && data.enclosure_interrupt_events.includes(" opened ")) {
+                    new_data.alert_types.push("enclosure");
+                    new_data.enclosure = "opened"
                 }
-
-                // Status check (lowest priority)
-                if (priority_type === "status" && data.interrupt_type === "status") {
-                    new_data.interrupt_type = "none";
-                    break;
+                // Enclosure check (second priority) 
+                if ( data.battery_voltage < 3.4) {
+                    new_data.alert_types.push("battery-voltage");
                 }
             }
         }
