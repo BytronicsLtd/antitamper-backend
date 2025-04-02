@@ -138,12 +138,13 @@
 <body>
     <div class="alert-container">
         <div class="alert-header">
-            {{#includes alert_types "calibration-switch"}}
-            <h1>⚠️ ALERT: Calibration Switch Tampering Detected </h1>
-            {{/includes}}
             {{#includes alert_types "enclosure"}}
             <h1> ⚠️ ALERT: Enclosure Tampering Detected <br> </h1>
             {{/includes}}
+            {{#includes alert_types "calibration-switch"}}
+            <h1>⚠️ ALERT: Calibration Switch Tampering Detected </h1>
+            {{/includes}}
+
             {{#includes alert_types "battery-voltage"}}
             <h1> ⏰ ALERT: Low battery voltage <br> </h1>
             {{/includes}}
@@ -168,7 +169,7 @@
             </div>
             {{!-- enclosure --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals enclosure "closed"}}icon-success{{else}}icon-error{{/ifEquals}}">
+                <div class="status-icon {{#ifEquals enclosure " closed"}}icon-success{{else}}icon-error{{/ifEquals}}">
                     {{#ifEquals enclosure "closed"}}<div>✓</div>{{else}}<div>!</div>{{/ifEquals}}
                 </div>
                 <div style="margin: 0px 0px  0px 10px;">
@@ -179,12 +180,12 @@
             </div>
             {{!-- calibration switch --}}
             <div class="status-item">
-                <div class="status-icon {{#ifEquals calib_switch "on"}}icon-error{{else}}icon-success{{/ifEquals}}">
+                <div class="status-icon {{#ifEquals calib_switch " on"}}icon-error{{else}}icon-success{{/ifEquals}}">
                     {{#ifEquals calib_switch "off"}}✓{{else}}!{{/ifEquals}}
                 </div>
                 <div style="margin: 0px 0px  0px 10px;">
                     <div class="status-label">Calibration Switch</div>
-                    <div class="status-value {{#ifEquals calib_switch "on"}}status-alert{{/ifEquals}}">
+                    <div class="status-value {{#ifEquals calib_switch " on"}}status-alert{{/ifEquals}}">
                         {{#ifEquals calib_switch "off"}}OFF{{else}}ON{{/ifEquals}}
                     </div>
                 </div>
