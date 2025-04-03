@@ -93,7 +93,7 @@ const controller = {
             }
             console.log("alerts  filter ", query)
             const { page, size } = req.query;
-            const limit = size ? +size : 1000;
+            const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
             const results = await DataModel.paginate(query, {
                 page, limit, offset,
