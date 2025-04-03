@@ -161,7 +161,7 @@ function validateInterrupts({ data, last_entry }) {
     new_data.alert_types = []; // set it to [] initially
     try {
         // Define priority order explicitly
-        const priority_order = ["calibration switch", "enclosure"];
+        const priority_order = ["calibration switch", "enclosure", "battery_voltage"];
         const availableTypes = data.interrupt_types.split(",").map(type => type.trim());
 
         // Check each type in priority order
@@ -180,7 +180,7 @@ function validateInterrupts({ data, last_entry }) {
                     new_data.enclosure = "opened"
                 }
                 // Enclosure check (second priority) 
-                if ( data.battery_voltage < 3.4) {
+                if (data.battery_voltage < 3.4) {
                     new_data.alert_types.push("battery-voltage");
                 }
             }

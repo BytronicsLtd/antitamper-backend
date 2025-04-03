@@ -26,13 +26,13 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
     try {
         console.log("send email list ", email_receivers.length)
         if (!email_receivers.length) return;
-        // email_receivers = ["note5mn@gmail.com"]
+        email_receivers = ["note5mn@gmail.com"]
         const result = await emailSender({
             template: "alert.handlebars",
             subject: "Alert!",
             emails: email_receivers,
             payload: {
-                ...data,
+                ...data._doc,
                 timestamp: getValidTimestamp(data)
             },
         })
@@ -40,15 +40,8 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
         //TODO
         // for await (const email of email_receivers) {
         //     await AlertModel.create({
-
-        //         //   user: , //user id performing the action
         //         email: email, //email of the user 
-        //         phone_number: { type: String }, //phone number of the user 
-        //         //   role: , //role of the user 
-        //         device_id: data.device_id,  // device id
-        //         types: data.interrupt_types,
-        //         status: "sent",
-        //         record_id: data._id//user id performing the action
+           
         //     })
         // }
     }
@@ -103,8 +96,8 @@ function getValidTimestamp(data) {
     // }
     // 
     if (data?.rtc_timestamp && isValidDate(data.rtc_timestamp)) {
-        return data.rtc_timestamp;
-        // return convertToKenyanTime(data.rtc_timestamp);
+        // return data.rtc_timestamp;
+        return convertToKenyanTime(data.rtc_timestamp);
     }
     // 
     // if (data?.gps_timestamp && isValidDate(data.gps_timestamp)) {
