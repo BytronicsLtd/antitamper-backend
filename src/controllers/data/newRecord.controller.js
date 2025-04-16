@@ -171,13 +171,13 @@ function validateInterrupts({ data, last_entry }) {
                 // Calibration switch check (highest priority)
                 if (priority_type === "calibration switch" && data.calib_sw_interrupt_events.includes(" on ")) {
                     new_data.alert_types.push("calibration-switch");
-                    new_data.calib_switch = "on"
+                    // new_data.calib_switch = "on"
                 }
 
                 // Enclosure check (second priority) 
                 if (priority_type === "enclosure" && data.enclosure_interrupt_events.includes(" opened ")) {
                     new_data.alert_types.push("enclosure");
-                    new_data.enclosure = "opened"
+                    // new_data.enclosure = "opened"
                 }
                 // Enclosure check (second priority) 
                 if (data.battery_voltage < 3.4) {
