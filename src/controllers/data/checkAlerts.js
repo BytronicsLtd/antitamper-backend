@@ -57,6 +57,8 @@ From backup: ${data.saved_to_sd}
 Time: ${format(data.rtc_timestamp, "dd/MM/yyy HH:mm")}
 `
         if (!sms_receivers.length) return;
+        console.log("sms_receivers ==== ", sms_receivers);
+        
         let phone_numbers = sms_receivers.map(user => user.phone_number)
         // phone_numbers = [254705773510]
         phone_numbers = phone_numbers

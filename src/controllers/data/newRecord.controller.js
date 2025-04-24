@@ -25,6 +25,7 @@ const controller = {
 
             //fetch users that belong to the same factory as the device
             let users = await UserModel.find({
+                soft_deleted:false,
                 $or: [
                     { role: "sys-admin" },
                     {
