@@ -38,7 +38,7 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
         })
         console.log("send email result ", result)
         //TODO
-        await AlertModel.create({ type: 'email', ...result })
+        await AlertModel.create({ type: 'email', ...result, reference_data: data._doc._id })
 
     }
     catch (error) {
@@ -62,7 +62,7 @@ Time: ${format(data.rtc_timestamp, "dd/MM/yyy HH:mm")}
         phone_numbers = phone_numbers
         const results = await sendSMS({ phone_numbers, message })
         console.log("send sms result ", results)
-        await AlertModel.create({type:'sms',...results})
+        await AlertModel.create({ type: 'sms', ...results, reference_data: data._doc._id })
     }
     catch (error) {
         console.log(chalk.red("Error checking alerts"), error);
