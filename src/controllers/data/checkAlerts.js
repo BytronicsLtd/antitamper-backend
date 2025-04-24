@@ -52,8 +52,8 @@ const sendSMSAlerts = async ({ data, sms_receivers }) => {
 ${data.interrupt_type} tampering detected
 Device: ${data.device_id}
 Battery: ${data.battery_voltage?.toFixed(2)}V
-Storage available: ${data.sd_card_available}
-From storage: ${data.saved_to_sd}
+Backup available: ${data.sd_card_available}
+From backup: ${data.saved_to_sd}
 Time: ${format(data.rtc_timestamp, "dd/MM/yyy HH:mm")}
 `
         if (!sms_receivers.length) return;
