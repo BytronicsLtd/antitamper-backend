@@ -15,7 +15,7 @@ const checkAlert = async ({ data, users }) => {
         // get sms receivers
         let sms_receivers = users.filter(user => user.can_receive_sms_alerts)
         sendEmailAlerts({ data, email_receivers }) // send email alerts
-        // sendSMSAlerts({ data, sms_receivers })
+        sendSMSAlerts({ data, sms_receivers })
     }
     catch (error) {
         console.log(chalk.red("Error checking alerts"), error);
@@ -38,12 +38,8 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
         })
         console.log("send email result ", result)
         //TODO
-        // for await (const email of email_receivers) {
-        //     await AlertModel.create({
-        //         email: email, //email of the user 
-           
-        //     })
-        // }
+        await AlertModel.create({ type: 'email', ...result })
+
     }
     catch (error) {
         console.log(chalk.red("Error checking alerts"), error);
@@ -52,24 +48,21 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
 // send sms alerts
 const sendSMSAlerts = async ({ data, sms_receivers }) => {
     try {
-        let message = `Alert from device ${data.device_id}
-                 Alert(s): ${data.interrupt_types} 
-                 State: ${data.state}
-                 Enclosure: ${data.enclosure}
-                 Calibration switch: ${data.calib_switch}
-                 Time: ${format(getValidTimestamp(data), "dd/MM/yyy HH:mm")}
-                `
-
-        console.log("sms receivers ", sms_receivers);
-        console.log("sms message ", message);
-
+        let message = `Alert!
+${data.interrupt_type} tampering detected
+Device: ${data.device_id}
+Battery: ${data.battery_voltage?.toFixed(2)}V
+Storage available: ${data.sd_card_available}
+From storage: ${data.saved_to_sd}
+Time: ${format(data.rtc_timestamp, "dd/MM/yyy HH:mm")}
+`
         if (!sms_receivers.length) return;
         let phone_numbers = sms_receivers.map(user => user.phone_number)
-        phone_numbers = [254724517084]
-        phone_numbers = phone_numbers.join(",")
-        const { success, sent, failed } = await sendSMS({ phone_numbers, message })
-
-        console.log("send sms result ", failed)
+        // phone_numbers = [254705773510]
+        phone_numbers = phone_numbers
+        const results = await sendSMS({ phone_numbers, message })
+        console.log("send sms result ", results)
+        await AlertModel.create({type:'sms',...results})
     }
     catch (error) {
         console.log(chalk.red("Error checking alerts"), error);

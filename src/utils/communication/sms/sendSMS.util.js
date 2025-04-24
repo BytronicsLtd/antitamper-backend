@@ -4,21 +4,27 @@ const chalk = require("chalk");
 async function sendSMS({ message, phone_numbers }) {
     try {
         const payload = {
-            apikey: process.env.SMS_API_KEY,
-            partnerID: process.env.SMS_PARTNERID,
-            message: message,
-            shortcode: process.env.SMS_SHORTCODE,
-            mobile: phone_numbers
+            senderid: process.env.SMS_USERID,
+            password: process.env.SMS_PASSWORD,
+            userid: process.env.SMS_USERID,
+            senderid: process.env.SMS_SHORTCODE,
+            msgType:'text',
+            // sendMethod:'quick',
+            sms: [
+                {
+                    mobile: phone_numbers,
+                    msg: message
+                },
+            ]
         }
         const response = await axios.post(process.env.SMS_URL, payload)
-        console.log("send sms response ", response.data);
-        const responses = response.data.responses
-        const sent = responses.filter((response) => response['response-code'] === 200)
-        const failed = responses.filter((response) => response['response-code'] >= 400)
-        return { success: true, sent, failed }
+        console.log("send sms response ", JSON.stringify(response.data));
+        const {status, transactionId, requestTime, sms} = response.data;
+        
+        return { success: status, transactionId, requestTime, sms }
 
     } catch (error) {
-        console.log(chalk.red("error sending sms"), error.response.data);
+        console.log(chalk.red("error sending sms"), error);
         return { success: false, error }
     }
 }
