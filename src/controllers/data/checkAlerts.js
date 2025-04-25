@@ -33,7 +33,7 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
             emails: email_receivers,
             payload: {
                 ...data._doc,
-                timestamp: getValidTimestamp(data)
+                timestamp: format(data.rtc_timestamp, "dd/MM/yyy HH:mm")
             },
         })
         console.log("send email result ", result)
