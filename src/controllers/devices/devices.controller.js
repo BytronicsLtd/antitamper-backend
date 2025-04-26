@@ -43,7 +43,7 @@ const controller = {
                 search_term,
             } = req.query;
             let query = {
-                // soft_deleted: { $ne: true }
+                soft_deleted: { $ne: true }
             };
             // ---------------------- search query  ------------------------
             if (search_term) {
@@ -128,10 +128,10 @@ const controller = {
     remove: async (req, res) => {
         const session = await mongoose.startSession();
         try {
+            session.startTransaction();
             const id = req.body.id;
             let device = await DeviceModel.findById(id);
-            console.log("Found device to delete ", device);
-            session.startTransaction();
+           
             if (!device) {
                 return res.status(404).send({ success: false, message: "Device with given ID not found" })
             }

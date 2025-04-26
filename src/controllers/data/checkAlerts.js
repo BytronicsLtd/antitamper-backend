@@ -77,30 +77,3 @@ Battery: ${data.battery_voltage?.toFixed(2)} V
 module.exports = {
     checkAlert
 }
-function getValidTimestamp(data) {
-    // Function to validate if a timestamp is valid
-    const isValidDate = (timestamp) => {
-        return timestamp instanceof Date && !isNaN(timestamp.getTime());
-    };
-    // Function to convert UTC to Kenyan time (UTC+3)
-    const convertToKenyanTime = (timestamp) => {
-        if (!isValidDate(timestamp)) return null;
-        return addHours(timestamp, 3);
-    };
-    // Check each timestamp in order of preference
-    // if (data?.gsm_timestamp && isValidDate(data.gsm_timestamp)) {
-    //     return data.gsm_timestamp;
-    // }
-    // 
-    if (data?.rtc_timestamp && isValidDate(data.rtc_timestamp)) {
-        // return data.rtc_timestamp;
-        return convertToKenyanTime(data.rtc_timestamp);
-    }
-    // 
-    // if (data?.gps_timestamp && isValidDate(data.gps_timestamp)) {
-    //     return convertToKenyanTime(data.gps_timestamp);
-    // }
-
-    // If no valid timestamp is found, return null or a default value
-    return null;
-}
