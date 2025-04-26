@@ -1,6 +1,4 @@
 const chalk = require("chalk");
-const UserModel = require("../../models/user");
-const ActivityModel = require("../../models/activityLog");
 const jwt = require("jsonwebtoken"); // used to create, sign, and verify tokens
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
@@ -9,6 +7,9 @@ const phoneNumberFormatter = require("../../utils/phoneNumberFormatter.util");
 const passwordValidationUtil = require("../../utils/passwordValidate.util");
 const emailSender = require("../../utils/communication/email/email.util");
 const { addMinutes, format } = require("date-fns");
+// 
+const UserModel = require("../../models/user");
+const ActivityModel = require("../../models/activityLog");
 
 
 const controller = {

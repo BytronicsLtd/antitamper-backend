@@ -107,6 +107,7 @@ schema.method("toJSON", function () {
   return object;
 });
 schema.pre('save', function (next) {
+  console.log("pre save profile ========================== ", this);
   if (this.isNew) {
     // Create operation
     if (this.role !== 'sys-admin' && !this.factory) {
@@ -115,6 +116,14 @@ schema.pre('save', function (next) {
   } else {
     // Update operation
     // Your update-specific logic here
+  }
+  next();
+});
+//pre save
+schema.pre('validate', async function (next) {
+  console.log("pre validate profile ========================== ", this.factory);
+  if (this.factory === "") {
+      this.factory = null
   }
   next();
 });

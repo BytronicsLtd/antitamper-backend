@@ -7,10 +7,26 @@ exports.getUsers = async (req, res) => {
     let = {
       email_confirmed,
       search_term,
+      soft_deleted
     } = req.query;
+    const user = req.user;
+    console.log("user -------- ", user);
+    // handle soft delete
     let query = {
       soft_deleted: { $ne: true }
     };
+
+    if (user.role === 'sys-admin' && soft_deleted) {
+      if (soft_deleted === "true") {
+        query.soft_deleted = true;
+      }
+      if (soft_deleted === "false") {
+        query.soft_deleted = false;
+      }
+      if (soft_deleted === 'any') {
+        delete query.soft_deleted
+      }
+    }
     // ---------------------- search query  ------------------------
     if (search_term) {
       query = {
@@ -34,7 +50,7 @@ exports.getUsers = async (req, res) => {
     const offset = page ? (page - 1) * limit : 0;
     const results = await UserModel.paginate(query, {
       page, limit, offset,
-      select: `name email phone_number email_confirmed role status can_receive_sms_alerts can_receive_email_alerts`,
+      select: `name email phone_number email_confirmed role status can_receive_sms_alerts can_receive_email_alerts soft_deleted factory level`,
       sort: '-createdAt',
     });
     // Add metadata for searchable parameters
@@ -89,10 +105,14 @@ exports.getUserById = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { password, id, ...rest } = req.body
-    const updatedUser = await UserModel.findByIdAndUpdate(id, {
+    let query = {
+      _id: id,
+      soft_deleted: { $ne: true }
+    }
+    const updatedUser = await UserModel.findOneAndUpdate(query, {
       $set: rest
     }, { new: true });
-    if (!updatedUser) return res.status(404).send({ success: false, message: "UserModel not found" });
+    if (!updatedUser) return res.status(404).send({ success: false, message: "User not found" });
     res.status(200).send({ success: true, results: updatedUser });
   } catch (err) {
     res.status(500).send({ success: false, message: "Error updating user", error: err.message });

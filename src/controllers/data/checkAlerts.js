@@ -2,6 +2,8 @@ const chalk = require("chalk");
 const emailSender = require("../../utils/communication/email/email.util");
 const { sendSMS } = require("../../utils/communication/sms/sendSMS.util");
 const { format, addHours } = require("date-fns");
+const { formatInTimeZone  } = require('date-fns-tz');
+
 const AlertModel = require("../../models/alerts.model.js")
 // check for alerts
 const checkAlert = async ({ data, users }) => {
@@ -24,6 +26,9 @@ const checkAlert = async ({ data, users }) => {
 // send email alerts
 const sendEmailAlerts = async ({ data, email_receivers }) => {
     try {
+        const local_ke_date = formatInTimeZone (data.rtc_timestamp, 'Africa/Nairobi', 'yyyy-MM-dd HH:mm');
+  
+
         console.log("send email list ", email_receivers.length)
         if (!email_receivers.length) return;
         // email_receivers = ["note5mn@gmail.com"]
@@ -33,7 +38,7 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
             emails: email_receivers,
             payload: {
                 ...data._doc,
-                timestamp: format(data.rtc_timestamp, "dd/MM/yyy HH:mm")
+                timestamp: local_ke_date
             },
         })
         console.log("send email result ", result)
@@ -48,22 +53,23 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
 // send sms alerts
 const sendSMSAlerts = async ({ data, sms_receivers }) => {
     try {
+        const local_ke_date = formatInTimeZone (data.rtc_timestamp, 'Africa/Nairobi', 'yyyy-MM-dd HH:mm');
+
         let message = `Alert!
 ${data.interrupt_type} tampering detected
 Device: ${data.device_id}
 Battery: ${data.battery_voltage?.toFixed(2)}V
 Backup available: ${data.sd_card_available}
 From backup: ${data.saved_to_sd}
-Time: ${format(data.rtc_timestamp, "dd/MM/yyy HH:mm")}
+Time: ${local_ke_date}
 `
         if (!sms_receivers.length) return;
-        console.log("sms_receivers ==== ", sms_receivers);
         
         let phone_numbers = sms_receivers.map(user => user.phone_number)
         // phone_numbers = [254705773510]
         phone_numbers = phone_numbers
         const results = await sendSMS({ phone_numbers, message })
-        console.log("send sms result ", results)
+        // console.log("send sms result ", results)
         await AlertModel.create({ type: 'sms', results, reference_data: data._doc._id,message, phone_numbers, timestamp:data.rtc_timestamp  })
     }
     catch (error) {

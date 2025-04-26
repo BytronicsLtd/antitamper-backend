@@ -39,7 +39,7 @@ const controller = {
             emailSender({
                 template: "reset-password.handlebars",
                 subject: "Password reset confirmation",
-                emails: [body.email],
+                emails: [user.email],
                 payload: {
                     confirmation_code_exp_time: format(
                         body.confirmation_code_exp_time,

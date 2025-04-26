@@ -43,7 +43,7 @@ module.exports = ({ app }) => {
   app.get('/api/v1/users/details/', { preHandler: [authenticate,] }, (req, res) => {
     userController.getUserById(req, res);
   });
-  // Retrieve a specific user by ID
+  // Retrieve login in user details
   app.get('/api/v1/users/me/', { preHandler: [authenticate,] }, (req, res) => {
     userController.getMe(req, res);
   });
