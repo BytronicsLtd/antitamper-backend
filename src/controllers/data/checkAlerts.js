@@ -27,8 +27,6 @@ const checkAlert = async ({ data, users }) => {
 const sendEmailAlerts = async ({ data, email_receivers }) => {
     try {
         const local_ke_date = formatInTimeZone (data.rtc_timestamp, 'Africa/Nairobi', 'yyyy-MM-dd HH:mm');
-  
-
         console.log("send email list ", email_receivers.length)
         if (!email_receivers.length) return;
         // email_receivers = ["note5mn@gmail.com"]
