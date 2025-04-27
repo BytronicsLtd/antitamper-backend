@@ -10,11 +10,13 @@ exports.getUsers = async (req, res) => {
       soft_deleted
     } = req.query;
     const user = req.user;
-    console.log("user -------- ", user);
     // handle soft delete
     let query = {
       soft_deleted: { $ne: true }
     };
+    if (user.level === 'factory') {
+      query.factory = user.factory
+    }
 
     if (user.role === 'sys-admin' && soft_deleted) {
       if (soft_deleted === "true") {
@@ -90,14 +92,14 @@ exports.getUserById = async (req, res) => {
   try {
     const id = req.query.id
     const user = await UserModel.findById(id)
-      .select('name email phone_number email_confirmed role status user')
+      .select('-password -token ')
       .populate([
         { path: 'factory', select: "name location", transform: (doc) => doc?.toJSON() || doc }
       ])
-    if (!user) return res.status(404).send({ success: false, message: "UserModel not found" });
+    if (!user) return res.status(404).send({ success: false, message: "User not found" });
     res.status(200).send({ success: true, results: user });
   } catch (err) {
-    res.status(500).send({ success: false, message: "Error retrieving user", error: err.message });
+    res.status(500).send({ success: false, message: "Error retrieving user details", error: err.message });
   }
 };
 
@@ -107,7 +109,6 @@ exports.updateUser = async (req, res) => {
     const { password, id, ...rest } = req.body
     let query = {
       _id: id,
-      soft_deleted: { $ne: true }
     }
     const updatedUser = await UserModel.findOneAndUpdate(query, {
       $set: rest
@@ -143,11 +144,7 @@ exports.remove = async (req, res) => {
       created_data: null,// created data
     }], { session })
     // delete
-    device = await UserModel.findByIdAndUpdate(id, {
-      $set: {
-        soft_deleted: true
-      }
-    }, { runValidators: true, new: true }).session(session)
+    device = await UserModel.findByIdAndDelete(id).session(session)
     await session.commitTransaction();
     session.endSession();
     res.status(200).send({ success: true, message: "User successfully deleted", results: device })

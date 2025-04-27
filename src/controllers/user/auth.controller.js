@@ -7,9 +7,11 @@ const phoneNumberFormatter = require("../../utils/phoneNumberFormatter.util");
 const passwordValidationUtil = require("../../utils/passwordValidate.util");
 const emailSender = require("../../utils/communication/email/email.util");
 const { addMinutes, format } = require("date-fns");
+const formatValidationErrors = require("../../utils/formatValidationErrors.util");
 // 
 const UserModel = require("../../models/user");
 const ActivityModel = require("../../models/activityLog");
+
 
 
 const controller = {
@@ -20,6 +22,10 @@ const controller = {
             session.startTransaction();
             //get payload from request
             const body = req.body;
+            console.log("create user body ", body);
+            if (body.phone_number) {
+                body.phone_number = phoneNumberFormatter(body.phone_number)
+            }
             // check if user is already registered
             const query = {
                 $or: [
@@ -73,7 +79,7 @@ const controller = {
             })
 
             await user.save({ session });
-            //
+            //create history
             await ActivityModel.create([{
                 action: "create", // edit, create, delete actions
                 user: req.user.id, //user id performing the action
@@ -98,7 +104,11 @@ const controller = {
             console.log(chalk.red("Error creating  user "), error);
             await session.abortTransaction();
             session.endSession();
-            res.status(400).send({ message: "Error creating user", error: error.message });
+            let errors = []
+            if (error.name === 'ValidationError') {
+                errors = formatValidationErrors(error.errors)
+            }
+            res.status(400).send({ message: "Error creating user", error: error.message, errors });
         }
     },
     // login user
@@ -182,7 +192,7 @@ const controller = {
             await emailSender({
                 template: "request-verification.handlebars",
                 subject: "Account verification",
-                emails: [body.email],
+                emails: [user.email],
                 payload: {
                     confirmation_code_exp_time: format(
                         confirmation_code_exp_time,

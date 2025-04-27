@@ -6,7 +6,8 @@ const schema = new Schema({
   name: {
     type: String,
     required: true,
-    unique: false,
+    validate: [{ validator: isCompoundUnique("name",'location'), message: "A factory with the given name and within the given location already exists", },
+      ],
   },
   location: {
     type: String,
@@ -31,8 +32,8 @@ const schema = new Schema({
   timestamps: true
 });
 
-// Add index for better query performance
-schema.index({ name: 1, location: 1 }, { unique: true });
+// compound index
+// schema.index({ name: 1, location: 1 }, { unique: true });
 
 schema.plugin(mongoosePaginate);
 
@@ -41,4 +42,15 @@ schema.method('toJSON', function () {
   object.id = _id;
   return object;
 });
+// validate that the factory name and location is unique 
+function isCompoundUnique(field, other_field) {
+  return async function (value) {
+      let query = {};
+      query[field] = this[field];
+      query[other_field] = this[other_field];
+      const result = await this.constructor.findOne(query)
+      if (result) return false;
+      return true
+  }
+}
 module.exports = mongoose.model('Factory', schema, "factories");

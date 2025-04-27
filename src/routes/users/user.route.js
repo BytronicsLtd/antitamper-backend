@@ -5,7 +5,7 @@ const authenticate = require("../../middlewares/authenticate.middleware");
 const checkRole = require("../../middlewares/checkRole.middleware");
 
 module.exports = ({ app }) => {
-  // Create a new user
+  // Create a new user  
   app.post('/api/v1/users/', { preHandler: [authenticate, checkRole(['sys-admin'])] }, (req, res) => {
     authController.createUser(req, res);
   });
@@ -35,12 +35,12 @@ module.exports = ({ app }) => {
     authController.logout(req, res)
   });
   // Retrieve all users
-  app.get('/api/v1/users/', { preHandler: [authenticate,] }, (req, res) => {
+  app.get('/api/v1/users/', { preHandler: [authenticate, checkRole(['sys-admin','Manager'])] }, (req, res) => {
     userController.getUsers(req, res);
   });
 
   // Retrieve a specific user by ID
-  app.get('/api/v1/users/details/', { preHandler: [authenticate,] }, (req, res) => {
+  app.get('/api/v1/users/details/', { preHandler: [authenticate,checkRole(['sys-admin'])] }, (req, res) => {
     userController.getUserById(req, res);
   });
   // Retrieve login in user details

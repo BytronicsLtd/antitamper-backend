@@ -19,6 +19,7 @@ const authenticate = async (request, reply) => {
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
         const user = await UserModel.findById(decoded.id);
+      
 
         if (!user) {
             return reply.code(401).send({
@@ -27,8 +28,7 @@ const authenticate = async (request, reply) => {
                 message: "Could not verify user"
             });
         }
-        // console.log("user token ", user.token);
-        // console.log("payload token ", token);
+
         // Check if token is present and matches user's stored token
         if (!user.token || user.token !== token) {
             return reply.code(401).send({
@@ -36,8 +36,9 @@ const authenticate = async (request, reply) => {
                 message: "Invalid or expired token"
             });
         }
+     
         request.user = user;
-
+        console.log("auth middleware  user ", request.user);
     } catch (error) {
         console.log(chalk.red("Verify token error: "), error);
         // Specific error for expired tokens

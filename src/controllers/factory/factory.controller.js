@@ -2,13 +2,20 @@ const chalk = require("chalk");
 const { default: mongoose } = require("mongoose");
 const ActivityModel = require('../../models/activityLog.js');
 const FactoryModel = require('../../models/factory.js');
+const formatValidationErrors = require("../../utils/formatValidationErrors.util.js");
 
 // Create a new factory
 async function createFactory(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
+    let query = {name: req.body.name, location: req.body.location};
+    const results = await FactoryModel.findOne(query)
+    if(results){
+      return res.status(400).send({ success: false, message: "Factory with given details already exists", results });
+    }
     const factory = new FactoryModel(req.body);
+
     const savedFactory = await factory.save({ session });
     await ActivityModel.create([{
       action: "create", // edit, create, delete actions
@@ -24,20 +31,51 @@ async function createFactory(req, res) {
     }], { session });
     await session.commitTransaction();
     session.endSession();
-    res.status(201).send(savedFactory);
+    res.status(201).send({ success: true, message: "Factory created successfully" });
   } catch (err) {
+    let errors = []
+    if (error.name === 'ValidationError') {
+        errors = formatValidationErrorsUtil(error.errors)
+    }
     await session.abortTransaction();
     session.endSession();
-    res.status(400).send({ message: 'Error creating factory', error: err.message });
+    res.status(400).send({ message: 'Error creating factory', error: err.message, errors });
   }
 }
 
 // Retrieve all factories
 async function getFactories(req, res) {
   try {
+    let = {
+      search_term,
+      soft_deleted
+    } = req.query;
+    const user = req.user;
     let query = {
       soft_deleted: { $ne: true }
     };
+    if (user.role === 'sys-admin' && soft_deleted) {
+      if (soft_deleted === "true") {
+        query.soft_deleted = true;
+      }
+      if (soft_deleted === "false") {
+        query.soft_deleted = false;
+      }
+      if (soft_deleted === 'any') {
+        delete query.soft_deleted
+      }
+    }
+    // ---------------------- search query  ------------------------
+    if (search_term) {
+      query = {
+        ...query,
+        $or: [
+          { name: { $regex: new RegExp(search_term, "i") } },
+          { region: { $regex: new RegExp(search_term, "i") } },
+          { location: { $regex: new RegExp(search_term, "i") } },
+        ],
+      };
+    }
     const { page, size } = req.query;
     const limit = size ? +size : 100;
     const offset = page ? (page - 1) * limit : 0;
@@ -47,7 +85,14 @@ async function getFactories(req, res) {
       sort: '-createdAt',
 
     });
-    res.status(200).send({ success: true, results });
+    const metadata = {
+      searchable_parameters: {
+        "name": "String",
+        "location": "String",
+        "region": "String",
+      }
+    };
+    res.status(200).send({ success: true, metadata, results });
   } catch (err) {
     res.staus(500).send({ success: false, message: 'Error retrieving factories', error: err.message });
   }

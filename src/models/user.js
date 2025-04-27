@@ -57,7 +57,9 @@ const schema = new Schema({
   level: {
     type: String,
     enum: ['factory', 'region', 'national', 'global'],
-    required: true
+    required: true,
+    validate: [{ validator: validateLevel('level') },
+    ],
   },
   //user status
   status: {
@@ -82,9 +84,7 @@ const schema = new Schema({
   factory: {
     type: Schema.Types.ObjectId,
     ref: 'Factory',
-    required: function () {
-      return this.role !== 'sys-admin' && this.isNew; // required for non sys admin role
-    }
+    validate: [{ validator: factoryRequired('factory') }],
   },
   //region the factory belongs to
   region: {
@@ -106,21 +106,8 @@ schema.method("toJSON", function () {
   object.id = _id;
   return object;
 });
-schema.pre('save', function (next) {
-  if (this.isNew) {
-    // Create operation
-    if (this.role !== 'sys-admin' && !this.factory) {
-      next(new Error('Factory is required for non-admin users during creation'));
-    }
-  } else {
-    // Update operation
-    // Your update-specific logic here
-  }
-  next();
-});
 //pre save
 schema.pre('validate', async function (next) {
-  console.log("pre validate profile ========================== ", this.factory);
   if (this.factory === "") {
     this.factory = null
   }
@@ -129,8 +116,37 @@ schema.pre('validate', async function (next) {
 module.exports = mongoose.model('User', schema, 'users');
 
 function isPhoneNumber(value) {
-
   const kenya_phone_regex = /^(?:254|\+254|0)?(?:(?:7(?:(?:[0-9][0-9])|(?:0[0-8])|(4[0-1]))[0-9]{6})|(?:1[0-9]{8}))$/;
   const clean_phone = value.replace(/[\s\-()]/g, '');
   if (!kenya_phone_regex.test(clean_phone)) throw new Error("Please enter a valid phone number.")
+}
+
+// ensure sys-admin have a level of global
+function validateLevel(field) {
+  return async function (value) {
+    if (this.role === 'sys-admin' && value != 'global') {
+      throw new Error("System administrators must have a global level");
+    }
+    if (this.role !== 'sys-admin' && value === 'global') {
+      throw new Error("Only system administrators can have a global level");
+    }
+    return true;
+  }
+}
+
+function factoryRequired(field) {
+  return async function (value) {
+    if (this.role !== 'sys-admin' && !this.factory) {
+      throw new Error("Factory is required for non-admin users during creation");
+    }
+
+    if (this.role !== 'sys-admin' && this.factory) {
+      const results = await mongoose.model('Factory').findById(this.factory)
+      if (!results) {
+        throw new Error("Provided factory does not exist");
+      }
+    }
+
+    return true
+  }
 }
