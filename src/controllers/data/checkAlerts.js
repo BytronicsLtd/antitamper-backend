@@ -36,6 +36,7 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
             emails: email_receivers,
             payload: {
                 ...data._doc,
+                battery_voltage: data.battery_voltage?.toFixed(2),
                 timestamp: local_ke_date
             },
         })
