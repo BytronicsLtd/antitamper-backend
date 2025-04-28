@@ -136,7 +136,8 @@ function validateLevel(field) {
 
 function factoryRequired(field) {
   return async function (value) {
-    if (this.role !== 'sys-admin' && !this.factory) {
+    const levels =  ['region', 'national', 'global'];
+    if (this.role !== 'sys-admin' && !this.factory && !levels.includes(this.level)) {
       throw new Error("Factory is required for non-admin users during creation");
     }
 
