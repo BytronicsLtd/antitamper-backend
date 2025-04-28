@@ -157,12 +157,9 @@ function regionRequired(field) {
     if (this.level === 'region' && !this.region) {
       throw new Error("Region is required");
     }
-    if (this.level !== 'global' && this.region) {
-
+    if (this.level == 'global' && this.region) {
         throw new Error("Global users do not require a region");
-      
     }
-
     return true
   }
 }
