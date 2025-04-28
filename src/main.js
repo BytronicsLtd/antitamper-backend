@@ -76,8 +76,8 @@ function setupMQTT() {
         host: process.env.MQTT_HOST,
         port: process.env.MQTT_PORT,
         custom_name: process.env.MQTT_CUSTOM_NAME,
-        username: "",
-        password: "",
+        username: process.env.MQTT_USERNAME,
+        password:process.env.MQTT_PASSWORD,
     });
     mqtt_instance.connect()
     mqtt_instance.onMessage((topic, message) => {
