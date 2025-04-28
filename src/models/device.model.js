@@ -92,9 +92,9 @@ schema.pre("save", async function (next) {
     const latest_entry = await mongoose.model("Device").findOne().sort({ createdAt: -1 }).select("company_id_counter");
     let company_id_counter = latest_entry?.company_id_counter || 0
 
-    let padded_serial = String(company_id_counter + 1).padStart(7, '0')
-    this.company_id = `BWS-${new Date().getFullYear()}-${new Date().getMonth() + 1}-${Math.ceil(Math.random()*10)}${padded_serial}`;
-    this.company_id_counter = company_id + 1;
+    let padded_serial = String(company_id_counter + 1).padStart(2, '0')
+    this.company_id = `BWS-${new Date().getFullYear()}${new Date().getMonth() + 1}${Math.ceil(Math.random()*10)}${padded_serial}`;
+    this.company_id_counter = company_id_counter + 1;
     next();
 });
 // 
