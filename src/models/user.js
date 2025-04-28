@@ -82,7 +82,7 @@ const schema = new Schema({
     default: false
   },
   factory: {
-    type: Schema.Types.ObjectId,
+    type: String,
     ref: 'Factory',
     validate: [{ validator: factoryRequired('factory') }],
   },
@@ -144,6 +144,7 @@ function factoryRequired(field) {
 
     if (this.role !== 'sys-admin' && this.factory) {
       const results = await mongoose.model('Factory').findById(this.factory)
+      this.region = results.region;
       if (!results) {
         throw new Error("Provided factory does not exist");
       }
