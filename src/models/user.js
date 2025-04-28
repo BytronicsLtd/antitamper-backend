@@ -90,6 +90,7 @@ const schema = new Schema({
   region: {
     type: String,
     default: null,
+    validate: [{ validator: regionRequired('region') }],
     index: true
   },
   password: {
@@ -136,7 +137,7 @@ function validateLevel(field) {
 
 function factoryRequired(field) {
   return async function (value) {
-    const levels =  ['region', 'national', 'global'];
+    const levels = ['region', 'national', 'global'];
     if (this.role !== 'sys-admin' && !this.factory && !levels.includes(this.level)) {
       throw new Error("Factory is required for non-admin users during creation");
     }
@@ -146,6 +147,20 @@ function factoryRequired(field) {
       if (!results) {
         throw new Error("Provided factory does not exist");
       }
+    }
+
+    return true
+  }
+}
+function regionRequired(field) {
+  return async function (value) {
+    if (this.level !== 'region' && !this.region) {
+      throw new Error("Region is required");
+    }
+    if (this.level !== 'global' && this.region) {
+
+        throw new Error("Global users do not require a region");
+      
     }
 
     return true
