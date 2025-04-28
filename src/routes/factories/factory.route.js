@@ -4,7 +4,7 @@ const checkRole = require("../../middlewares/checkRole.middleware");
 
 module.exports = ({ app }) => {
   // Create a new factory
-  app.post('/api/v1/factories/', { preHandler: [authenticate] }, (req,res) => {
+  app.post('/api/v1/factories/', { preHandler: [authenticate, checkRole(['sys-admin'])] }, (req,res) => {
     factoriesController.createFactory(req,res);
   });
 

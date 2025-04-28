@@ -9,9 +9,9 @@ async function createFactory(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    let query = {name: req.body.name, location: req.body.location};
+    let query = { name: req.body.name, location: req.body.location };
     const results = await FactoryModel.findOne(query)
-    if(results){
+    if (results) {
       return res.status(400).send({ success: false, message: "Factory with given details already exists", results });
     }
     const factory = new FactoryModel(req.body);
@@ -35,7 +35,7 @@ async function createFactory(req, res) {
   } catch (err) {
     let errors = []
     if (error.name === 'ValidationError') {
-        errors = formatValidationErrorsUtil(error.errors)
+      errors = formatValidationErrorsUtil(error.errors)
     }
     await session.abortTransaction();
     session.endSession();
@@ -54,6 +54,7 @@ async function getFactories(req, res) {
     let query = {
       soft_deleted: { $ne: true }
     };
+
     if (user.role === 'sys-admin' && soft_deleted) {
       if (soft_deleted === "true") {
         query.soft_deleted = true;
@@ -75,6 +76,9 @@ async function getFactories(req, res) {
           { location: { $regex: new RegExp(search_term, "i") } },
         ],
       };
+    }
+    query = {
+      ...checkAccess({query, req}),
     }
     const { page, size } = req.query;
     const limit = size ? +size : 100;
@@ -194,3 +198,21 @@ module.exports = {
   updateFactory,
   remove
 };
+// check access
+function checkAccess({ query, req }) {
+  const user = req.user;
+  const role = user.role;
+  const level = user.level;
+  const factory = user.factory
+  console.log(" role: ", role, " level: ", level, " factory: ", factory);
+  // filter by factory
+  if(level === "factory"){
+    query._id = factory
+  }
+  // filter by region
+  if(level === "region"){
+    query.region = region
+  }
+  return query
+
+}

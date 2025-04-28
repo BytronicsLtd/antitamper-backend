@@ -36,9 +36,7 @@ const authenticate = async (request, reply) => {
                 message: "Invalid or expired token"
             });
         }
-     
         request.user = user;
-        console.log("auth middleware  user ", request.user);
     } catch (error) {
         console.log(chalk.red("Verify token error: "), error);
         // Specific error for expired tokens
