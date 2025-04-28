@@ -159,7 +159,7 @@ function regionRequired(field) {
       throw new Error("Region is required");
     }
     if (levels.includes(this.level) && this.region) {
-        throw new Error("Global users do not require a region");
+        throw new Error("Global and national users do not require a region");
     }
     return true
   }
