@@ -32,14 +32,14 @@ async function createFactory(req, res) {
     await session.commitTransaction();
     session.endSession();
     res.status(201).send({ success: true, message: "Factory created successfully" });
-  } catch (err) {
+  } catch (error) {
     let errors = []
     if (error.name === 'ValidationError') {
-      errors = formatValidationErrorsUtil(error.errors)
+      errors = formatValidationErrors(error.errors)
     }
     await session.abortTransaction();
     session.endSession();
-    res.status(400).send({ message: 'Error creating factory', error: err.message, errors });
+    res.status(400).send({ message: 'Error creating factory', error: error.message, errors });
   }
 }
 
