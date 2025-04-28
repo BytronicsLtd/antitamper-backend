@@ -154,10 +154,11 @@ function factoryRequired(field) {
 }
 function regionRequired(field) {
   return async function (value) {
+    const levels = ['national', 'global'];
     if (this.level === 'region' && !this.region) {
       throw new Error("Region is required");
     }
-    if (this.level === 'global' && this.region) {
+    if (levels.includes(this.level) && this.region) {
         throw new Error("Global users do not require a region");
     }
     return true
