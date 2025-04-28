@@ -144,10 +144,10 @@ function factoryRequired(field) {
 
     if (this.role !== 'sys-admin' && this.factory) {
       const results = await mongoose.model('Factory').findById(this.factory)
-      this.region = results.region;
       if (!results) {
         throw new Error("Provided factory does not exist");
       }
+      this.region = results.region;
     }
 
     return true
