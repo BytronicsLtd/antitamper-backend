@@ -15,7 +15,7 @@ const controller = {
             const payload = req.body;
             mqtt_client.publish("scale-antitamper/data", JSON.stringify(payload))
             // save the raw payload
-            await RawDataModel.save(payload)
+            await RawDataModel.create(payload)
             // find device details
             const device = await DeviceModel.findOne({ device_id: payload.device_id })
                 .populate([
