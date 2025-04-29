@@ -2,6 +2,7 @@ const chalk = require("chalk");
 const DataModel = require("../../models/data.model");
 const UserModel = require("../../models/user");
 const DeviceModel = require("../../models/device.model");
+const RawDataModel = require("../../models/raw-data.model.js");
 
 const MQTTClient = require("../../config/mqtt.conf");
 const { checkAlert } = require("./checkAlerts.js");
@@ -13,6 +14,8 @@ const controller = {
         try {
             const payload = req.body;
             mqtt_client.publish("scale-antitamper/data", JSON.stringify(payload))
+            // save the raw payload
+            await RawDataModel.save(payload)
             // find device details
             const device = await DeviceModel.findOne({ device_id: payload.device_id })
                 .populate([
