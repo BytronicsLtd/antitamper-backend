@@ -62,7 +62,7 @@ Battery: ${data.battery_voltage?.toFixed(2)} V
 `
         if (!sms_receivers.length) return;
         
-        let phone_numbers = sms_receivers.map(user => user.phone_number)
+        let phone_numbers = sms_receivers.filter(user =>  user.phone_number).map(user => user.phone_number)
         // phone_numbers = [254705773510]
         phone_numbers = phone_numbers
         const results = await sendSMS({ phone_numbers, message })
