@@ -229,7 +229,7 @@ const controller = {
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
-            const results = await DataModel.paginate(query, {
+            const results = await RawDataModel.paginate(query, {
                 page, limit, offset,
                 select: ``,
                 sort: '-createdAt',
