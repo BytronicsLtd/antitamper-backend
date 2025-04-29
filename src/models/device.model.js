@@ -86,15 +86,23 @@ schema.method("toJSON", function () {
     object.id = _id;
     return object;
 });
-// pre save hook to generate serial number
-schema.pre("save", async function (next) {
-    if (this.company_id) next();
-    const latest_entry = await mongoose.model("Device").findOne().sort({ createdAt: -1 }).select("company_id_counter");
-    let company_id_counter = latest_entry?.company_id_counter || 0
 
-    let padded_serial = String(company_id_counter + 1).padStart(2, '0')
-    this.company_id = `BWS-${new Date().getFullYear()}${new Date().getMonth() + 1}${Math.ceil(Math.random()*10)}${padded_serial}`;
-    this.company_id_counter = company_id_counter + 1;
+// pre save hook to generate serial number with format BWS/0000001
+schema.pre("save", async function (next) {
+    if (this.company_id) {
+        next();
+        return;
+    }
+    const latest_entry = await mongoose.model("Device").findOne().sort({ company_id_counter: -1 }).select("company_id_counter");
+    let counter = latest_entry?.company_id_counter || 0;
+    
+    // Increment counter for new device
+    counter = counter + 1;
+    
+    // Format as BWS/0000001 with 7 digits padded with zeros
+    this.company_id = `BWS/${String(counter).padStart(7, '0')}`;
+    this.company_id_counter = counter;
+    
     next();
 });
 // 

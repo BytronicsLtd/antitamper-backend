@@ -20,7 +20,7 @@ app.register(require('@fastify/multipart'), {
 //connect to database
 const dbConnect = require("./config/db.config.js");
 
-// setupMQTT();
+setupMQTT();
 dbConnect();
 //register models
 require("./models/index")
