@@ -14,7 +14,7 @@ module.exports = ({ app }) => {
       dataController.fetchMany(req,res);
     });
     // 
-    app.get('/api/v1/data/raw/', { preHandler: [authenticate] }, (req, res) => {
+    app.get('/api/v1/data/raw/', { preHandler: [authenticate,checkRole(['root','sys-admin'])] }, (req, res) => {
       dataController.fetchManyRaw(req,res);
     });
     // 
