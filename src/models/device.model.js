@@ -5,7 +5,7 @@ const Schema = {
     device_id: {
         type: String,
         required: true,
-        unique: true,
+        validate: [{ validator: isUnique('device_id') }],
     },
     // Bws....
     company_id: {
@@ -101,7 +101,7 @@ schema.pre("save", async function (next) {
     counter = counter + 1;
 
     // Format as BWS/0000001 with 7 digits padded with zeros
-    this.company_id = `BWS/${String(counter).padStart(7, '0')}`;
+    this.company_id = `BWS/${String(counter).padStart(4, '0')}`;
     this.company_id_counter = counter;
 
     next();
@@ -133,4 +133,15 @@ function isPhoneNumber(value) {
     const kenya_phone_regex = /^(?:254|\+254|0)?(?:(?:7(?:(?:[0-9][0-9])|(?:0[0-8])|(4[0-1]))[0-9]{6})|(?:1[0-9]{8}))$/;
     const clean_phone = value.replace(/[\s\-()]/g, '');
     if (!kenya_phone_regex.test(clean_phone)) throw new Error("Please enter a valid phone number.")
+}
+
+function isUnique(field){
+    return async function (value){
+        let query = {};
+        query[field] = this[field];
+        const result = await this.constructor.findOne(query)
+        if (result){
+            throw new Error("Device ID provided already exists")
+        };
+    }
 }

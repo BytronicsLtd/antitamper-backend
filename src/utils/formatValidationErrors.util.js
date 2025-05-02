@@ -14,7 +14,7 @@ module.exports = function parseValidationErrors (errors){
         else {
             formattedErrors[field] = error.message;
         }
-        error_arr.push(formattedErrors[field])
+        error_arr.push(formattedErrors)
     });
     return error_arr
     // return formattedErrors

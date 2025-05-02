@@ -4,13 +4,15 @@ const UserModel = require("../../models/user.js")
 const FactoryModel = require('../../models/factory.js');
 const ActivityModel = require('../../models/activityLog.js');
 const { default: mongoose } = require("mongoose");
-
+const formatValidationErrors = require("../../utils/formatValidationErrors.util");
 const controller = {
     create: async (req, res) => {
         const session = await mongoose.startSession();
         try {
             session.startTransaction();
             const payload = req.body;
+            console.log("create device payload ", payload);
+
             const device = new DeviceModel(payload)
             await ActivityModel.create([{
                 action: "delete", // edit, create, delete actions
@@ -32,7 +34,11 @@ const controller = {
             console.log(chalk.red("Error creating device"), error);
             await session.abortTransaction();
             session.endSession();
-            res.status(500).send({ success: false, message: 'Error creating device', error: error.message })
+            let errors = []
+            if (error.name === 'ValidationError') {
+                errors = formatValidationErrors(error.errors)
+            }
+            res.status(500).send({ success: false, message: 'Error creating device', errors})
 
         }
     },
@@ -41,6 +47,7 @@ const controller = {
         try {
             let = {
                 search_term,
+                soft_deleted
             } = req.query;
             const user = req.user;
             // handle soft delete
@@ -49,15 +56,15 @@ const controller = {
             };
             const elevated_roles = ['root', 'sys-admin']
             if (elevated_roles.includes(user.role) && soft_deleted) {
-              if (soft_deleted === "true") {
-                query.soft_deleted = true;
-              }
-              if (soft_deleted === "false") {
-                query.soft_deleted = false;
-              }
-              if (soft_deleted === 'any') {
-                delete query.soft_deleted
-              }
+                if (soft_deleted === "true") {
+                    query.soft_deleted = true;
+                }
+                if (soft_deleted === "false") {
+                    query.soft_deleted = false;
+                }
+                if (soft_deleted === 'any') {
+                    delete query.soft_deleted
+                }
             }
             // ---------------------- search query  ------------------------
             if (search_term) {
@@ -75,7 +82,7 @@ const controller = {
             }
             query = {
                 ...checkAccess({ query, req }),
-              }
+            }
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
@@ -110,6 +117,8 @@ const controller = {
             let device = await DeviceModel.findById(id)
             device = device?.toJSON()
             if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
+            console.log("devices =============== = ", device);
+
             const users = await UserModel.find({ factory: device.factory }).select('email name phone_number role')
             res.status(200).send({ success: true, results: { device, users } });
         } catch (error) {
@@ -147,7 +156,7 @@ const controller = {
             session.startTransaction();
             const id = req.body.id;
             let device = await DeviceModel.findById(id);
-           
+
             if (!device) {
                 return res.status(404).send({ success: false, message: "Device with given ID not found" })
             }
@@ -189,12 +198,12 @@ function checkAccess({ query, req }) {
     const region = user.region
     // filter by factory
     if (level === "factory") {
-      query.factory = factory
+        query.factory = factory
     }
     // filter by region
     if (level === "region") {
-      query.region = region
+        query.region = region
     }
     return query
-  
-  }
+
+}

@@ -177,5 +177,4 @@ function checkAccess({ query, req }) {
     query.region = region
   }
   return query
-
 }
