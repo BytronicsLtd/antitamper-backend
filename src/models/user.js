@@ -53,6 +53,12 @@ const schema = new Schema({
     enum: ['sys-admin', 'admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
     required: true
   },
+  // 
+  factory: {
+    type: String,
+    ref: 'Factory',
+    validate: [{ validator: factoryRequired('factory') }],
+  },
   //
   level: {
     type: String,
@@ -60,6 +66,12 @@ const schema = new Schema({
     required: true,
     validate: [{ validator: validateLevel('level') },
     ],
+  },
+  // region
+  region: {
+    type: String,
+    default: null,
+    validate: [{ validator: validateRegion('region') }, { validator: regionRequired('region') }],
   },
   //user status
   status: {
@@ -81,18 +93,7 @@ const schema = new Schema({
     type: Boolean,
     default: false
   },
-  factory: {
-    type: String,
-    ref: 'Factory',
-    validate: [{ validator: factoryRequired('factory') }],
-  },
-  //region the factory belongs to
-  region: {
-    type: String,
-    default: null,
-    validate: [{ validator: regionRequired('region') }],
-    index: true
-  },
+
   password: {
     type: String,
     required: true
@@ -134,7 +135,21 @@ function validateLevel(field) {
     return true;
   }
 }
-
+// validate region
+function validateRegion(field) {
+  return async function (value) {
+    console.log(value, " validate region ==== ", this.level);
+    if (this.role != 'Manager' && value) {
+      throw new Error("Regional users must have a role of Manager");
+    }
+    if (this.level != 'region') {
+      console.log(" level for region validateion ================= ", this.level);
+      throw new Error("Regional users must have level set as region");
+    }
+    return true;
+  }
+}
+// 
 function factoryRequired(field) {
   return async function (value) {
     const levels = ['region', 'national', 'global'];
@@ -160,7 +175,7 @@ function regionRequired(field) {
       throw new Error("Region is required");
     }
     if (levels.includes(this.level) && this.region) {
-        throw new Error("Global and national users do not require a region");
+      throw new Error("Global and national users do not require a region");
     }
     return true
   }

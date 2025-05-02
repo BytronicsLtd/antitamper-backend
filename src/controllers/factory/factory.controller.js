@@ -15,8 +15,8 @@ async function createFactory(req, res) {
       return res.status(400).send({ success: false, message: "Factory with given details already exists", results });
     }
     const factory = new FactoryModel(req.body);
-
-    const savedFactory = await factory.save({ session });
+    // 
+    await factory.save({ session });
     await ActivityModel.create([{
       action: "create", // edit, create, delete actions
       user: req.user.id, //user id performing the action
@@ -78,7 +78,7 @@ async function getFactories(req, res) {
       };
     }
     query = {
-      ...checkAccess({query, req}),
+      ...checkAccess({ query, req }),
     }
     const { page, size } = req.query;
     const limit = size ? +size : 100;
@@ -206,11 +206,11 @@ function checkAccess({ query, req }) {
   const factory = user.factory
   console.log(" role: ", role, " level: ", level, " factory: ", factory);
   // filter by factory
-  if(level === "factory"){
+  if (level === "factory") {
     query._id = factory
   }
   // filter by region
-  if(level === "region"){
+  if (level === "region") {
     query.region = region
   }
   return query

@@ -107,6 +107,7 @@ exports.getUserById = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { password, id, ...rest } = req.body
+    
     let query = {
       _id: id,
     }
