@@ -12,7 +12,7 @@ module.exports = ({ app }) => {
     activityLogsController.getActivityLogById(req, res);
   });
   //
-  app.delete('/api/v1/activity-logs/delete-old/', { preHandler: [authenticate, checkRole(['sys-admin'])] }, (req, res) => {
+  app.delete('/api/v1/activity-logs/delete-old/', { preHandler: [authenticate, checkRole(['root'])] }, (req, res) => {
     activityLogsController.deleteOldLogs(req, res);
   });
 };

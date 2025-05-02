@@ -42,9 +42,23 @@ const controller = {
             let = {
                 search_term,
             } = req.query;
+            const user = req.user;
+            // handle soft delete
             let query = {
                 soft_deleted: { $ne: true }
             };
+            const elevated_roles = ['root', 'sys-admin']
+            if (elevated_roles.includes(user.role) && soft_deleted) {
+              if (soft_deleted === "true") {
+                query.soft_deleted = true;
+              }
+              if (soft_deleted === "false") {
+                query.soft_deleted = false;
+              }
+              if (soft_deleted === 'any') {
+                delete query.soft_deleted
+              }
+            }
             // ---------------------- search query  ------------------------
             if (search_term) {
                 query = {
@@ -59,7 +73,9 @@ const controller = {
                     ],
                 };
             }
-
+            query = {
+                ...checkAccess({ query, req }),
+              }
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
@@ -163,3 +179,22 @@ const controller = {
 }
 
 module.exports = controller;
+
+// check access
+function checkAccess({ query, req }) {
+    const user = req.user;
+    const role = user.role;
+    const level = user.level;
+    const factory = user.factory
+    const region = user.region
+    // filter by factory
+    if (level === "factory") {
+      query.factory = factory
+    }
+    // filter by region
+    if (level === "region") {
+      query.region = region
+    }
+    return query
+  
+  }

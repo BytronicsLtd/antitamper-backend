@@ -50,14 +50,8 @@ const schema = new Schema({
   //
   role: {
     type: String,
-    enum: ['sys-admin', 'admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
+    enum: ['root','sys-admin', 'admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
     required: true
-  },
-  // 
-  factory: {
-    type: String,
-    ref: 'Factory',
-    validate: [{ validator: factoryRequired('factory') }],
   },
   //
   level: {
@@ -67,11 +61,16 @@ const schema = new Schema({
     validate: [{ validator: validateLevel('level') },
     ],
   },
-  // region
+  // 
+  factory: {
+    type: String,
+    ref: 'Factory',
+    validate: [{ validator: factoryRequired('factory') }],
+  },
   region: {
     type: String,
-    default: null,
-    validate: [{ validator: validateRegion('region') }, { validator: regionRequired('region') }],
+    defaul: null,
+    validate: [{ validator: regionRequired('region') }],
   },
   //user status
   status: {
@@ -108,13 +107,7 @@ schema.method("toJSON", function () {
   object.id = _id;
   return object;
 });
-//pre save
-schema.pre('validate', async function (next) {
-  if (this.factory === "") {
-    this.factory = null
-  }
-  next();
-});
+
 module.exports = mongoose.model('User', schema, 'users');
 
 function isPhoneNumber(value) {
@@ -125,7 +118,7 @@ function isPhoneNumber(value) {
 
 // ensure sys-admin have a level of global
 function validateLevel(field) {
-  return async function (value) {
+  return function (value) {
     if (this.role === 'sys-admin' && value != 'global') {
       throw new Error("System administrators must have a global level");
     }
@@ -135,48 +128,52 @@ function validateLevel(field) {
     return true;
   }
 }
-// validate region
-function validateRegion(field) {
-  return async function (value) {
-    console.log(value, " validate region ==== ", this.level);
-    if (this.role != 'Manager' && value) {
-      throw new Error("Regional users must have a role of Manager");
-    }
-    if (this.level != 'region') {
-      console.log(" level for region validateion ================= ", this.level);
-      throw new Error("Regional users must have level set as region");
-    }
-    return true;
-  }
-}
-// 
+
 function factoryRequired(field) {
   return async function (value) {
     const levels = ['region', 'national', 'global'];
-    if (this.role !== 'sys-admin' && !this.factory && !levels.includes(this.level)) {
+    if (!this.factory && !levels.includes(this.level)) {
       throw new Error("Factory is required for non-admin users during creation");
     }
-
-    if (this.role !== 'sys-admin' && this.factory) {
+    // confirm if provided factory exists for users with a level of factory
+    if (!levels.includes(this.level) && this.factory) {
       const results = await mongoose.model('Factory').findById(this.factory)
       if (!results) {
         throw new Error("Provided factory does not exist");
       }
       this.region = results.region;
     }
+    // remove factory if users have the roles in the array
+    if(value && levels.includes(this.level) ){
+      this.factory = null;
+    }
 
     return true
   }
 }
+// Region validation
 function regionRequired(field) {
   return async function (value) {
+    const data = this
+    // console.log(value, " validate region ==== ", data);
     const levels = ['national', 'global'];
-    if (this.level === 'region' && !this.region) {
+    // Region is required for regional level users
+    if (data.level === 'region' && !value) {
       throw new Error("Region is required");
     }
-    if (levels.includes(this.level) && this.region) {
+    // Region user must have the role of Manager
+    if (data.role != 'Manager'  && value ) {
+      throw new Error("Regional users must have the role of Manager");
+    }
+    // Level must be region if region is provided
+    if (data.level !== 'region' && value) {
+      throw new Error("Level must be region if region is provided");
+    }
+
+    // Global and national users don't need region
+    if (levels.includes(data.level) && value) {
       throw new Error("Global and national users do not require a region");
     }
-    return true
+    return true;
   }
 }

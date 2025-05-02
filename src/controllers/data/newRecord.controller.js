@@ -6,7 +6,7 @@ const RawDataModel = require("../../models/raw-data.model.js");
 
 const MQTTClient = require("../../config/mqtt.conf");
 const { checkAlert } = require("./checkAlerts.js");
-const { isSameYear, addHours } = require("date-fns");
+const { isSameYear, addHours, addSeconds } = require("date-fns");
 
 const mqtt_client = new MQTTClient({})
 const controller = {
@@ -140,7 +140,7 @@ const controller = {
                 }
 
             }
-            const date = new Date();
+            const date = addSeconds(new Date(), 5);
             res.status(201).send({
                 success: true, cmd: "SET_TIME",
                 timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1,

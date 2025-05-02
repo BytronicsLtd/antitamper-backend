@@ -17,8 +17,9 @@ exports.getUsers = async (req, res) => {
     if (user.level === 'factory') {
       query.factory = user.factory
     }
-
-    if (user.role === 'sys-admin' && soft_deleted) {
+    // add query for elevated roles
+    const elevated_roles = ['root', 'sys-admin']
+    if (elevated_roles.includes(user.role) && soft_deleted) {
       if (soft_deleted === "true") {
         query.soft_deleted = true;
       }
@@ -47,12 +48,15 @@ exports.getUsers = async (req, res) => {
     if (email_confirmed) {
       query.email_confirmed = email_confirmed === "false" ? false : true
     }
+    query = {
+      ...checkAccess({ query, req }),
+    }
     const { page, size } = req.query;
     const limit = size ? +size : 100;
     const offset = page ? (page - 1) * limit : 0;
     const results = await UserModel.paginate(query, {
       page, limit, offset,
-      select: `name email phone_number email_confirmed role status can_receive_sms_alerts can_receive_email_alerts soft_deleted factory level`,
+      select: `name email phone_number email_confirmed role status can_receive_sms_alerts can_receive_email_alerts soft_deleted factory level region`,
       sort: '-createdAt',
     });
     // Add metadata for searchable parameters
@@ -107,7 +111,7 @@ exports.getUserById = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { password, id, ...rest } = req.body
-    
+
     let query = {
       _id: id,
     }
@@ -156,3 +160,22 @@ exports.remove = async (req, res) => {
     res.status(500).send({ success: false, error: error.message })
   }
 };
+
+// check access
+function checkAccess({ query, req }) {
+  const user = req.user;
+  const role = user.role;
+  const level = user.level;
+  const factory = user.factory
+  const region = user.region
+  // filter by factory
+  if (level === "factory") {
+    query.factory = factory
+  }
+  // filter by region
+  if (level === "region") {
+    query.region = region
+  }
+  return query
+
+}

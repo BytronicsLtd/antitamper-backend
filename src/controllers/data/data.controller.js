@@ -5,8 +5,6 @@ const RawDataModel = require("../../models/raw-data.model");
 const emailSender = require("../../utils/communication/email/email.util");
 const { addHours, isSameYear } = require("date-fns");
 
-
-
 const controller = {
     // fetch many data
     fetchMany: async (req, res) => {
@@ -101,7 +99,9 @@ const controller = {
                     ],
                 };
             }
-
+            query = {
+                ...checkAccess({ query, req }),
+              }
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
@@ -226,6 +226,9 @@ const controller = {
                     ],
                 };
             }
+            query = {
+                ...checkAccess({ query, req }),
+              }
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
@@ -244,7 +247,6 @@ const controller = {
 }
 
 module.exports = controller;
-
 //
 function isWithinCurrentYear(time) {
     const timestamp = time instanceof Date ? time : new Date(time);
@@ -252,3 +254,22 @@ function isWithinCurrentYear(time) {
 
     return isSameYear(timestamp, now);
 }
+
+// check access
+function checkAccess({ query, req }) {
+    const user = req.user;
+    const role = user.role;
+    const level = user.level;
+    const factory = user.factory
+    const region = user.region
+    // filter by factory
+    if (level === "factory") {
+      query.factory = factory
+    }
+    // filter by region
+    if (level === "region") {
+      query.region = region
+    }
+    return query
+  
+  }

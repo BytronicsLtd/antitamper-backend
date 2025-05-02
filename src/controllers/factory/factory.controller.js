@@ -97,8 +97,10 @@ async function getFactories(req, res) {
       }
     };
     res.status(200).send({ success: true, metadata, results });
-  } catch (err) {
-    res.staus(500).send({ success: false, message: 'Error retrieving factories', error: err.message });
+  } catch (error) {
+    console.log(chalk.red('Error retrieving factories'), error);
+    
+    res.status(500).send({ success: false, message: 'Error retrieving factories', error: error.message });
   }
 }
 
@@ -204,7 +206,7 @@ function checkAccess({ query, req }) {
   const role = user.role;
   const level = user.level;
   const factory = user.factory
-  console.log(" role: ", role, " level: ", level, " factory: ", factory);
+  const region = user.region
   // filter by factory
   if (level === "factory") {
     query._id = factory
