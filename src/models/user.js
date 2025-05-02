@@ -66,6 +66,7 @@ const schema = new Schema({
     type: String,
     ref: 'Factory',
     validate: [{ validator: factoryRequired('factory') }],
+    defaul: null,
   },
   region: {
     type: String,
@@ -144,7 +145,7 @@ function factoryRequired(field) {
       this.region = results.region;
     }
     // remove factory if users have the roles in the array
-    if(value && levels.includes(this.level) ){
+    if(levels.includes(this.level) ){
       this.factory = null;
     }
 
