@@ -3,10 +3,10 @@ const DataModel = require("../../models/data.model");
 const UserModel = require("../../models/user");
 const DeviceModel = require("../../models/device.model");
 const RawDataModel = require("../../models/raw-data.model.js");
-
 const MQTTClient = require("../../config/mqtt.conf");
 const { checkAlert } = require("./checkAlerts.js");
 const { isSameYear, addHours, addSeconds } = require("date-fns");
+const { formatInTimeZone } = require('date-fns-tz');
 
 const mqtt_client = new MQTTClient({})
 const controller = {
@@ -81,15 +81,7 @@ const controller = {
             else {
                 data.gps_timestamp = undefined
             }
-            const now = new Date();
-            const utcDate = new Date(Date.UTC(
-                now.getUTCFullYear(),
-                now.getUTCMonth(),
-                now.getUTCDate(),
-                now.getUTCHours(),
-                now.getUTCMinutes(),
-                now.getUTCSeconds()
-            ));
+            const utc_date_time = formatInTimeZone(new Date(), 'Africa/Accra', 'yyyy-MM-dd HH:mm');
             // parse gsm timestamp
             if (gsm_datetime) {
                 try {
@@ -99,7 +91,7 @@ const controller = {
                     }
                     else {
                         if (data.saved_to_sd === false) {
-                            data.gsm_timestamp = addHours(utcDate, 3)
+                            data.gsm_timestamp = addHours(utc_date_time, 3)
                         }
                     }
 
@@ -117,7 +109,7 @@ const controller = {
                     }
                     else {
                         if (data.saved_to_sd === false) {
-                            data.rtc_timestamp = addHours(utcDate, 3)
+                            data.rtc_timestamp = utc_date_time
                         }
                     }
                 } catch (error) {

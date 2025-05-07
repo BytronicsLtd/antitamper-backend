@@ -1,7 +1,6 @@
 const chalk = require("chalk");
 const emailSender = require("../../utils/communication/email/email.util");
 const { sendSMS } = require("../../utils/communication/sms/sendSMS.util");
-const { format, addHours } = require("date-fns");
 const { formatInTimeZone } = require('date-fns-tz');
 
 const AlertModel = require("../../models/alerts.model.js")
