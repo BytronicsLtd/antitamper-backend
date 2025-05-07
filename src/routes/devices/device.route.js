@@ -7,6 +7,14 @@ module.exports = ({ app }) => {
   app.post('/api/v1/devices/', { preHandler: [authenticate,checkRole(["root", "sys-admin"])] }, (req, res) => {
     deviceController.create(req, res)
   });
+  //  m2m get time
+  app.post('/api/v1/devices/m2m/time/', { preHandler: [] }, (req, res) => {
+    deviceController.getTime(req, res);
+  });
+  //  m2m get time
+  app.post('/api/v1/devices/m2m/id/', { preHandler: [] }, (req, res) => {
+    deviceController.getCompanyID(req, res);
+  });
   // fetch many devices
   app.get('/api/v1/devices/', { preHandler: [authenticate,] }, (req, res) => {
     deviceController.fetchMany(req, res);

@@ -141,11 +141,11 @@ const controller = {
                 }
 
             }
-            const date = addSeconds(new Date(), 5);
+            const date = addSeconds(new Date(), 3);
             res.status(201).send({
                 success: true, cmd: "SET_TIME",
-                timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1,
-                date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()]
+                timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1,date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
+                company_id: device.company_id 
             })
         } catch (error) {
             console.log(chalk.red("Error in device status"), error);

@@ -5,7 +5,7 @@ const authenticate = require("../../middlewares/authenticate.middleware");
 const checkRole = require("../../middlewares/checkRole.middleware");
 
 module.exports = ({ app }) => {
-    // route used my m2m to
+    // route used my m2m to update alerts
     app.post('/api/v1/data/', { preHandler: [] }, (req, res) => {
       newRecordsController.updateScaleStatus(req, res)
     });

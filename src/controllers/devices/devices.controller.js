@@ -5,6 +5,7 @@ const FactoryModel = require('../../models/factory.js');
 const ActivityModel = require('../../models/activityLog.js');
 const { default: mongoose } = require("mongoose");
 const formatValidationErrors = require("../../utils/formatValidationErrors.util");
+const { addSeconds } = require("date-fns");
 const controller = {
     create: async (req, res) => {
         const session = await mongoose.startSession();
@@ -38,7 +39,7 @@ const controller = {
             if (error.name === 'ValidationError') {
                 errors = formatValidationErrors(error.errors)
             }
-            res.status(500).send({ success: false, message: 'Error creating device', errors})
+            res.status(500).send({ success: false, message: 'Error creating device', errors })
 
         }
     },
@@ -156,7 +157,7 @@ const controller = {
             session.startTransaction();
             const id = req.body.id;
             let device = await DeviceModel.findById(id);
-          
+
             if (!device) {
                 return res.status(404).send({ success: false, message: "Device with given ID not found" })
             }
@@ -184,7 +185,36 @@ const controller = {
             session.endSession();
             res.status(500).send({ success: false, error: error.message })
         }
-    }
+    },
+    // get time for device
+    getTime: async (req, res) => {
+        try {
+
+            const date = addSeconds(new Date(), 3);
+            res.status(200).send({
+                success: true, cmd: "SET_TIME",
+                timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1,
+                date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()]
+            })
+        } catch (error) {
+            console.log(chalk.red("Error sending time to device"), error);
+            res.status(500).send({ success: false, error: error.message })
+        }
+    },
+    // get time for device
+    getCompanyID: async (req, res) => {
+        try {
+            const device_id = req.body.device_id
+            const device = await DeviceModel.findOne({ device_id });
+            if(!device) {
+                return   res.status(404).send({success: false})
+            }
+            res.status(200).send({success: true, company_id: device.company_id })
+        } catch (error) {
+            console.log(chalk.red("Error fetching device company id"), error);
+            res.status(500).send({ success: false, error: error.message })
+        }
+    },
 }
 
 module.exports = controller;
