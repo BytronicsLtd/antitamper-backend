@@ -81,7 +81,15 @@ const controller = {
             else {
                 data.gps_timestamp = undefined
             }
-            const utc_date_time = formatInTimeZone(new Date(), 'Africa/Accra', 'yyyy-MM-dd HH:mm');
+            const now = new Date();
+            const utc_date_time = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate(),
+                now.getUTCHours(),
+                now.getUTCMinutes(),
+                now.getUTCSeconds()
+            ));
             // parse gsm timestamp
             if (gsm_datetime) {
                 try {
