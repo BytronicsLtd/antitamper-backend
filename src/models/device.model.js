@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
+const { trim } = require('validator');
 
 const Schema = {
     device_id: {
@@ -18,6 +19,7 @@ const Schema = {
     },
     // could be the scale serial number
     device_sim_card_no: {
+        trim:true,
         type: String,
     },
     // SIM card attached to device
@@ -143,7 +145,8 @@ function isUnique(field){
     return async function (value){
         let query = {};
         query[field] = this[field];
-        const result = await this.constructor.findOne(query)
+        const result = await mongoose.model('Device').findOne(query)
+
         if (result){
             throw new Error("Device ID provided already exists")
         };
