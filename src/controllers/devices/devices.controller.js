@@ -156,7 +156,7 @@ const controller = {
             session.startTransaction();
             const id = req.body.id;
             let device = await DeviceModel.findById(id);
-
+          
             if (!device) {
                 return res.status(404).send({ success: false, message: "Device with given ID not found" })
             }
@@ -174,7 +174,7 @@ const controller = {
                 created_data: null,// created data
             }], { session })
             // delete
-            device = await DeviceModel.findOneAndDelete(id).session(session)
+            device = await DeviceModel.findByIdAndDelete(device.id).session(session)
             await session.commitTransaction();
             session.endSession();
             res.status(200).send({ success: true, message: "Device successfully deleted", results: device })

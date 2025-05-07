@@ -139,7 +139,7 @@ function isUnique(field){
     return async function (value){
         let query = {};
         query[field] = this[field];
-        const result = await this.model.findOne(query)
+        const result = await this.constructor.findOne(query)
         if (result){
             throw new Error("Device ID provided already exists")
         };
