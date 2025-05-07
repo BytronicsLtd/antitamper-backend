@@ -14,6 +14,8 @@ const schema = new Schema({
     type: String,
     required: true,
     unique: true,
+    trim:true,
+    lowercase:true,
     validate: {
       validator: function (value) {
         return validator.isEmail(value);
