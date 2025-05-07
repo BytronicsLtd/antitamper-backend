@@ -56,13 +56,13 @@ const sendSMSAlerts = async ({ data, sms_receivers }) => {
         const alert_types = data.alert_types;
         let alert_title = ``;
         if (alert_types.includes('enclosure')) {
-            alert_title += `Enclosure Tampering Detected`
+            alert_title += `Enclosure Tampering Detected \n`
         }
         if (alert_types.includes('calibration-switch')) {
-            alert_title += `Calibration Switch Tampering Detected`
+            alert_title += `Calibration Switch Tampering Detected \n`
         }
         if (alert_types.includes('battery-voltage')) {
-            alert_title += `Low battery voltage`
+            alert_title += `Low battery voltage \n`
         }
         let message = `Alert!
 ${alert_title} 
