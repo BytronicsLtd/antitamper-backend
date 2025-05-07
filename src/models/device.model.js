@@ -96,18 +96,18 @@ schema.method("toJSON", function () {
 
 // pre save hook to generate serial number with format BWS/0000001
 schema.pre("save", async function (next) {
-    if (this.company_id) {
-        next();
-        return;
-    }
+    // if (this.company_id) {
+    //     next();
+    //     return;
+    // }
     const latest_entry = await mongoose.model("Device").findOne().sort({ company_id_counter: -1 }).select("company_id_counter");
     let counter = latest_entry?.company_id_counter || 0;
 
     // Increment counter for new device
     counter = counter + 1;
 
-    // Format as BWS/0000001 with 7 digits padded with zeros
-    this.company_id = `BWS/${String(counter).padStart(4, '0')}`;
+    // Format as BWS-0001 with 7 digits padded with zeros
+    this.company_id = `BWS-${String(counter).padStart(4, '0')}`;
     this.company_id_counter = counter;
 
     next();
