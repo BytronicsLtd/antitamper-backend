@@ -87,7 +87,6 @@ const controller = {
                         { device_id: { $regex: new RegExp(search_term, "i") } },
                         { factory_location: { $regex: new RegExp(search_term, "i") } },
                         { factory_name: { $regex: new RegExp(search_term, "i") } },
-
                     ],
                 };
             }

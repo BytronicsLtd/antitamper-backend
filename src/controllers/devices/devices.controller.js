@@ -120,7 +120,7 @@ const controller = {
             if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
             console.log("devices =============== = ", device);
 
-            const users = await UserModel.find({ factory: device.factory }).select('email name phone_number role')
+            const users = await UserModel.find({ factory: device.factory }).select('email name phone_number role level role')
             res.status(200).send({ success: true, results: { device, users } });
         } catch (error) {
             console.log(chalk.red("Error fetching device details"), error);
