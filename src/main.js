@@ -20,7 +20,7 @@ app.register(require('@fastify/multipart'), {
 //connect to database
 const dbConnect = require("./config/db.config.js");
 
-setupMQTT();
+// setupMQTT();
 dbConnect();
 //register models
 require("./models/index")
@@ -69,23 +69,23 @@ async function main() {
 
 main();
 
-function setupMQTT() {
-    const mqtt = require("./config/mqtt.conf.js")
-    const mqtt_instance = new mqtt({
-        topic: "#",
-        host: process.env.MQTT_HOST,
-        port: process.env.MQTT_PORT,
-        custom_name: process.env.MQTT_CUSTOM_NAME,
-        username: process.env.MQTT_USERNAME,
-        password:process.env.MQTT_PASSWORD,
-    });
-    mqtt_instance.connect()
-    mqtt_instance.onMessage((topic, message) => {
-        if (topic === "scale-antitamper/data") {
-            console.log(topic, "message ", JSON.parse(message));
-        }
+// function setupMQTT() {
+//     const mqtt = require("./config/mqtt.conf.js")
+//     const mqtt_instance = new mqtt({
+//         topic: "#",
+//         host: process.env.MQTT_HOST,
+//         port: process.env.MQTT_PORT,
+//         custom_name: process.env.MQTT_CUSTOM_NAME,
+//         username: process.env.MQTT_USERNAME,
+//         password:process.env.MQTT_PASSWORD,
+//     });
+//     mqtt_instance.connect()
+//     mqtt_instance.onMessage((topic, message) => {
+//         if (topic === "scale-antitamper/data") {
+//             console.log(topic, "message ", JSON.parse(message));
+//         }
 
-    })
-}
+//     })
+// }
 
 

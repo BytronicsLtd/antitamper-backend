@@ -35,7 +35,7 @@ module.exports = ({ app }) => {
     authController.logout(req, res)
   });
   // Retrieve all users
-  app.get('/api/v1/users/', { preHandler: [authenticate, checkRole(['root','sys-admin','Manager'])] }, (req, res) => {
+  app.get('/api/v1/users/', { preHandler: [authenticate, checkRole(['root','sys-admin','Manager','ICT Manager'])] }, (req, res) => {
     userController.getUsers(req, res);
   });
 

@@ -52,6 +52,7 @@ const controller = {
                 ...payload,
                 factory: device?.factory?.id,
                 company_id: device?.company_id || device?.device_id,
+                region: device?.factory?.region,
                 factory_name: device?.factory?.name,
                 factory_location: device?.factory?.location,
             }
