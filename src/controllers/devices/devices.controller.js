@@ -167,6 +167,7 @@ const controller = {
             .status(404)
             .send({ success: true, message: "Factory not found" });
         data.factory = factory.id;
+        data.region = factory.region;
         data.factory_name = factory.name;
         data.factory_location = factory.location;
       }
