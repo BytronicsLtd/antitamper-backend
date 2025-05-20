@@ -5,6 +5,7 @@ const userRoutes = require("./users/user.route");
 const dataRoutes = require("./data/data.route");
 const globalRoutes = require("./globals.routes");
 const regionRoutes = require("./regions/regions.routes");
+const alertsRoutes = require("./alerts/alerts.route");
 
 module.exports = ({ app }) => {
     deviceRoutes({ app });
@@ -14,6 +15,7 @@ module.exports = ({ app }) => {
     userRoutes({ app });
     regionRoutes({ app });
     globalRoutes({ app });
+    alertsRoutes({ app });
   
 };
   
