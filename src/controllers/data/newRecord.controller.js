@@ -51,6 +51,7 @@ const controller = {
             let data = {
                 ...payload,
                 factory: device?.factory?.id,
+                region: device?.factory?.region,
                 company_id: device?.company_id || device?.device_id,
                 region: device?.factory?.region,
                 factory_name: device?.factory?.name,

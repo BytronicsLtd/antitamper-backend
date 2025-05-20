@@ -23,7 +23,7 @@ const controller = {
           message: "Factory not found",
         });
       }
-
+      //@Sylvia added region to device
       payload.region = factory.region;
 
 
