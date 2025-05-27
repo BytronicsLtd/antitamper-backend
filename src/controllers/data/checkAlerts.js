@@ -66,6 +66,7 @@ const sendSMSAlerts = async ({ data, sms_receivers }) => {
         let message = `Alert!
 ${alert_title} 
 Device: ${data.company_id}
+Factory: ${data.factory_name}
 Time: ${local_ke_date}
 Battery: ${data.battery_voltage?.toFixed(2)} V
 `
