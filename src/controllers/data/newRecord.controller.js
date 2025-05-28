@@ -145,7 +145,7 @@ const controller = {
             }
             const date = addSeconds(new Date(), 3);
             res.status(201).send({
-                success: true, cmd: "SET_TIME",
+                success: true,
                 timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1,date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
                 company_id: device.company_id 
             })
@@ -167,7 +167,7 @@ function validateInterrupts({ data, last_entry }) {
     try {
         // Define priority order explicitly
         const priority_order = ["calibration switch", "enclosure", "battery_voltage"];
-        const availableTypes = data.interrupt_types.split(",").map(type => type.trim());
+        const availableTypes = data.interrupt_types?.split(",").map(type => type.trim());
 
         // Check each type in priority order
         for (const priority_type of priority_order) {
