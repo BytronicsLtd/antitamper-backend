@@ -22,6 +22,9 @@ const controller = {
                 factory_name,
                 saved_to_sd,
                 has_gp_coords,
+                region,
+                factory_name,
+                company_id
             } = req.query;
             // query builder
             let query = {};
@@ -29,8 +32,21 @@ const controller = {
             if (has_gp_coords === "true") {
                 query["gps_location.coordinates"] = { $not: { $size: 0 } };
             }
+            // device id
             if (device_id) {
                 query.device_id = device_id
+            }
+            // region
+            if (region) {
+                query.region = region
+            }
+            // factory name
+            if (factory_name) {
+                query.factory_name = factory_name
+            }
+            // company id
+            if (company_id) {
+                query.company_id = company_id
             }
             if (state) {
                 query.state = state
@@ -95,6 +111,8 @@ const controller = {
                         { device_id: { $regex: new RegExp(search_term, "i") } },
                         { factory_location: { $regex: new RegExp(search_term, "i") } },
                         { factory_name: { $regex: new RegExp(search_term, "i") } },
+                        { region: { $regex: new RegExp(search_term, "i") } },
+                        { company_id: { $regex: new RegExp(search_term, "i") } },
 
                     ],
                 };

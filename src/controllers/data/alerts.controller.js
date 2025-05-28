@@ -16,13 +16,28 @@ const controller = {
                 battery_threshold,
                 interrupt_type,
                 factory_name,
-                saved_to_sd
+                saved_to_sd,
+                region,
+                factory_name,
+                company_id
             } = req.query;
             // query builder
             let query = {};
-            //check for device id
+            // device id
             if (device_id) {
                 query.device_id = device_id
+            }
+            // region
+            if (region) {
+                query.region = region
+            }
+            // factory name
+            if (factory_name) {
+                query.factory_name = factory_name
+            }
+            // company id
+            if (company_id) {
+                query.company_id = company_id
             }
             if (state) {
                 query.state = state
@@ -87,6 +102,8 @@ const controller = {
                         { device_id: { $regex: new RegExp(search_term, "i") } },
                         { factory_location: { $regex: new RegExp(search_term, "i") } },
                         { factory_name: { $regex: new RegExp(search_term, "i") } },
+                        { region: { $regex: new RegExp(search_term, "i") } },
+                        { company_id: { $regex: new RegExp(search_term, "i") } },
                     ],
                 };
             }
@@ -131,7 +148,7 @@ const controller = {
             };
 
             // Include metadata in the response
-            res.status(200).send({success: true, results, metadata });
+            res.status(200).send({ success: true, results, metadata });
         } catch (error) {
             console.log(chalk.red("Error fetching alerts"), error);
             res.status(500).send({

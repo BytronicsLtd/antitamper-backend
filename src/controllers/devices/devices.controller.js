@@ -66,12 +66,13 @@ const controller = {
   //fetch many devices
   fetchMany: async (req, res) => {
     try {
-      let { search_term, soft_deleted } = req.query;
+      let { search_term, soft_deleted, company_id, factory_name, region } = req.query;
       const user = req.user;
       // handle soft delete
       let query = {
         soft_deleted: { $ne: true },
       };
+      // show soft deleted
       const elevated_roles = ["root", "sys-admin", "Manager", "ICT Manager"];
       if (elevated_roles.includes(user.role) && soft_deleted) {
         if (soft_deleted === "true") {
@@ -84,6 +85,18 @@ const controller = {
           delete query.soft_deleted;
         }
       }
+      // region
+      if (region) {
+        query.region = region
+      }
+      // factory name
+      if (factory_name) {
+        query.factory_name = factory_name
+      }
+      // company id
+      if (company_id) {
+        query.company_id = company_id
+      }
       // ---------------------- search query  ------------------------
       if (search_term) {
         query = {
@@ -95,6 +108,7 @@ const controller = {
             { serial_number: { $regex: new RegExp(search_term, "i") } },
             { phone_number: { $regex: new RegExp(search_term, "i") } },
             { status: { $regex: new RegExp(search_term, "i") } },
+            { company_id: { $regex: new RegExp(search_term, "i") } },
           ],
         };
       }
