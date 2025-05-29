@@ -166,7 +166,7 @@ function validateInterrupts({ data, last_entry }) {
     new_data.alert_types = []; // set it to [] initially
     try {
         // Define priority order explicitly
-        const priority_order = ["calibration switch", "enclosure", "battery_voltage"];
+        const priority_order = [ "enclosure", "calibration switch", "battery_voltage"];
         const availableTypes = data.interrupt_types?.split(",").map(type => type.trim());
 
         // Check each type in priority order

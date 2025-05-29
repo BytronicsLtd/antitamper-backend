@@ -138,16 +138,16 @@
 <body>
     <div class="alert-container">
         <div class="alert-header">
-            {{#includes alert_types "enclosure"}}
+            {{#ifEquals alert_type "enclosure"}}
             <h1> ⚠️ ALERT: Enclosure Tampering Detected <br> </h1>
-            {{/includes}}
-            {{#includes alert_types "calibration-switch"}}
+            {{/ifEquals}}
+            {{#ifEquals alert_type "calibration-switch"}}
             <h1>⚠️ ALERT: Calibration Switch Tampering Detected </h1>
-            {{/includes}}
+            {{/ifEquals}}
 
-            {{#includes alert_types "battery-voltage"}}
+            {{#ifEquals alert_type "battery-voltage"}}
             <h1> ⏰ ALERT: Low battery voltage <br> </h1>
-            {{/includes}}
+            {{/ifEquals}}
         </div>
 
         <div class="device-info">

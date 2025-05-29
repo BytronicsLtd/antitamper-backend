@@ -28,20 +28,24 @@ const sendEmailAlerts = async ({ data, email_receivers }) => {
         const local_ke_date = formatInTimeZone(data.rtc_timestamp, 'Africa/Nairobi', 'yyyy-MM-dd HH:mm');
         console.log("send email list ", email_receivers.length)
         if (!email_receivers.length) return;
-        // email_receivers = ["note5mn@gmail.com"]
-        const result = await emailSender({
-            template: "alert.handlebars",
-            subject: "Alert!",
-            emails: email_receivers,
-            payload: {
-                ...data._doc,
-                battery_voltage: data.battery_voltage?.toFixed(2),
-                timestamp: local_ke_date
-            },
-        })
-        console.log("send email result ", result)
-        //TODO
-        await AlertModel.create({ type: 'email', result, reference_data: data._doc._id, email_receivers, timestamp: data.rtc_timestamp })
+        const alert_types = data.alert_types;
+        for await (const alert_type of alert_types) {
+            // email_receivers = ["note5mn@gmail.com"]
+            const result = await emailSender({
+                template: "alert.handlebars",
+                subject: "Alert!",
+                emails: email_receivers,
+                payload: {
+                    ...data._doc,
+                    alert_type,
+                    battery_voltage: data.battery_voltage?.toFixed(2),
+                    timestamp: local_ke_date
+                },
+            })
+            console.log("send email result ", result)
+            //TODO
+            await AlertModel.create({ type: 'email', result, reference_data: data._doc._id, email_receivers, timestamp: data.rtc_timestamp })
+        }
 
     }
     catch (error) {
@@ -53,31 +57,29 @@ const sendSMSAlerts = async ({ data, sms_receivers }) => {
     try {
         const local_ke_date = formatInTimeZone(data.rtc_timestamp, 'Africa/Nairobi', 'yyyy-MM-dd HH:mm');
         const alert_types = data.alert_types;
-        let alert_title = ``;
-        if (alert_types.includes('enclosure')) {
-            alert_title += `Enclosure Tampering Detected \n`
-        }
-        if (alert_types.includes('calibration-switch')) {
-            alert_title += `Calibration Switch Tampering Detected \n`
-        }
-        if (alert_types.includes('battery-voltage')) {
-            alert_title += `Low battery voltage \n`
-        }
-        let message = `Alert!
-${alert_title} 
-Device: ${data.company_id}
-Factory: ${data.factory_name}
-Time: ${local_ke_date}
-Battery: ${data.battery_voltage?.toFixed(2)} V
-`
+        // make the alerts a loop that split the titles
         if (!sms_receivers.length) return;
-
-        let phone_numbers = sms_receivers.filter(user => user.phone_number).map(user => user.phone_number)
+        let phone_numbers = sms_receivers.filter(user => user.phone_number).map(user => user.phone_number);
         // phone_numbers = [254705773510]
-        phone_numbers = phone_numbers
-        const results = await sendSMS({ phone_numbers, message })
-        // console.log("send sms result ", results)
-        await AlertModel.create({ type: 'sms', results, reference_data: data._doc._id, message, phone_numbers, timestamp: data.rtc_timestamp })
+        phone_numbers = phone_numbers;
+           console.log("alert types ======= ", alert_types);
+        for await (const alert_type of alert_types) {
+        
+            let alert_title = ``;
+            if (alert_type === 'enclosure') {
+                alert_title = `Enclosure Tampering Detected `
+            }
+            if (alert_type === 'calibration-switch') {
+                alert_title = `Calibration Switch Tampering Detected `
+            }
+            if (alert_type === 'battery-voltage') {
+                alert_title = `Low battery voltage`
+            }
+            let message = `Alert! \n${alert_title}\nDevice: ${data.company_id}\nFactory: ${data.factory_name}\nTime: ${local_ke_date}\nBattery: ${data.battery_voltage?.toFixed(2)} V`
+            const results = await sendSMS({ phone_numbers, message })
+            // console.log("send sms result ", results)
+            await AlertModel.create({ type: 'sms', results, reference_data: data._doc._id, message, phone_numbers, timestamp: data.rtc_timestamp })
+        }
     }
     catch (error) {
         console.log(chalk.red("Error checking alerts"), error);
