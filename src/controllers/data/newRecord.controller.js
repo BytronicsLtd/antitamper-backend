@@ -22,7 +22,10 @@ const controller = {
                     { path: 'factory', transform: (doc) => doc?.toJSON() || doc, }
                 ])
             if (!device) {
-                return res.status(404).send({ success: false })
+                const date = addSeconds(new Date(), 3);
+                return res.status(404).send({
+                     timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1,date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
+                 })
             }
 
 
@@ -145,7 +148,6 @@ const controller = {
             }
             const date = addSeconds(new Date(), 3);
             res.status(201).send({
-                success: true,
                 timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1,date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
                 company_id: device.company_id 
             })
