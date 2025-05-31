@@ -135,7 +135,10 @@ const controller = {
                     // console.log("data to save ", data_to_save);
                     if (!data.test_data) {
                         await data_to_save.save(new_data);
-                        await checkAlert({ data: data_to_save, users })
+                        // only check alerts for active devices
+                        if (device.status === "active") {
+                            await checkAlert({ data: data_to_save, users })
+                        }
                     }
 
                 } catch (error) {
