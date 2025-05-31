@@ -24,14 +24,12 @@ const controller = {
             if (!device) {
                 const date = addSeconds(new Date(), 3);
                 return res.status(404).send({
-                     timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1,date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
-                 })
+                    timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
+                })
             }
-
-
             //fetch users that belong to the same factory as the device
             let users = await UserModel.find({
-                soft_deleted:false,
+                soft_deleted: false,
                 $or: [
                     { role: "sys-admin" },
                     {
@@ -48,7 +46,6 @@ const controller = {
                 ]
             }).select("-_id email phone_number can_receive_email_alerts can_receive_sms_alerts role factory");
             const last_entry = await DataModel.findOne({ device_id: payload.device_id }).sort({ createdAt: -1 });
-
             //
             let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_datetime, gsm_datetime, rtc_datetime } = payload;
             let data = {
@@ -75,7 +72,7 @@ const controller = {
                 };
             }
             // parse gps timestamp
-            if (gps_datetime) {
+            if (gps_datetime > 0) {
                 try {
                     const iso_time = new Date(Number(gps_datetime) * 1000);
                     data.gps_timestamp = iso_time;
@@ -148,8 +145,8 @@ const controller = {
             }
             const date = addSeconds(new Date(), 3);
             res.status(201).send({
-                timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1,date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
-                company_id: device.company_id 
+                timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
+                company_id: device.company_id
             })
         } catch (error) {
             console.log(chalk.red("Error in device status"), error);
@@ -168,7 +165,7 @@ function validateInterrupts({ data, last_entry }) {
     new_data.alert_types = []; // set it to [] initially
     try {
         // Define priority order explicitly
-        const priority_order = [ "enclosure", "calibration switch", "battery_voltage"];
+        const priority_order = ["enclosure", "calibration switch", "battery_voltage"];
         const availableTypes = data.interrupt_types?.split(",").map(type => type.trim());
 
         // Check each type in priority order

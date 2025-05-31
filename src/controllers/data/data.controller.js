@@ -119,7 +119,7 @@ const controller = {
             }
             query = {
                 ...checkAccess({ query, req }),
-              }
+            }
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
@@ -199,9 +199,18 @@ const controller = {
                 start_datetime,
                 end_datetime,
                 search_term,
+                company_id
             } = req.query;
             // query builder
             let query = {};
+            // company id
+            if (company_id) {
+                query.company_id = company_id
+            }
+            // device id
+            if (device_id) {
+                query.device_id = device_id
+            }
             // Handle start and end datetime for gsm_timestamp and rtc_timestamp
             if (start_datetime && end_datetime) {
                 query.$or = [
@@ -246,7 +255,7 @@ const controller = {
             }
             query = {
                 ...checkAccess({ query, req }),
-              }
+            }
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
@@ -282,12 +291,12 @@ function checkAccess({ query, req }) {
     const region = user.region
     // filter by factory
     if (level === "factory") {
-      query.factory = factory
+        query.factory = factory
     }
     // filter by region
     if (level === "region") {
-      query.region = region
+        query.region = region
     }
     return query
-  
-  }
+
+}
