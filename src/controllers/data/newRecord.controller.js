@@ -198,13 +198,13 @@ function validateInterrupts({ data, last_entry }) {
                 new_data.alert_types.push("battery-voltage");
             }
         }
-    }
+
 
         return new_data;
-} catch (error) {
-    console.error("Error validating interrupts:", error);
-    return new_data;
-}
+    } catch (error) {
+        console.error("Error validating interrupts:", error);
+        return new_data;
+    }
 }
 
 //
