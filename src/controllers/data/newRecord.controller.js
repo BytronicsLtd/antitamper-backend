@@ -176,13 +176,18 @@ function validateInterrupts({ data, last_entry }) {
             // Only process if this interrupt type is available for this device
             if (availableTypes.includes(priority_type)) {
                 // Calibration switch check (highest priority)
-                if (priority_type === "calibration switch" && (data.calib_sw_interrupt_events.includes("on") || data.calib_sw_interrupt_events.includes("1"))) {
-                    new_data.alert_types.push("calibration-switch");
+                if (priority_type === "calibration switch") {
+                    let calib_sw_interrupt_events = data.calib_sw_interrupt_events.split(" ")
+                    if (calib_sw_interrupt_events.includes(1)) {
+                        new_data.alert_types.push("calibration-switch");
+                    }
                 }
-
                 // Enclosure check (second priority) 
-                if (priority_type === "enclosure" && (data.enclosure_interrupt_events.includes("opened") || data.enclosure_interrupt_events.includes("1"))) {
-                    new_data.alert_types.push("enclosure");
+                if (priority_type === "enclosure") {
+                    let enclosure_interrupt_events = data.enclosure_interrupt_events.split(" ");
+                    if (enclosure_interrupt_events.includes(1)) {
+                        new_data.alert_types.push("enclosure");
+                    }
                 }
                 // Enclosure check (second priority) 
                 if (data.battery_voltage < 3.4) {
