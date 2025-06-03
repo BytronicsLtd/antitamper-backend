@@ -177,30 +177,34 @@ function validateInterrupts({ data, last_entry }) {
             if (availableTypes.includes(priority_type)) {
                 // Calibration switch check (highest priority)
                 if (priority_type === "calibration switch") {
-                    let calib_sw_interrupt_events = data.calib_sw_interrupt_events.split(" ")
-                    if (calib_sw_interrupt_events.includes(1)) {
+                    let calib_sw_interrupt_events = data.calib_sw_interrupt_events.split(" ").map(event => event.trim());
+                    console.log("calibration switch events array ", calib_sw_interrupt_events);
+                    if (calib_sw_interrupt_events.includes("1")) {
                         new_data.alert_types.push("calibration-switch");
                     }
                 }
                 // Enclosure check (second priority) 
                 if (priority_type === "enclosure") {
-                    let enclosure_interrupt_events = data.enclosure_interrupt_events.split(" ");
-                    if (enclosure_interrupt_events.includes(1)) {
+                    let enclosure_interrupt_events = data.enclosure_interrupt_events.split(" ").map(event => event.trim());
+                    console.log("enclosure events array ", enclosure_interrupt_events);
+                    if (enclosure_interrupt_events.includes("1")) {
                         new_data.alert_types.push("enclosure");
                     }
-                }
-                // Enclosure check (second priority) 
-                if (data.battery_voltage < 3.4) {
-                    new_data.alert_types.push("battery-voltage");
+
                 }
             }
+            // Enclosure check (second priority) 
+            if (data.battery_voltage < 3.4) {
+                new_data.alert_types.push("battery-voltage");
+            }
         }
+    }
 
         return new_data;
-    } catch (error) {
-        console.error("Error validating interrupts:", error);
-        return new_data;
-    }
+} catch (error) {
+    console.error("Error validating interrupts:", error);
+    return new_data;
+}
 }
 
 //
