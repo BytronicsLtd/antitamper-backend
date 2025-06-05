@@ -22,7 +22,10 @@ const controller = {
                 company_id
             } = req.query;
             // query builder
-            let query = {};
+            let query = {
+                  interrupt_types: { $ne: "" }
+
+            };
             // device id
             if (device_id) {
                 query.device_id = device_id

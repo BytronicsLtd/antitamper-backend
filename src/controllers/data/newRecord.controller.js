@@ -170,7 +170,6 @@ function validateInterrupts({ data, last_entry }) {
         // Define priority order explicitly
         const priority_order = ["enclosure", "calibration switch", "battery_voltage"];
         const availableTypes = data.interrupt_types?.split(",").map(type => type.trim());
-
         // Check each type in priority order
         for (const priority_type of priority_order) {
             // Only process if this interrupt type is available for this device
@@ -190,7 +189,6 @@ function validateInterrupts({ data, last_entry }) {
                     if (enclosure_interrupt_events.includes("1")) {
                         new_data.alert_types.push("enclosure");
                     }
-
                 }
             }
             // Enclosure check (second priority) 
@@ -198,8 +196,6 @@ function validateInterrupts({ data, last_entry }) {
                 new_data.alert_types.push("battery-voltage");
             }
         }
-
-
         return new_data;
     } catch (error) {
         console.error("Error validating interrupts:", error);
