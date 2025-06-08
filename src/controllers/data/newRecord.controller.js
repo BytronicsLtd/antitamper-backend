@@ -164,8 +164,8 @@ module.exports = controller;
 // check valid interrupts
 function validateInterrupts({ data, last_entry }) {
     let new_data = { ...data };
-
     new_data.alert_types = []; // set it to [] initially
+    let battery_alert_added = false;
     try {
         // Define priority order explicitly
         const priority_order = ["enclosure", "calibration switch", "battery_voltage"];
@@ -192,8 +192,9 @@ function validateInterrupts({ data, last_entry }) {
                 }
             }
             // Enclosure check (second priority) 
-            if (data.battery_voltage < 3.4) {
+            if (data.battery_voltage < 3.4 && !battery_alert_added) {
                 new_data.alert_types.push("battery-voltage");
+                battery_alert_added = true;
             }
         }
         return new_data;
