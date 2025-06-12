@@ -180,7 +180,7 @@ function validateInterrupts({ data, last_entry }) {
     try {
         // Define priority order explicitly
         const priority_order = ["enclosure", "calibration switch", "battery_voltage"];
-        const availableTypes = data.interrupt_types?.split(",").map(type => type.trim());
+        const availableTypes = data.interrupt_types?.split(" ").map(type => type.trim());
         // Check each type in priority order
         for (const priority_type of priority_order) {
             // Only process if this interrupt type is available for this device
