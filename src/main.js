@@ -86,8 +86,8 @@ function setupMQTT() {
             let payload = JSON.parse(message)
             console.log(topic, "message ", payload);
             if (payload.encrypted) {
-                const { decryptSTM32Data } = require('./utils/decrypt.util.js');
-                const decryptedJSON = decryptSTM32Data(payload.data);
+                const { decryptDeviceData } = require('./utils/decrypt.util.js');
+                const decryptedJSON = decryptDeviceData(payload.data);
 
                 if (decryptedJSON) {
                     console.log('Decrypted JSON:');

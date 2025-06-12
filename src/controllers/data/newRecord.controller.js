@@ -6,7 +6,7 @@ const RawDataModel = require("../../models/raw-data.model.js");
 const MQTTClient = require("../../config/mqtt.conf");
 const { checkAlert } = require("./checkAlerts.js");
 const { isSameYear, addHours, addSeconds } = require("date-fns");
-const { decryptSTM32Data } = require("../../utils/decrypt.util.js");
+const { decryptDeviceData } = require("../../utils/decrypt.util.js");
 
 
 const mqtt_client = new MQTTClient({})
@@ -19,7 +19,7 @@ const controller = {
             await RawDataModel.create(payload);
             // handle encrypted data
             if (payload.encrypted) {
-                const decrypted = decryptSTM32Data(payload.data);
+                const decrypted = decryptDeviceData(payload.data);
                 if (decrypted) {
                     payload = { ...decrypted, encrypted: true };
                 } else {
