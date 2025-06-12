@@ -6,16 +6,27 @@ const RawDataModel = require("../../models/raw-data.model.js");
 const MQTTClient = require("../../config/mqtt.conf");
 const { checkAlert } = require("./checkAlerts.js");
 const { isSameYear, addHours, addSeconds } = require("date-fns");
-const { formatInTimeZone } = require('date-fns-tz');
+const { decryptSTM32Data } = require("../../utils/decrypt.util.js");
+
 
 const mqtt_client = new MQTTClient({})
 const controller = {
     updateScaleStatus: async (req, res) => {
         try {
-            const payload = req.body;
+            let payload = req.body;
             mqtt_client.publish("scale-antitamper/data", JSON.stringify(payload))
             // save the raw payload
-            await RawDataModel.create(payload)
+            await RawDataModel.create(payload);
+            // handle encrypted data
+            if (payload.encrypted) {
+                const decrypted = decryptSTM32Data(payload.data);
+                if (decrypted) {
+                    payload = { ...decrypted, encrypted: true };
+                } else {
+                    console.log('Decryption failed');
+                }
+
+            }
             // find device details
             const device = await DeviceModel.findOne({ device_id: payload.device_id })
                 .populate([

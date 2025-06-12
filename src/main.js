@@ -19,6 +19,7 @@ app.register(require('@fastify/multipart'), {
 
 //connect to database
 const dbConnect = require("./config/db.config.js");
+
 // setup mqtt
 setupMQTT();
 dbConnect();
@@ -77,12 +78,25 @@ function setupMQTT() {
         port: process.env.MQTT_PORT,
         custom_name: process.env.MQTT_CUSTOM_NAME,
         username: process.env.MQTT_USERNAME,
-        password:process.env.MQTT_PASSWORD,
+        password: process.env.MQTT_PASSWORD,
     });
     mqtt_instance.connect()
     mqtt_instance.onMessage((topic, message) => {
         if (topic === "scale-antitamper/data") {
-            console.log(topic, "message ", JSON.parse(message));
+            let payload = JSON.parse(message)
+            console.log(topic, "message ", payload);
+            if (payload.encrypted) {
+                const { decryptSTM32Data } = require('./utils/decrypt.util.js');
+                const decryptedJSON = decryptSTM32Data(payload.data);
+
+                if (decryptedJSON) {
+                    console.log('Decrypted JSON:');
+                    console.log(JSON.stringify(decryptedJSON, null, 2));
+                } else {
+                    console.log('Decryption failed');
+                }
+
+            }
         }
 
     })
