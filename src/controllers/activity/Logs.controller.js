@@ -37,6 +37,9 @@ const activityLogController = {
         page, limit, offset,
         select: ``,
         sort: '-createdAt',
+        populate:[
+             { path: 'user', select: "-_id email", transform: (doc) => doc?.toJSON() || doc }
+        ]
 
       });
       // Add metadata for searchable parameters
