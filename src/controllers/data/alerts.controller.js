@@ -109,6 +109,9 @@ const controller = {
                     ],
                 };
             }
+             query = {
+                ...checkAccess({ query, req }),
+            }
             console.log("alerts  filter ", query)
             const { page, size } = req.query;
             const limit = size ? +size : 100;
@@ -162,3 +165,22 @@ const controller = {
     },
 }
 module.exports = controller
+
+// check access
+function checkAccess({ query, req }) {
+    const user = req.user;
+    const role = user.role;
+    const level = user.level;
+    const factory = user.factory
+    const region = user.region
+    // filter by factory
+    if (level === "factory") {
+        query.factory = factory
+    }
+    // filter by region
+    if (level === "region") {
+        query.region = region
+    }
+    return query
+
+}
