@@ -47,7 +47,6 @@ const schema = new Schema({
   // designation
   designation: {
     type: String,
-    required: true
   },
   // jwt token  set internally
   token: {
