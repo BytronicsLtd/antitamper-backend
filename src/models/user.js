@@ -56,7 +56,7 @@ const schema = new Schema({
   //
   role: {
     type: String,
-    enum: ['root', 'sys-admin', 'admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
+    enum: ['root', 'sys-admin', 'admin', 'Manager', 'ICT Manager', 'FUM', 'FSC',"user"],
     required: true
   },
   //
