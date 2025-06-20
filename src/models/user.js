@@ -14,8 +14,8 @@ const schema = new Schema({
     type: String,
     required: true,
     unique: true,
-    trim:true,
-    lowercase:true,
+    trim: true,
+    lowercase: true,
     validate: {
       validator: function (value) {
         return validator.isEmail(value);
@@ -44,6 +44,11 @@ const schema = new Schema({
     type: Date,
     default: null,
   },
+  // designation
+  designation: {
+    type: String,
+    required: true
+  },
   // jwt token  set internally
   token: {
     type: String,
@@ -52,7 +57,7 @@ const schema = new Schema({
   //
   role: {
     type: String,
-    enum: ['root','sys-admin', 'admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
+    enum: ['root', 'sys-admin', 'admin', 'Manager', 'ICT Manager', 'FUM', 'FSC'],
     required: true
   },
   //
@@ -147,7 +152,7 @@ function factoryRequired(field) {
       this.region = results.region;
     }
     // remove factory if users have the roles in the array
-    if(levels.includes(this.level) ){
+    if (levels.includes(this.level)) {
       this.factory = null;
     }
 
@@ -165,7 +170,7 @@ function regionRequired(field) {
       throw new Error("Region is required");
     }
     // Region user must have the role of Manager
-    if (data.role != 'Manager'  && value ) {
+    if (data.role != 'Manager' && value) {
       throw new Error("Regional users must have the role of Manager");
     }
     // Level must be region if region is provided
