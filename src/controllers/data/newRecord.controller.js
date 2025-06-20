@@ -17,6 +17,9 @@ const controller = {
             mqtt_client.publish("scale-antitamper/data", JSON.stringify(payload))
             // save the raw payload
             await RawDataModel.create(payload);
+            if (payload.periodic_data) {
+                payload.interrupt_types = "";
+            }
             // handle encrypted data
             if (payload.encrypted) {
                 const decrypted = decryptDeviceData(payload.data);
