@@ -7,7 +7,7 @@ const controller = {
     try {
       let = {
         device_id,
-        interrupt_occured,
+
         start_datetime,
         end_datetime,
         search_term,
@@ -60,10 +60,6 @@ const controller = {
         query.battery_voltage = {
           $gte: Number(battery_threshold),
         };
-      }
-      // query by interrupt occurrence
-      if (interrupt_occured || interrupt_occured == 0) {
-        query.interrupt_occured = parseInt(interrupt_occured);
       }
       // Handle start and end datetime for gsm_timestamp and rtc_timestamp
       if (start_datetime && end_datetime) {
@@ -155,10 +151,12 @@ const controller = {
       const metadata = {
         searchable_parameters: {
           device_id: "String",
-          interrupt_occured: "Number [0,1]",
+          enclosure: "String",
+          state: "String",
           start_datetime: "Date",
           end_datetime: "Date",
           search_term: "String",
+
         },
       };
 

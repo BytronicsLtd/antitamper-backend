@@ -11,7 +11,6 @@ const controller = {
     try {
       let = {
         device_id,
-        interrupt_occured,
         start_datetime,
         end_datetime,
         search_term,
@@ -68,37 +67,43 @@ const controller = {
           $gte: Number(battery_threshold),
         };
       }
-      // query by interrupt occurrence
-      if (interrupt_occured || interrupt_occured == 0) {
-        query.interrupt_occured = parseInt(interrupt_occured);
-      }
+
       // Handle start and end datetime for gsm_timestamp and rtc_timestamp
       if (start_datetime && end_datetime) {
+        const start = new Date(start_datetime);
+        start.setHours(0, 0, 0, 0); // Start of day
+        const end = new Date(end_datetime);
+        end.setHours(23, 59, 59, 999); // End of day
+
         query.$or = [
           {
             gsm_timestamp: {
-              $gte: new Date(start_datetime).toISOString(),
-              $lte: new Date(end_datetime).toISOString(),
+              $gte: start.toISOString(),
+              $lte: end.toISOString(),
             },
           },
           {
             rtc_timestamp: {
-              $gte: new Date(start_datetime).toISOString(),
-              $lte: new Date(end_datetime).toISOString(),
+              $gte: start.toISOString(),
+              $lte: end.toISOString(),
             },
           },
         ];
       } else if (start_datetime) {
-        // Only start_datetime is provided
+        const start = new Date(start_datetime);
+        start.setHours(0, 0, 0, 0);
+
         query.$or = [
-          { gsm_timestamp: { $gte: new Date(start_datetime).toISOString() } },
-          { rtc_timestamp: { $gte: new Date(start_datetime).toISOString() } },
+          { gsm_timestamp: { $gte: start.toISOString() } },
+          { rtc_timestamp: { $gte: start.toISOString() } },
         ];
       } else if (end_datetime) {
-        // Only end_datetime is provided
+        const end = new Date(end_datetime);
+        end.setHours(23, 59, 59, 999);
+
         query.$or = [
-          { gsm_timestamp: { $lte: new Date(end_datetime).toISOString() } },
-          { rtc_timestamp: { $lte: new Date(end_datetime).toISOString() } },
+          { gsm_timestamp: { $lte: end.toISOString() } },
+          { rtc_timestamp: { $lte: end.toISOString() } },
         ];
       }
 
@@ -156,6 +161,8 @@ const controller = {
       // Add metadata for searchable parameters
       const metadata = {
         searchable_parameters: {
+          state: "String",
+          enclosure: "String",
           device_id: "String",
           start_datetime: "Date",
           end_datetime: "Date",
@@ -195,6 +202,7 @@ const controller = {
       res.status(500).send({ success: false });
     }
   },
+  // this is for fetching raw data as received from the devices
   fetchManyRaw: async (req, res) => {
     try {
       let = {
