@@ -204,7 +204,7 @@ function validateInterrupts({ data, last_entry }) {
                 }
             }
             // Enclosure check (second priority) 
-            if (data.battery_voltage < 3.5 && !battery_alert_added) {
+            if (data.battery_voltage < 3.45 && !battery_alert_added) {
                 new_data.alert_types.push("battery-voltage");
                 battery_alert_added = true;
             }
