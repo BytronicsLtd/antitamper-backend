@@ -27,10 +27,8 @@ const Schema = {
         type: String,
     },
     // 
-    phone_number: {
+    scale_model: {
         type: String,
-        required: true,
-        validate: [{ validator: isPhoneNumber }],
     },
     // id of factory
     factory: {
