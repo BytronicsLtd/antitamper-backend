@@ -1,186 +1,195 @@
 const chalk = require("chalk");
-const DataModel = require("../../models/data.model")
+const DataModel = require("../../models/data.model");
 
 const controller = {
-    // fetch many data
-    fetchMany: async (req, res) => {
-        try {
-            let = {
-                device_id,
-                interrupt_occured,
-                start_datetime,
-                end_datetime,
-                search_term,
-                state,
-                enclosure,
-                battery_threshold,
-                interrupt_type,
-                factory_name,
-                saved_to_sd,
-                region,
-                factory_name,
-                company_id
-            } = req.query;
-            // query builder
-            let query = {
-                interrupt_types: { $ne: "" } // ensure  we have interrupts
-            };
-            // device id
-            if (device_id) {
-                query.device_id = device_id
-            }
-            // region
-            if (region) {
-                query.region = region
-            }
-            // factory name
-            if (factory_name) {
-                query.factory_name = factory_name
-            }
-            // company id
-            if (company_id) {
-                query.company_id = company_id
-            }
-            if (state) {
-                query.state = state
-            }
-            if (interrupt_type) {
-                query.interrupt_type = interrupt_type
-            }
-            if (enclosure) {
-                query.enclosure = enclosure
-            }
-            if (factory_name) {
-                query.factory_name = factory_name
-            }
-            if (saved_to_sd) {
-                query.saved_to_sd = saved_to_sd === "false" ? false : true
-            }
-            if (battery_threshold) {
-                query.battery_voltage = {
-                    $gte: Number(battery_threshold)
-                }
-            }
-            // query by interrupt occurrence 
-            if (interrupt_occured || interrupt_occured == 0) {
-                query.interrupt_occured = parseInt(interrupt_occured)
-            }
-            // Handle start and end datetime for gsm_timestamp and rtc_timestamp
-            if (start_datetime && end_datetime) {
-                query.$or = [
-                    {
-                        gsm_timestamp: {
-                            $gte: new Date(start_datetime).toISOString(),
-                            $lte: new Date(end_datetime).toISOString()
-                        }
-                    },
-                    {
-                        rtc_timestamp: {
-                            $gte: new Date(start_datetime).toISOString(),
-                            $lte: new Date(end_datetime).toISOString()
-                        }
-                    }
-                ];
-            } else if (start_datetime) {
-                // Only start_datetime is provided
-                query.$or = [
-                    { gsm_timestamp: { $gte: new Date(start_datetime).toISOString() } },
-                    { rtc_timestamp: { $gte: new Date(start_datetime).toISOString() } }
-                ];
-            } else if (end_datetime) {
-                // Only end_datetime is provided
-                query.$or = [
-                    { gsm_timestamp: { $lte: new Date(end_datetime).toISOString() } },
-                    { rtc_timestamp: { $lte: new Date(end_datetime).toISOString() } }
-                ];
-            }
+  // fetch many data
+  fetchMany: async (req, res) => {
+    try {
+      let = {
+        device_id,
+        interrupt_occured,
+        start_datetime,
+        end_datetime,
+        search_term,
+        state,
+        enclosure,
+        battery_threshold,
+        interrupt_types,
+        factory_name,
+        saved_to_sd,
+        region,
+        factory_name,
+        company_id,
+      } = req.query;
+      // query builder
+      let query = {
+        interrupt_types: { $ne: "" }, // ensure  we have interrupts
+      };
+      // device id
+      if (device_id) {
+        query.device_id = device_id;
+      }
+      // region
+      if (region) {
+        query.region = region;
+      }
+      // factory name
+      if (factory_name) {
+        query.factory_name = factory_name;
+      }
+      // company id
+      if (company_id) {
+        query.company_id = company_id;
+      }
+      if (state) {
+        query.state = state;
+      }
+      if (interrupt_types) {
+        query.interrupt_types = interrupt_types;
+      }
+      if (enclosure) {
+        query.enclosure = enclosure;
+      }
+      if (factory_name) {
+        query.factory_name = factory_name;
+      }
+      if (saved_to_sd) {
+        query.saved_to_sd = saved_to_sd === "false" ? false : true;
+      }
+      if (battery_threshold) {
+        query.battery_voltage = {
+          $gte: Number(battery_threshold),
+        };
+      }
+      // query by interrupt occurrence
+      if (interrupt_occured || interrupt_occured == 0) {
+        query.interrupt_occured = parseInt(interrupt_occured);
+      }
+      // Handle start and end datetime for gsm_timestamp and rtc_timestamp
+      if (start_datetime && end_datetime) {
+        const start = new Date(start_datetime);
+        start.setHours(0, 0, 0, 0); // Start of day
+        const end = new Date(end_datetime);
+        end.setHours(23, 59, 59, 999); // End of day
 
-            // ---------------------- search query  ------------------------
-            if (search_term) {
-                query = {
-                    ...query,
-                    $or: [
-                        { interrupt_type: { $regex: new RegExp(search_term, "i") } },
-                        { device_id: { $regex: new RegExp(search_term, "i") } },
-                        { factory_location: { $regex: new RegExp(search_term, "i") } },
-                        { factory_name: { $regex: new RegExp(search_term, "i") } },
-                        { region: { $regex: new RegExp(search_term, "i") } },
-                        { company_id: { $regex: new RegExp(search_term, "i") } },
-                    ],
-                };
-            }
-             query = {
-                ...checkAccess({ query, req }),
-            }
-            console.log("alerts  filter ", query)
-            const { page, size } = req.query;
-            const limit = size ? +size : 100;
-            const offset = page ? (page - 1) * limit : 0;
-            const results = await DataModel.paginate(query, {
-                page, limit, offset,
-                select: ``,
-                sort: '-createdAt',
+        query.$or = [
+          {
+            gsm_timestamp: {
+              $gte: start.toISOString(),
+              $lte: end.toISOString(),
+            },
+          },
+          {
+            rtc_timestamp: {
+              $gte: start.toISOString(),
+              $lte: end.toISOString(),
+            },
+          },
+        ];
+      } else if (start_datetime) {
+        const start = new Date(start_datetime);
+        start.setHours(0, 0, 0, 0);
 
-            });
-            const docs = results.docs.map(result => {
-                // Destructure result._doc and rename _id to id
-                const { _id, __v, ...rest } = result._doc;
-                let modifiedResult = {
-                    id: _id,
-                    ...rest,
-                };
+        query.$or = [
+          { gsm_timestamp: { $gte: start.toISOString() } },
+          { rtc_timestamp: { $gte: start.toISOString() } },
+        ];
+      } else if (end_datetime) {
+        const end = new Date(end_datetime);
+        end.setHours(23, 59, 59, 999);
 
-                if (result?.gsm_lat && result?.gsm_lon) {
-                    modifiedResult.gsm_map_url = `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`
-                }
+        query.$or = [
+          { gsm_timestamp: { $lte: end.toISOString() } },
+          { rtc_timestamp: { $lte: end.toISOString() } },
+        ];
+      }
 
-                if (result?.gps_lat && result?.gps_lon) {
-                    modifiedResult.gps_map_url = `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`
-                }
+      if (search_term) {
+        query = {
+          ...query,
+          $or: [
+            { interrupt_types: { $regex: new RegExp(search_term, "i") } },
+            { device_id: { $regex: new RegExp(search_term, "i") } },
+            { factory_location: { $regex: new RegExp(search_term, "i") } },
+            { factory_name: { $regex: new RegExp(search_term, "i") } },
+            { region: { $regex: new RegExp(search_term, "i") } },
+            { company_id: { $regex: new RegExp(search_term, "i") } },
+            { state: { $regex: new RegExp(search_term, "i") } },
+          ],
+        };
+      }
+      query = {
+        ...checkAccess({ query, req }),
+      };
+      console.log("alerts  filter ", query);
+      const { page, size } = req.query;
+      const limit = size ? +size : 100;
+      const offset = page ? (page - 1) * limit : 0;
+      const results = await DataModel.paginate(query, {
+        page,
+        limit,
+        offset,
+        select: ``,
+        sort: "-createdAt",
+      });
+      const docs = results.docs.map((result) => {
+        // Destructure result._doc and rename _id to id
+        const { _id, __v, ...rest } = result._doc;
+        let modifiedResult = {
+          id: _id,
+          ...rest,
+        };
 
-                return modifiedResult;
-            });
-            results.docs = docs;
-            // Add metadata for searchable parameters
-            const metadata = {
-                searchable_parameters: {
-                    "device_id": "String",
-                    "interrupt_occured": "Number [0,1]",
-                    "start_datetime": "Date",
-                    "end_datetime": "Date",
-                    "search_term": "String"
-                }
-            };
-
-            // Include metadata in the response
-            res.status(200).send({ success: true, results, metadata });
-        } catch (error) {
-            console.log(chalk.red("Error fetching alerts"), error);
-            res.status(500).send({
-                message: {
-                    en: "Error fetching scales",
-                },
-            });
+        if (result?.gsm_lat && result?.gsm_lon) {
+          modifiedResult.gsm_map_url = `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`;
         }
-    },
-}
-module.exports = controller
+
+        if (result?.gps_lat && result?.gps_lon) {
+          modifiedResult.gps_map_url = `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`;
+        }
+
+        return modifiedResult;
+      });
+      results.docs = docs;
+      // Add metadata for searchable parameters
+      const metadata = {
+        searchable_parameters: {
+          device_id: "String",
+          interrupt_occured: "Number [0,1]",
+          start_datetime: "Date",
+          end_datetime: "Date",
+          search_term: "String",
+        },
+      };
+
+      // Include metadata in the response
+      res.status(200).send({ success: true, results, metadata });
+    } catch (error) {
+      console.log(chalk.red("Error fetching alerts"), error);
+      res.status(500).send({
+        message: {
+          en: "Error fetching scales",
+        },
+      });
+    }
+  },
+};
+module.exports = controller;
 
 // check access
 function checkAccess({ query, req }) {
-    const user = req.user;
-    const role = user.role;
-    const level = user.level;
-    const factory = user.factory
-    const region = user.region
-    // filter by factory
-    if (level === "factory") {
-        query.factory = factory
-    }
-    // filter by region
-    if (level === "region") {
-        query.region = region
-    }
-    return query
-
+  const user = req.user;
+  const role = user.role;
+  const level = user.level;
+  const factory = user.factory;
+  const region = user.region;
+  // filter by factory
+  if (level === "factory") {
+    query.factory = factory;
+  }
+  // filter by region
+  if (level === "region") {
+    query.region = region;
+  }
+  return query;
 }
