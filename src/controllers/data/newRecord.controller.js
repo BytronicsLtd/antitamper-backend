@@ -192,8 +192,12 @@ function validateInterrupts({ data, last_entry }) {
                 // Calibration switch check (highest priority)
                 if (priority_type === "calibration switch") {
                     let calib_sw_interrupt_events = data.calib_sw_interrupt_events.split(" ").map(event => event.trim());
-                    if (calib_sw_interrupt_events.includes("1")) {
+                    if (calib_sw_interrupt_events.includes("1") && new_data.state == "on") {
                         new_data.alert_types.push("calibration-switch");
+                    }
+                    // 
+                    if (calib_sw_interrupt_events.includes("1") && new_data.state == "off") {
+                        new_data.interrupt_types = ""
                     }
                 }
                 // Enclosure check (second priority) 
