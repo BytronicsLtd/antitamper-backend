@@ -195,7 +195,7 @@ function validateInterrupts({ data, last_entry }) {
                     if (calib_sw_interrupt_events.includes("1") && new_data.state == "on") {
                         new_data.alert_types.push("calibration-switch");
                     }
-                    // 
+                    // ignore interrupts where state is off abd calibration switch is 1
                     if (calib_sw_interrupt_events.includes("1") && new_data.state == "off") {
                         new_data.interrupt_types = ""
                     }
