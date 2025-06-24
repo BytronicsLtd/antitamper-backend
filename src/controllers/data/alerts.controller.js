@@ -23,7 +23,10 @@ const controller = {
       } = req.query;
       // query builder
       let query = {
-        interrupt_types: { $ne: "" }, // ensure  we have interrupts
+        interrupt_types: {
+          $exists: true,
+          $ne: ""
+        }, // ensure  we have interrupts
       };
       // device id
       if (device_id) {

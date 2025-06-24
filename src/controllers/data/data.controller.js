@@ -27,7 +27,7 @@ const controller = {
       } = req.query;
       // query builder
       let query = {};
-      //check for device id
+      //check for gps
       if (has_gp_coords === "true") {
         query["gps_location.coordinates"] = { $not: { $size: 0 } };
       }
