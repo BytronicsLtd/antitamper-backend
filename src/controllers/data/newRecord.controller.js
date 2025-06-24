@@ -5,7 +5,7 @@ const DeviceModel = require("../../models/device.model");
 const RawDataModel = require("../../models/raw-data.model.js");
 const MQTTClient = require("../../config/mqtt.conf");
 const { checkAlert } = require("./checkAlerts.js");
-const { isSameYear, addHours, addSeconds } = require("date-fns");
+const { isSameYear, addHours, addSeconds, subHours } = require("date-fns");
 const { decryptDeviceData } = require("../../utils/decrypt.util.js");
 
 
@@ -112,7 +112,7 @@ const controller = {
                 try {
                     const iso_time = new Date(Number(gsm_datetime) * 1000);
                     if (isWithinCurrentYear(iso_time)) {
-                        data.gsm_timestamp = iso_time;
+                        data.gsm_timestamp = subHours(iso_time, 3);
                     }
                     // else {
                     //     if (data.saved_to_sd === false) {
