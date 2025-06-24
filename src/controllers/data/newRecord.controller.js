@@ -114,11 +114,11 @@ const controller = {
                     if (isWithinCurrentYear(iso_time)) {
                         data.gsm_timestamp = iso_time;
                     }
-                    else {
-                        if (data.saved_to_sd === false) {
-                            data.gsm_timestamp = addHours(utc_date_time, 3)
-                        }
-                    }
+                    // else {
+                    //     if (data.saved_to_sd === false) {
+                    //         data.gsm_timestamp = addHours(utc_date_time, 3)
+                    //     }
+                    // }
 
                 } catch (error) {
                     data.gsm_timestamp = null;
