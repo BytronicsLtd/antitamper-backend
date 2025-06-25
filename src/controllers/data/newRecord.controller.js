@@ -180,7 +180,7 @@ function validateInterrupts({ data, last_entry }) {
     let battery_alert_added = false;
     try {
         // Define priority order explicitly
-        const priority_order = ["enclosure", "calibration switch", "battery_voltage","state"];
+        const priority_order = ["enclosure", "calibration switch", "battery_voltage", "state"];
         const availableTypes = data.interrupt_types?.split(",").map(type => type.trim()) || [];
         // Check each type in priority order
         for (const priority_type of priority_order) {
@@ -208,6 +208,7 @@ function validateInterrupts({ data, last_entry }) {
             // Enclosure check (second priority) 
             if (data.battery_voltage < 3.45 && !battery_alert_added) {
                 new_data.alert_types.push("battery-voltage");
+                new_data.interrupt_types = data?.interrupt_types || "" + "battery_voltage"
                 battery_alert_added = true;
             }
         }
