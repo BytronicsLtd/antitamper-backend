@@ -62,6 +62,9 @@ const controller = {
       }
       if (interrupt_types) {
         query.interrupt_types = interrupt_types;
+        if (interrupt_types.battery_voltage) {
+          query.alert_types = { $elemMatch: { $eq: "battery-voltage" } }
+        }
       }
       if (enclosure) {
         query.enclosure = enclosure;
