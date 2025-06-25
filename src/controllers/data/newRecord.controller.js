@@ -17,9 +17,6 @@ const controller = {
             mqtt_client.publish("scale-antitamper/data", JSON.stringify(payload))
             // save the raw payload
             await RawDataModel.create(payload);
-            if (payload.periodic_data) {
-                payload.interrupt_types = "";
-            }
             // handle encrypted data
             if (payload.encrypted) {
                 const decrypted = decryptDeviceData(payload.data);
@@ -183,7 +180,7 @@ function validateInterrupts({ data, last_entry }) {
     let battery_alert_added = false;
     try {
         // Define priority order explicitly
-        const priority_order = ["enclosure", "calibration switch", "battery_voltage"];
+        const priority_order = ["enclosure", "calibration switch", "battery_voltage","state"];
         const availableTypes = data.interrupt_types?.split(",").map(type => type.trim()) || [];
         // Check each type in priority order
         for (const priority_type of priority_order) {
