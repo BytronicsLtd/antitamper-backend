@@ -136,6 +136,7 @@ const controller = {
         let modifiedResult = {
           id: _id,
           ...rest,
+          interrupt_types: rest.alert_types.join(" "),
         };
 
         if (result?.gsm_lat && result?.gsm_lon) {
