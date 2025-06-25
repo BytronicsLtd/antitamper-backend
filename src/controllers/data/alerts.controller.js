@@ -22,9 +22,20 @@ const controller = {
       } = req.query;
       // query builder
       let query = {
-        alert_types: {
-          $not: { $size: 0 }
-        }
+        $or: [
+          {
+            interrupt_types: {
+              $exists: true,
+              $ne: ""
+            }
+          },
+          {
+            alert_types: {
+              $ne: []
+            }
+          }
+        ]
+
       };
       // device id
       if (device_id) {
@@ -134,7 +145,7 @@ const controller = {
         let modifiedResult = {
           id: _id,
           ...rest,
-         interrupt_types: rest?.alert_types?.map(type => type.replace(/-/g, " ")).join(" "),
+          interrupt_types: rest?.interrupt_types || rest?.alert_types?.map(type => type.replace(/-/g, " ")).join(" "),
         };
 
         if (result?.gsm_lat && result?.gsm_lon) {
