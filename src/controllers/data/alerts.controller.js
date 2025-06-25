@@ -7,18 +7,17 @@ const controller = {
     try {
       let = {
         device_id,
-
         start_datetime,
         end_datetime,
         search_term,
         state,
         enclosure,
-        battery_threshold,
         interrupt_types,
         factory_name,
         saved_to_sd,
         region,
         factory_name,
+        scale_model,
         company_id,
       } = req.query;
       // query builder
@@ -39,6 +38,10 @@ const controller = {
       if (factory_name) {
         query.factory_name = factory_name;
       }
+      // scale model 
+      if (scale_model) {
+        query.scale_model = scale_model;
+      }
       // company id
       if (company_id) {
         query.company_id = company_id;
@@ -57,11 +60,6 @@ const controller = {
       }
       if (saved_to_sd) {
         query.saved_to_sd = saved_to_sd === "false" ? false : true;
-      }
-      if (battery_threshold) {
-        query.battery_voltage = {
-          $gte: Number(battery_threshold),
-        };
       }
       // Handle start and end datetime for gsm_timestamp and rtc_timestamp
       if (start_datetime && end_datetime) {
@@ -136,7 +134,7 @@ const controller = {
         let modifiedResult = {
           id: _id,
           ...rest,
-          interrupt_types: rest.alert_types.join(" "),
+         interrupt_types: rest.alert_types.map(type => type.replace(/-/g, " ")).join(" "),
         };
 
         if (result?.gsm_lat && result?.gsm_lon) {

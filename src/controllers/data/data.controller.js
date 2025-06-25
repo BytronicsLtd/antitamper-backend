@@ -24,6 +24,7 @@ const controller = {
         region,
         factory_name,
         company_id,
+        scale_model,
       } = req.query;
       // query builder
       let query = {};
@@ -34,6 +35,10 @@ const controller = {
       // device id
       if (device_id) {
         query.device_id = device_id;
+      }
+      // scale model 
+      if (scale_model) {
+        query.scale_model = scale_model;
       }
       // region
       if (region) {
