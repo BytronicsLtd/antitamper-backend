@@ -14,199 +14,149 @@ const controller = {
       const payload = req.body;
       console.log("create device payload ", payload);
 
-      const factory = await FactoryModel.findById(payload.factory);
-      if (!factory) {
-        await session.abortTransaction();
-        session.endSession();
-        return res.status(404).send({
-          success: false,
-          message: "Factory not found",
-        });
-      }
-      //@Sylvia added region to device
-      payload.region = factory.region;
+            const device = new DeviceModel(payload)
+            await ActivityModel.create([{
+                action: "delete", // edit, create, delete actions
+                user: req.user.id, //user id performing the action
+                email: req.user.email, //email of the user performinng the action
+                role: req.user.role, //role of the user performing the action
+                timestamp: Date.now(), // time the action was performed
+                model: "Device", //data model affected by the action
+                affected_id: device.id, //id of the item affected by the action
+                deleted_data: device, // deleted data
+                edited_data: null, // edited data
+                created_data: null,// created data
+            }], { session })
+            await device.save(session)
+            await session.commitTransaction();
+            session.endSession();
+            res.status(201).send({ success: true, device })
+        } catch (error) {
+            console.log(chalk.red("Error creating device"), error);
+            await session.abortTransaction();
+            session.endSession();
+            let errors = []
+            if (error.name === 'ValidationError') {
+                errors = formatValidationErrors(error.errors)
+            }
+            res.status(500).send({ success: false, message: 'Error creating device', errors})
 
+        }
+    },
+    //fetch many devices
+    fetchMany: async (req, res) => {
+        try {
+            let = {
+                search_term,
+                soft_deleted
+            } = req.query;
+            const user = req.user;
+            // handle soft delete
+            let query = {
+                soft_deleted: { $ne: true }
+            };
+            const elevated_roles = ['root', 'sys-admin']
+            if (elevated_roles.includes(user.role) && soft_deleted) {
+                if (soft_deleted === "true") {
+                    query.soft_deleted = true;
+                }
+                if (soft_deleted === "false") {
+                    query.soft_deleted = false;
+                }
+                if (soft_deleted === 'any') {
+                    delete query.soft_deleted
+                }
+            }
+            // ---------------------- search query  ------------------------
+            if (search_term) {
+                query = {
+                    ...query,
+                    $or: [
+                        { device_id: { $regex: new RegExp(search_term, "i") } },
+                        { factory_name: { $regex: new RegExp(search_term, "i") } },
+                        { region: { $regex: new RegExp(search_term, "i") } },
+                        { serial_number: { $regex: new RegExp(search_term, "i") } },
+                        { phone_number: { $regex: new RegExp(search_term, "i") } },
+                        { status: { $regex: new RegExp(search_term, "i") } },
+                    ],
+                };
+            }
+            query = {
+                ...checkAccess({ query, req }),
+            }
+            const { page, size } = req.query;
+            const limit = size ? +size : 100;
+            const offset = page ? (page - 1) * limit : 0;
+            const results = await DeviceModel.paginate(query, {
+                page, limit, offset,
+                select: ``,
+                sort: '-createdAt',
 
-      const device = new DeviceModel(payload);
-      await ActivityModel.create(
-        [
-          {
-            action: "delete", // edit, create, delete actions
-            user: req.user.id, //user id performing the action
-            email: req.user.email, //email of the user performinng the action
-            role: req.user.role, //role of the user performing the action
-            timestamp: Date.now(), // time the action was performed
-            region: factory.region || "unknown",
-            model: "Device", //data model affected by the action
-            affected_id: device.id, //id of the item affected by the action
-            deleted_data: device, // deleted data
-            edited_data: null, // edited data
-            created_data: null, // created data
-          },
-        ],
-        { session }
-      );
-      await device.save(session);
-      await session.commitTransaction();
-      session.endSession();
-      res.status(201).send({ success: true, device });
-    } catch (error) {
-      console.log(chalk.red("Error creating device"), error);
-      await session.abortTransaction();
-      session.endSession();
-      let errors = [];
-      if (error.name === "ValidationError") {
-        errors = formatValidationErrors(error.errors);
-      }
-      res
-        .status(500)
-        .send({ success: false, message: "Error creating device", errors });
-    }
-  },
-  //fetch many devices
-  fetchMany: async (req, res) => {
-    try {
-      let { search_term, soft_deleted, company_id, factory_name, region } = req.query;
-      const user = req.user;
-      // handle soft delete
-      let query = {
-        soft_deleted: { $ne: true },
-      };
-      // show soft deleted
-      const elevated_roles = ["root", "sys-admin", "Manager", "ICT Manager"];
-      if (elevated_roles.includes(user.role) && soft_deleted) {
-        if (soft_deleted === "true") {
-          query.soft_deleted = true;
+            });
+            // Add metadata for searchable parameters
+            const metadata = {
+                searchable_parameters: {
+                    "search_term": "String",
+                    "serial_number": "String",
+                    "phone_number": "String",
+                    "factory_name": "String",
+                    "factory_location": "String",
+                    "region": "String",
+                    "status": "String"
+                }
+            };
+            res.status(200).send({ success: true, metadata, results });
+        } catch (error) {
+            console.log(chalk.red("Error fetching devices"), error);
+            res.status(500).send({ success: false })
         }
-        if (soft_deleted === "false") {
-          query.soft_deleted = false;
-        }
-        if (soft_deleted === "any") {
-          delete query.soft_deleted;
-        }
-      }
-      // region
-      if (region) {
-        query.region = region
-      }
-      // factory name
-      if (factory_name) {
-        query.factory_name = factory_name
-      }
-      // company id
-      if (company_id) {
-        query.company_id = company_id
-      }
-      // ---------------------- search query  ------------------------
-      if (search_term) {
-        query = {
-          ...query,
-          $or: [
-            { device_id: { $regex: new RegExp(search_term, "i") } },
-            { factory_name: { $regex: new RegExp(search_term, "i") } },
-            { region: { $regex: new RegExp(search_term, "i") } },
-            { serial_number: { $regex: new RegExp(search_term, "i") } },
-            { phone_number: { $regex: new RegExp(search_term, "i") } },
-            { status: { $regex: new RegExp(search_term, "i") } },
-            { company_id: { $regex: new RegExp(search_term, "i") } },
-          ],
-        };
-      }
-      query = {
-        ...checkAccess({ query, req }),
-      };
-      const { page, size } = req.query;
-      const limit = size ? +size : 100;
-      const offset = page ? (page - 1) * limit : 0;
-      const results = await DeviceModel.paginate(query, {
-        page,
-        limit,
-        offset,
-        select: ``,
-        sort: "-createdAt",
-      });
-      // Add metadata for searchable parameters
-      const metadata = {
-        searchable_parameters: {
-          search_term: "String",
-          serial_number: "String",
-          phone_number: "String",
-          factory_name: "String",
-          factory_location: "String",
-          region: "String",
-          status: "String",
-        },
-      };
-      res.status(200).send({ success: true, metadata, results });
-    } catch (error) {
-      console.log(chalk.red("Error fetching devices"), error);
-      res.status(500).send({ success: false });
-    }
-  },
-  // fetch  device details
-  getOne: async (req, res) => {
-    try {
-      const id = req.query.id;
-      let device = await DeviceModel.findById(id);
-      device = device?.toJSON();
-      if (!device)
-        return res
-          .status(404)
-          .send({ success: false, message: "Device not found" });
-      console.log("devices =============== = ", device);
+    },
+    // fetch  device details
+    getOne: async (req, res) => {
+        try {
+            const id = req.query.id
+            let device = await DeviceModel.findById(id)
+            device = device?.toJSON()
+            if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
+            console.log("devices =============== = ", device);
 
-      const users = await UserModel.find({ factory: device.factory }).select(
-        "email name phone_number role level role"
-      );
-      res.status(200).send({ success: true, results: { device, users } });
-    } catch (error) {
-      console.log(chalk.red("Error fetching device details"), error);
-      res.status(500).send({ success: false });
-    }
-  },
-  update: async (req, res) => {
-    try {
-      const id = req.body.id;
-      let { soft_deleted, ...data } = req.body;
-      let device = await DeviceModel.findById(id); // Use `findById` method
-      if (!device)
-        return res
-          .status(404)
-          .send({ success: false, message: "Device not found" });
-      //fetch factory details if factory id is passed
-      if (data.factory) {
-        const factory = await FactoryModel.findById(data.factory);
-        if (!factory)
-          return res
-            .status(404)
-            .send({ success: true, message: "Factory not found" });
-        data.factory = factory.id;
-        data.region = factory.region;
-        data.factory_name = factory.name;
-        data.factory_location = factory.location;
-      }
-      device = await DeviceModel.findByIdAndUpdate(
-        id,
-        {
-          $set: data,
-        },
-        { runValidators: true, new: true }
-      );
-      res
-        .status(200)
-        .send({ success: true, message: "Device updated successfully" });
-    } catch (error) {
-      console.log(chalk.red("Error fetching device details"), error);
-      res.status(500).send({ success: false, error: error.message });
-    }
-  },
-  // remove
-  remove: async (req, res) => {
-    const session = await mongoose.startSession();
-    try {
-      session.startTransaction();
-      const id = req.body.id;
-      let device = await DeviceModel.findById(id);
+            const users = await UserModel.find({ factory: device.factory }).select('email name phone_number role')
+            res.status(200).send({ success: true, results: { device, users } });
+        } catch (error) {
+            console.log(chalk.red("Error fetching device details"), error);
+            res.status(500).send({ success: false })
+        }
+    },
+    update: async (req, res) => {
+        try {
+            const id = req.body.id
+            let { soft_deleted, ...data } = req.body
+            let device = await DeviceModel.findById(id); // Use `findById` method
+            if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
+            //fetch factory details if factory id is passed
+            if (data.factory) {
+                const factory = await FactoryModel.findById(data.factory);
+                if (!factory) return res.status(404).send({ success: true, message: "Factory not found" });
+                data.factory = factory.id;
+                data.factory_name = factory.name;
+                data.factory_location = factory.location
+            }
+            device = await DeviceModel.findByIdAndUpdate(id, {
+                $set: data
+            }, { runValidators: true, new: true })
+            res.status(200).send({ success: true, message: "Device updated successfully" })
+        } catch (error) {
+            console.log(chalk.red("Error fetching device details"), error);
+            res.status(500).send({ success: false, error: error.message })
+        }
+    },
+    // remove 
+    remove: async (req, res) => {
+        const session = await mongoose.startSession();
+        try {
+            session.startTransaction();
+            const id = req.body.id;
+            let device = await DeviceModel.findById(id);
 
       if (!device) {
         return res
