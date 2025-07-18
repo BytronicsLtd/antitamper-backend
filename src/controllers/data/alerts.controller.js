@@ -118,6 +118,7 @@ const controller = {
                     $or: [
                         { interrupt_type: { $regex: new RegExp(search_term, "i") } },
                         { device_id: { $regex: new RegExp(search_term, "i") } },
+                        { company_id: { $regex: new RegExp(search_term, "i") } },
                         { factory_location: { $regex: new RegExp(search_term, "i") } },
                         { factory_name: { $regex: new RegExp(search_term, "i") } },
 
@@ -159,7 +160,7 @@ const controller = {
       // Add metadata for searchable parameters
       const metadata = {
         searchable_parameters: {
-          device_id: "String",
+          company_id: "String",
           enclosure: "String",
           state: "String",
           start_datetime: "Date",
