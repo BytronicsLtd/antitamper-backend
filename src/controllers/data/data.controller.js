@@ -173,6 +173,7 @@ const controller = {
           end_datetime: "Date",
           search_term: "String",
           saved_to_sd: "true|false",
+          sd_card_available: "true|false",
           has_gp_coords: "true|false",
         },
       };
