@@ -25,6 +25,7 @@ const controller = {
         factory_name,
         company_id,
         scale_model,
+        sd_card_available,
       } = req.query;
       // query builder
       let query = {};
@@ -66,6 +67,9 @@ const controller = {
       }
       if (saved_to_sd) {
         query.saved_to_sd = saved_to_sd === "false" ? false : true;
+      }
+      if (sd_card_available) {
+        query.sd_card_available = sd_card_available === "false" ? false : true;
       }
       if (battery_threshold) {
         query.battery_voltage = {
