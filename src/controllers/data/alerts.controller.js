@@ -15,6 +15,7 @@ const controller = {
         interrupt_types,
         factory_name,
         saved_to_sd,
+        sd_card_available,
         region,
         factory_name,
         scale_model,
@@ -71,6 +72,9 @@ const controller = {
       }
       if (saved_to_sd) {
         query.saved_to_sd = saved_to_sd === "false" ? false : true;
+      }
+       if (sd_card_available) {
+        query.sd_card_available = sd_card_available === "false" ? false : true;
       }
       // Handle start and end datetime for gsm_timestamp and rtc_timestamp
       if (start_datetime && end_datetime) {
