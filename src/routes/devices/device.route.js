@@ -15,6 +15,10 @@ module.exports = ({ app }) => {
   app.post('/api/v1/devices/m2m/id/', { preHandler: [] }, (req, res) => {
     deviceController.getCompanyID(req, res);
   });
+  //  m2m get time
+  app.post('/api/v1/devices/m2m/verify/', { preHandler: [] }, (req, res) => {
+    deviceController.verifyScale(req, res);
+  });
   // fetch many devices
   app.get('/api/v1/devices/', { preHandler: [authenticate,] }, (req, res) => {
     deviceController.fetchMany(req, res);
