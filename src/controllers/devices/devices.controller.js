@@ -240,6 +240,7 @@ const controller = {
 
       const approved_scales = [
         { scale_id: "0F:03:24:92:10:69", company_id: "BWS-0001" },
+        { scale_id: "0F:03:24:92:10:53", company_id: "BWS-0002" },
       ]
       const scale = approved_scales.find((scale) => scale.scale_id == scale_id)
       if (!scale) {
