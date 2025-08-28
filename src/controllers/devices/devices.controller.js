@@ -235,14 +235,15 @@ const controller = {
   // verify scale
   verifyScale: async (req, res) => {
     try {
-      const scale_id = req.body.scale_id;
+      const bluetooth_mac_address = req.body.scale_id;
       console.log("verify body ", req.body);
 
       const approved_scales = [
-        { scale_id: "0F:03:24:92:10:69", company_id: "BWS-0001" },
-        { scale_id: "0F:03:24:92:10:53", company_id: "BWS-0002" },
+        { bluetooth_mac_address: "0F:03:24:92:10:69", company_id: "BWS-0001" },
+        { bluetooth_mac_address: "0F:03:24:92:10:53", company_id: "BWS-0002" },
       ]
-      const scale = approved_scales.find((scale) => scale.scale_id == scale_id)
+      // const scale = await DeviceModel.findOne({ bluetooth_mac_address });
+      const scale = approved_scales.find((scale) => scale.bluetooth_mac_address == bluetooth_mac_address)
       if (!scale) {
         return res.status(404).send({ success: false });
       }

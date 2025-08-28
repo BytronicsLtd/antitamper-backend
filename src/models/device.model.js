@@ -17,6 +17,11 @@ const Schema = {
     serial_number: {
         type: String,
     },
+    // bluetooth mac address
+    bluetooth_mac_address: {
+        type: String,
+        default:null
+    },
     // could be the scale serial number
     device_sim_card_no: {
         trim:true,
