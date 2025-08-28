@@ -239,8 +239,8 @@ const controller = {
       console.log("verify body ", req.body);
 
       const approved_scales = [
-        { bluetooth_mac_address: "0F:03:24:92:10:69", company_id: "BWS-0001" },
-        { bluetooth_mac_address: "0F:03:24:92:10:53", company_id: "BWS-0002" },
+        { bluetooth_mac_address: "0F:03:24:92:10:69", company_id: "BWS-0052" },
+        { bluetooth_mac_address: "0F:03:24:92:10:53", company_id: "BWS-0051" },
       ]
       const scale = await DeviceModel.findOne({ bluetooth_mac_address });
       // const scale = approved_scales.find((scale) => scale.bluetooth_mac_address == bluetooth_mac_address)
