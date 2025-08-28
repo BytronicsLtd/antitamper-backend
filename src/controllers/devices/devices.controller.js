@@ -242,12 +242,12 @@ const controller = {
         { bluetooth_mac_address: "0F:03:24:92:10:69", company_id: "BWS-0001" },
         { bluetooth_mac_address: "0F:03:24:92:10:53", company_id: "BWS-0002" },
       ]
-      // const scale = await DeviceModel.findOne({ bluetooth_mac_address });
-      const scale = approved_scales.find((scale) => scale.bluetooth_mac_address == bluetooth_mac_address)
+      const scale = await DeviceModel.findOne({ bluetooth_mac_address });
+      // const scale = approved_scales.find((scale) => scale.bluetooth_mac_address == bluetooth_mac_address)
       if (!scale) {
         return res.status(404).send({ success: false });
       }
-      res.status(200).send({ success: true, company_id: scale.company_id });
+      res.status(200).send({ success: true, scale });
     } catch (error) {
       console.log(chalk.red("Error verifying scale "), error);
       res.status(500).send({ success: false, error: error.message });
