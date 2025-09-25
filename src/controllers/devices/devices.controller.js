@@ -247,6 +247,9 @@ const controller = {
       if (!scale) {
         return res.status(404).send({ success: false });
       }
+      if(scale.status === "inactive"){
+         return res.status(401).send({ success: false });
+      }
       res.status(200).send({ success: true, scale });
     } catch (error) {
       console.log(chalk.red("Error verifying scale "), error);
