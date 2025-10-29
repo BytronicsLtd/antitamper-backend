@@ -6,6 +6,7 @@ const ActivityModel = require("../../models/activityLog.js");
 const { default: mongoose } = require("mongoose");
 const formatValidationErrors = require("../../utils/formatValidationErrors.util");
 const { addSeconds } = require("date-fns");
+const scalesDumpModel = require("../../models/scales-dump.model.js");
 const controller = {
   create: async (req, res) => {
     const session = await mongoose.startSession();
@@ -16,7 +17,7 @@ const controller = {
 
       const device = new DeviceModel(payload)
       await ActivityModel.create([{
-        action: "delete", // edit, create, delete actions
+        action: "create", // edit, create, delete actions
         user: req.user.id, //user id performing the action
         email: req.user.email, //email of the user performinng the action
         role: req.user.role, //role of the user performing the action
@@ -118,7 +119,6 @@ const controller = {
       let device = await DeviceModel.findById(id)
       device = device?.toJSON()
       if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
-      console.log("devices =============== = ", device);
 
       const users = await UserModel.find({ factory: device.factory }).select('email name phone_number role')
       res.status(200).send({ success: true, results: { device, users } });
@@ -128,26 +128,57 @@ const controller = {
     }
   },
   update: async (req, res) => {
+    const session = await mongoose.startSession();
     try {
+      session.startTransaction();
       const id = req.body.id
       let { soft_deleted, ...data } = req.body
       let device = await DeviceModel.findById(id); // Use `findById` method
-      if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
+      if (!device) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).send({ success: false, message: 'Device not found' });
+      }
       //fetch factory details if factory id is passed
       if (data.factory) {
         const factory = await FactoryModel.findById(data.factory);
-        if (!factory) return res.status(404).send({ success: true, message: "Factory not found" });
+        if (!factory) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(404).send({ success: false, message: "Factory not found" });
+        }
         data.factory = factory.id;
         data.factory_name = factory.name;
         data.factory_location = factory.location
       }
       device = await DeviceModel.findByIdAndUpdate(id, {
         $set: data
-      }, { runValidators: true, new: true })
+      }, { runValidators: true, new: true }).session(session);
+      // log the edit
+      await ActivityModel.create([{
+        action: "update", // edit, create, delete actions
+        user: req.user.id, //user id performing the action
+        email: req.user.email, //email of the user performinng the action
+        role: req.user.role, //role of the user performing the action
+        timestamp: Date.now(), // time the action was performed
+        model: "Device", //data model affected by the action
+        affected_id: device.id, //id of the item affected by the action
+        deleted_data: null, // deleted data
+        edited_data: device, // edited data
+        created_data: null,// created data
+      }], { session })
+      await session.commitTransaction();
+      session.endSession();
       res.status(200).send({ success: true, message: "Device updated successfully" })
     } catch (error) {
       console.log(chalk.red("Error fetching device details"), error);
-      res.status(500).send({ success: false, error: error.message })
+      await session.abortTransaction();
+      session.endSession();
+      let errors = []
+      if (error.name === 'ValidationError') {
+        errors = formatValidationErrors(error.errors)
+      }
+      res.status(500).send({ success: false, error: error.message, errors })
     }
   },
   // remove 
@@ -235,18 +266,33 @@ const controller = {
   // verify scale
   verifyScale: async (req, res) => {
     try {
-      const bluetooth_mac_address = req.body.scale_id;
-      console.log("verify body ", req.body);
+      const bluetooth_mac_address = req.body.bluetooth_mac_address;
 
+      // Validate that bluetooth_mac_address is present and not empty
+      if (!bluetooth_mac_address || bluetooth_mac_address.trim() === '') {
+        return res.status(400).send({ success: false, message: "Bluetooth MAC address is required" });
+      }
+
+      await scalesDumpModel.findOneAndUpdate({ bluetooth_mac_address }, {
+        $set: req.body
+      }, { upsert: true });
+      // save the scale details first for later analysis
       const scale = await DeviceModel.findOne({ bluetooth_mac_address });
-      
+
       if (!scale) {
-        return res.status(404).send({ success: false });
+        return res.status(404).send({ success: false, message: "Scale details not found" });
       }
-      if(scale.status === "inactive"){
-         return res.status(401).send({ success: false });
+      if (scale.status === "inactive") {
+        return res.status(401).send({ success: false, message: "Scale is currently inactive" });
       }
-      res.status(200).send({ success: true, scale });
+      res.status(200).send({
+        success: true, results: {
+          company_id: scale.company_id,
+          factory_name: scale.factory_name,
+          scale_model: scale.scale_model
+        },
+        message: "Scale verified successfully"
+      });
     } catch (error) {
       console.log(chalk.red("Error verifying scale "), error);
       res.status(500).send({ success: false, error: error.message });

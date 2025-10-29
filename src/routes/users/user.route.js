@@ -6,7 +6,7 @@ const checkRole = require("../../middlewares/checkRole.middleware");
 
 module.exports = ({ app }) => {
   // Create a new user  
-  app.post('/api/v1/users/', { preHandler: [authenticate, checkRole(['root','sys-admin'])] }, (req, res) => {
+  app.post('/api/v1/users/', { preHandler: [authenticate, checkRole(['root', 'sys-admin'])] }, (req, res) => {
     authController.createUser(req, res);
   });
   // login user
@@ -35,12 +35,12 @@ module.exports = ({ app }) => {
     authController.logout(req, res)
   });
   // Retrieve all users
-  app.get('/api/v1/users/', { preHandler: [authenticate, checkRole(['root','sys-admin','Manager','ICT Manager'])] }, (req, res) => {
+  app.get('/api/v1/users/', { preHandler: [authenticate, checkRole(['root', 'sys-admin', 'Manager', 'ICT Manager'])] }, (req, res) => {
     userController.getUsers(req, res);
   });
 
   // Retrieve a specific user by ID
-  app.get('/api/v1/users/details/', { preHandler: [authenticate,checkRole(['root','sys-admin'])] }, (req, res) => {
+  app.get('/api/v1/users/details/', { preHandler: [authenticate, checkRole(['root', 'sys-admin'])] }, (req, res) => {
     userController.getUserById(req, res);
   });
   // Retrieve login in user details
