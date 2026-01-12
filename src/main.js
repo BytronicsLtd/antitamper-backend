@@ -6,9 +6,6 @@ const fastify = require('fastify')
 const cors = require('@fastify/cors');
 const chalk = require("chalk");
 const { format } = require("date-fns");
-const cron = require('node-cron');
-const { exec } = require("child_process");
-
 
 //http server
 const app = fastify();
@@ -22,7 +19,8 @@ app.register(require('@fastify/multipart'), {
 
 //connect to database
 const dbConnect = require("./config/db.config.js");
-const { subscribe } = require('diagnostics_channel');
+// setup mqtt
+setupMQTT();
 dbConnect();
 //register models
 require("./models/index")
@@ -61,21 +59,33 @@ async function main() {
     const port = process.env.PORT || 3001
     app.listen({ port, host: "0.0.0.0" });
     console.log(chalk.yellow("server running on port", port));
+    const { setRoutes } = require("./globals/variables.globals.js");
+
+    setRoutes(all_routes);
     if (process.env.LOG_ROUTES) console.log(chalk.blue("Registered routes: "), all_routes);
 
 }
 // 
+
 main();
-cron.schedule('*/10 * * * *', () => {
-    exec("bash /usr/local/bin/clearsyslog.sh", (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.error(`Stderr: ${stderr}`);
-            return;
-        }
-        console.log(`Output: ${stdout}`);
+
+function setupMQTT() {
+    const mqtt = require("./config/mqtt.conf.js")
+    const mqtt_instance = new mqtt({
+        topic: "#",
+        host: process.env.MQTT_HOST,
+        port: process.env.MQTT_PORT,
+        custom_name: process.env.MQTT_CUSTOM_NAME,
+        username: process.env.MQTT_USERNAME,
+        password:process.env.MQTT_PASSWORD,
     });
-});
+    mqtt_instance.connect()
+    mqtt_instance.onMessage((topic, message) => {
+        if (topic === "scale-antitamper/data") {
+            console.log(topic, "message ", JSON.parse(message));
+        }
+
+    })
+}
+
+

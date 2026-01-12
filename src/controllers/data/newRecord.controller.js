@@ -2,30 +2,72 @@ const chalk = require("chalk");
 const DataModel = require("../../models/data.model");
 const UserModel = require("../../models/user");
 const DeviceModel = require("../../models/device.model");
-const emailSender = require("../../utils/communication/email/email.util")
+const RawDataModel = require("../../models/raw-data.model.js");
+const MQTTClient = require("../../config/mqtt.conf");
+const { checkAlert } = require("./checkAlerts.js");
+const { isSameYear, addHours, addSeconds, subHours } = require("date-fns");
+const { decryptDeviceData } = require("../../utils/decrypt.util.js");
 
 
+const mqtt_client = new MQTTClient({})
 const controller = {
     updateScaleStatus: async (req, res) => {
         try {
-            const payload = req.body;
+            let payload = req.body;
+            mqtt_client.publish("scale-antitamper/data", JSON.stringify(payload))
+            // save the raw payload
+            await RawDataModel.create(payload);
+            // handle encrypted data
+            if (payload.encrypted) {
+                const decrypted = decryptDeviceData(payload.data);
+                if (decrypted) {
+                    payload = { ...decrypted, encrypted: true };
+                } else {
+                    console.log('Decryption failed');
+                }
+
+            }
             // find device details
-            const device =  await DeviceModel.findOne({device_id:payload.device_id})
-            .populate([
-                {path:'factory', transform: (doc) => doc?.toJSON() || doc,}
-            ])
-            if(!device){
-                return res.status(404).send({success:false})
+            const device = await DeviceModel.findOne({ device_id: payload.device_id })
+                .populate([
+                    { path: 'factory', transform: (doc) => doc?.toJSON() || doc, }
+                ])
+            if (!device) {
+                const date = addSeconds(new Date(), 3);
+                return res.status(404).send({
+                    timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
+                })
             }
             //fetch users that belong to the same factory as the device
-            let users =  await UserModel.find({factory:device?.factory?.id}).select("-_id email phone_number")            
+            let users = await UserModel.find({
+                soft_deleted: false,
+                $or: [
+                    { role: "sys-admin" },
+                    {
+                        $and: [
+                            { factory: device?.factory?.id },
+                            {
+                                $or: [
+                                    { can_receive_email_alerts: true },
+                                    { can_receive_sms_alerts: true }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }).select("-_id email phone_number can_receive_email_alerts can_receive_sms_alerts role factory");
+            const last_entry = await DataModel.findOne({ device_id: payload.device_id }).sort({ createdAt: -1 });
             //
             let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_datetime, gsm_datetime, rtc_datetime } = payload;
             let data = {
                 ...payload,
                 factory: device?.factory?.id,
-                factory_name:device?.factory?.name,
-                factory_location:device?.factory?.location,
+                scale_model: device?.scale_model,
+                region: device?.factory?.region,
+                company_id: device?.company_id || device?.device_id,
+                region: device?.factory?.region,
+                factory_name: device?.factory?.name,
+                factory_location: device?.factory?.location,
             }
             // gps location
             if (gps_lat && gps_lon) {
@@ -42,63 +84,145 @@ const controller = {
                 };
             }
             // parse gps timestamp
-            if (gps_datetime?.length > 10) {
-                const iso_time = new Date(gps_datetime);
-                data.gps_timestamp = iso_time;
+            if (gps_datetime > 0) {
+                try {
+                    const iso_time = new Date(Number(gps_datetime) * 1000);
+                    data.gps_timestamp = iso_time;
+                } catch (error) {
+                    data.gps_timestamp = undefined;
+                }
             }
             else {
                 data.gps_timestamp = undefined
             }
+            const now = new Date();
+            const utc_date_time = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate(),
+                now.getUTCHours(),
+                now.getUTCMinutes(),
+                now.getUTCSeconds()
+            ));
             // parse gsm timestamp
-            if (gsm_datetime?.length > 10) {
-                // Extract parts from "25/01/22,15:40:07"
-                const [datePart, time] = gsm_datetime?.split(',');
-                const just_time = time.split('+')[0]
-                // Split and reverse date
-                const [d, m, y] = datePart.split('/').reverse();
-                const adjusted_date = new Date(`20${y}-${m}-${d} ${just_time}`)
-                data.gsm_timestamp = new Date(adjusted_date - 3 * 60 * 60 * 1000)
+            if (gsm_datetime) {
+                try {
+                    const iso_time = new Date(Number(gsm_datetime) * 1000);
+                    if (isWithinCurrentYear(iso_time)) {
+                        data.gsm_timestamp = subHours(iso_time, 3);
+                    }
+                    // else {
+                    //     if (data.saved_to_sd === false) {
+                    //         data.gsm_timestamp = addHours(utc_date_time, 3)
+                    //     }
+                    // }
+
+                } catch (error) {
+                    data.gsm_timestamp = null;
+                }
             }
             // parse RTC timestamp
-            if (rtc_datetime?.length > 5) {
-                const formatted_date = rtc_datetime.replace(/(\d{2})\/(\d{2})\/(\d{2}),(.*)\+\d{2}/, '20$3-$2-$1T$4');
-                const date = new Date(formatted_date); // Parse the formatted date                
-                const adjusted_date = new Date(date.getTime() - 3 * 60 * 60 * 1000); // Add 3 hours
-                data.rtc_timestamp = adjusted_date
+            if (rtc_datetime) {
+                try {
+                    const iso_time = new Date(Number(rtc_datetime) * 1000);
+
+                    if (isWithinCurrentYear(iso_time)) {
+                        data.rtc_timestamp = iso_time;
+                    }
+                    else {
+                        if (data.saved_to_sd === false) {
+                            data.rtc_timestamp = utc_date_time
+                        }
+                    }
+                } catch (error) {
+                    data.rtc_timestamp = null;
+                }
             }
 
+            if (Object.keys(data).length > 1) {
+                try {
+                    //check alert
+                    const new_data = validateInterrupts({ data, last_entry })
+                    const data_to_save = new DataModel(new_data);
+                    // console.log("data to save ", data_to_save);
+                    if (!data.test_data) {
+                        await data_to_save.save(new_data);
+                        // only check alerts for active devices
+                        if (device.status === "active") {
+                            await checkAlert({ data: data_to_save, users })
+                        }
+                    }
 
-            // console.log("data to save ", data);
-            await DataModel.create(data);
-            await checkAlert({data, users})
-            res.status(201).send({ success: true, cmd: 15 })
+                } catch (error) {
+                    console.log("error checking alert", error);
+                }
+
+            }
+            const date = addSeconds(new Date(), 3);
+            res.status(201).send({
+                timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
+                company_id: device.company_id
+            })
         } catch (error) {
             console.log(chalk.red("Error in device status"), error);
             res.status(500).send({ success: false })
 
         }
     },
-
-
 }
 
 module.exports = controller;
-// check for alerts
-async function checkAlert({data, users}) {
+
+// check valid interrupts
+function validateInterrupts({ data, last_entry }) {
+    let new_data = { ...data };
+    new_data.alert_types = []; // set it to [] initially
+    let battery_alert_added = false;
     try {
-        if (data.interrupt_type === 'none') return;
-        // "gmnolkeri@gmail.com"
-        const receivers = users.map(user=>user.email)
-        console.log("email receivers ", receivers)
-        const result = await emailSender({
-            template: "alert.handlebars",
-            subject: "Alert!",
-            emails: receivers,
-            payload: data,
-        })
-        console.log("send email result ", result)
+        // Define priority order explicitly
+        const priority_order = ["enclosure", "calibration switch", "battery_voltage", "state"];
+        const availableTypes = data.interrupt_types?.split(",").map(type => type.trim()) || [];
+        // Check each type in priority order
+        for (const priority_type of priority_order) {
+            // Only process if this interrupt type is available for this device
+            if (availableTypes.includes(priority_type)) {
+                // Calibration switch check (highest priority)
+                if (priority_type === "calibration switch") {
+                    let calib_sw_interrupt_events = data.calib_sw_interrupt_events.split(" ").map(event => event.trim());
+                    if (calib_sw_interrupt_events.includes("1") && new_data.state == "on") {
+                        new_data.alert_types.push("calibration-switch");
+                    }
+                    // ignore interrupts where state is off abd calibration switch is 1
+                    if (calib_sw_interrupt_events.includes("1") && new_data.state == "off") {
+                        new_data.interrupt_types = ""
+                    }
+                }
+                // Enclosure check (second priority) 
+                if (priority_type === "enclosure") {
+                    let enclosure_interrupt_events = data.enclosure_interrupt_events.split(" ").map(event => event.trim());
+                    if (enclosure_interrupt_events.includes("1")) {
+                        new_data.alert_types.push("enclosure");
+                    }
+                }
+            }
+            // Enclosure check (second priority) 
+            if (data.battery_voltage < 3.45 && !battery_alert_added) {
+                new_data.alert_types.push("battery-voltage");
+                new_data.interrupt_types = data?.interrupt_types || "" + "battery_voltage"
+                battery_alert_added = true;
+            }
+        }
+        return new_data;
+    } catch (error) {
+        console.error("Error validating interrupts:", error);
+        return new_data;
     }
-    catch (error) {
-        console.log(chalk.red("Error checking alerts"), error);
-    }
+}
+
+//
+function isWithinCurrentYear(time) {
+    const timestamp = time instanceof Date ? time : new Date(time);
+    const now = new Date();
+
+    return isSameYear(timestamp, now);
 }

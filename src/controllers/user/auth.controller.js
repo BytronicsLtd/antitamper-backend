@@ -1,13 +1,17 @@
 const chalk = require("chalk");
-const UserModel = require("../../models/user");
-const ActivityModel = require("../../models/activityLog");
 const jwt = require("jsonwebtoken"); // used to create, sign, and verify tokens
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const { default: mongoose } = require("mongoose");
+const phoneNumberFormatter = require("../../utils/phoneNumberFormatter.util");
 const passwordValidationUtil = require("../../utils/passwordValidate.util");
 const emailSender = require("../../utils/communication/email/email.util");
 const { addMinutes, format } = require("date-fns");
+const formatValidationErrors = require("../../utils/formatValidationErrors.util");
+// 
+const UserModel = require("../../models/user");
+const ActivityModel = require("../../models/activityLog");
+
 
 
 const controller = {
@@ -18,10 +22,14 @@ const controller = {
             session.startTransaction();
             //get payload from request
             const body = req.body;
+            console.log("create user body ", body);
+            if (body.phone_number) {
+                body.phone_number = phoneNumberFormatter(body.phone_number)
+            }
             // check if user is already registered
             const query = {
                 $or: [
-                    { phone_number: body.phone_number },
+                    { phone_number: phoneNumberFormatter(body.phone_number) },
                     { email: body.email }
                 ]
             }
@@ -71,6 +79,19 @@ const controller = {
             })
 
             await user.save({ session });
+            //create history
+            await ActivityModel.create([{
+                action: "create", // edit, create, delete actions
+                user: req.user.id, //user id performing the action
+                email: req.user.email, //email of the user performinng the action
+                role: req.user.role, //role of the user performing the action
+                timestamp: Date.now(), // time the action was performed
+                model: "User", //data model affected by the action
+                affected_id: user.id, //id of the item affected by the action
+                deleted_data: null, // deleted data
+                edited_data: null, // edited data
+                created_data: user,// created data
+            }], { session })
             await session.commitTransaction();
             session.endSession();
 
@@ -83,7 +104,11 @@ const controller = {
             console.log(chalk.red("Error creating  user "), error);
             await session.abortTransaction();
             session.endSession();
-            res.status(400).send({ message: "Error creating user", error: error.message });
+            let errors = []
+            if (error.name === 'ValidationError') {
+                errors = formatValidationErrors(error.errors)
+            }
+            res.status(400).send({ message: "Error creating user", error: error.message, errors });
         }
     },
     // login user
@@ -93,12 +118,18 @@ const controller = {
             const body = req.body;
             const query = {
                 $or: [
-                    { phone_number: body.email_or_phone_number },
+                    { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
                     { email: body.email_or_phone_number }
-                ]
+                ],
+                soft_deleted: { $ne: true }
             }
+            console.log("login  ", query);
+
             // if email already exists return error
-            let user = await UserModel.findOne(query).select("email phone_number password roles")
+            let user = await UserModel.findOne(query)
+                .populate([
+                    { path: 'factory', select: "name location", transform: (doc) => doc?.toJSON() || doc }
+                ])
             if (!user) {
                 return res.status(404).send({ success: true, message: "User with given email or phone number not found", });
             }
@@ -111,24 +142,24 @@ const controller = {
                 return res.status(400).send({ success: true, message: "Invalid password", });
             }
             //create token valid for one month
-            const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
+            const new_token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
                 expiresIn: 2592000, // 30 days
             });
-            const { password, createdAt, updatedAt, ...user_data } = user.toJSON();
+            const { password, createdAt, token, updatedAt, ...user_data } = user.toJSON();
             //save web token to db
             await UserModel.findOneAndUpdate(
-                { email: body.email },
+                query,
                 {
                     $set: {
-                        token: token,
+                        token: new_token,
                     },
                 },
             );
-            res.status(200).send({ success: true, message: "Successfully logged in", results: user_data, token });
+            res.status(200).send({ success: true, message: "Successfully logged in", results: user_data, token: new_token });
 
         } catch (error) {
             console.log(chalk.red("Error logging in user "), error);
-            res.status(500).send({ success: false, message: "Error retrieving users", error: error.message });
+            res.status(500).send({ success: false, message: "Error logging in user", error: error.message });
 
         }
     },
@@ -136,14 +167,17 @@ const controller = {
     requestVerification: async (req, res) => {
         try {
             const body = req.body;
-            const user = await UserModel.findOne({ email: body.email });
+            const query = {
+                $or: [
+                    { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
+                    { email: body.email_or_phone_number }
+                ]
+            }
+            const user = await UserModel.findOne(query);
 
             if (!user) {
                 return res.status(404).send({
-                    success: false,
-                    message: {
-                        en: "User with given email or phone number not found"
-                    }
+                    success: false, message: "User with given email or phone number not found"
                 });
             }
             // Generate verification code
@@ -158,7 +192,7 @@ const controller = {
             await emailSender({
                 template: "request-verification.handlebars",
                 subject: "Account verification",
-                emails: [body.email],
+                emails: [user.email],
                 payload: {
                     confirmation_code_exp_time: format(
                         confirmation_code_exp_time,
@@ -169,8 +203,8 @@ const controller = {
             });
 
             // Update user
-            const updatedUser = await UserModel.findByIdAndUpdate(
-                user.id,
+            const updatedUser = await UserModel.findOneAndUpdate(
+                query,
                 {
                     $set: {
                         confirmation_code,
@@ -185,7 +219,7 @@ const controller = {
                 action: "request-account-verification",
                 user: user.id,
                 email: user.email,
-                roles: user.roles,
+                role: user.role,
                 timestamp: Date.now(),
                 model: "User",
                 affected_id: user.id,
@@ -195,33 +229,33 @@ const controller = {
 
             return res.status(200).send({
                 success: true,
-                results: {
-                    id: user.id,
-                    confirmation_code,
-                    confirmation_code_exp_time
-                },
-                message: {
-                    en: "Reset code has been sent to your email"
-                }
+                // results: {
+                //     id: user.id,
+                //     confirmation_code,
+                //     confirmation_code_exp_time
+                // },
+                message: "Reset code has been sent to your email"
             });
 
         } catch (error) {
             console.log(chalk.red("Error requesting password reset "), error);
             await ErrorModel.logError(req, error);
             return res.status(500).send({
-                success: false,
-                message: {
-                    en: "An error occurred while requesting password reset"
-                }
+                success: false, message: "An error occurred while requesting password reset"
             });
         }
     },
     // verify user
     verifyUser: async (req, res) => {
         try {
-            const { id, confirmation_code } = req.body;
-
-            let user = await UserModel.findById(id);
+            const body = req.body;
+            const query = {
+                $or: [
+                    { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
+                    { email: body.email_or_phone_number }
+                ]
+            }
+            let user = await UserModel.findOne(query);
             if (!user) {
                 return res.status(404).send({
                     success: false,
@@ -231,25 +265,15 @@ const controller = {
                 });
             }
 
-            if (user.confirmation_code !== confirmation_code) {
-                return res.status(400).send({
-                    success: false,
-                    message: {
-                        en: "Invalid confirmation code"
-                    }
-                });
+            if (user.confirmation_code !== body.confirmation_code) {
+                return res.status(400).send({ success: false, message: "Invalid confirmation code" });
             }
 
             if (user.confirmation_code_exp_time < new Date()) {
-                return res.status(400).send({
-                    success: false,
-                    message: {
-                        en: "Confirmation code has expired"
-                    }
-                });
+                return res.status(400).send({ success: false, message: "Confirmation code has expired" });
             }
 
-            await UserModel.findByIdAndUpdate(id, {
+            await UserModel.findOneAndUpdate(query, {
                 $set: {
                     email_confirmed: true,
                     confirmation_code: null,
@@ -261,7 +285,7 @@ const controller = {
                 action: "user-verification",
                 user: user.id,
                 email: user.email,
-                roles: user.roles,
+                role: user.role,
                 timestamp: Date.now(),
                 model: "User",
                 affected_id: user.id,
@@ -269,22 +293,12 @@ const controller = {
                 edited_data: null,
             });
 
-            return res.status(200).send({
-                success: true,
-                message: {
-                    en: "User verified successfully"
-                }
-            });
+            return res.status(200).send({ success: true, message: "User verified successfully" });
 
         } catch (error) {
             console.log(chalk.red("Error verifying user "), error);
             await ErrorModel.logError(req, error);
-            return res.status(500).send({
-                success: false,
-                message: {
-                    en: "An error occurred while verifying user"
-                }
-            });
+            return res.status(500).send({ success: false, message: "An error occurred while verifying user" });
         }
     },
     //logout user

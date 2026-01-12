@@ -12,13 +12,21 @@ const Schema = {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Factory',
     },
+    // set internally
     factory_name: {
-        type:String,
-        default:null
+        type: String,
+        default: null
     },
+    // set internally
     factory_location: {
-        type:String,
-        default:null
+        type: String,
+        default: null
+    },
+    // set internally
+    region: {
+        type: String,
+        default: null,
+        index: true
     },
     //
     gps_location: {
@@ -31,6 +39,11 @@ const Schema = {
             type: [Number],
             // required: true
         }
+    },
+    // on or off scale state 
+    state:{
+        type:String,
+        index:true,
     },
     //
     gsm_location: {

@@ -10,7 +10,7 @@ const schema = new Schema({
     ref: 'User',
   }, //user id performing the action
   email: { type: String }, //email of the user performinng the action
-  roles: { type: [String] }, //role of the user performing the action
+  role: { type: String}, //role of the user performing the action
   timestamp: { type: Date }, // time the action was performed
   model: { type: String }, //data model affected by the action
   affected_id: { type: String }, //id of the item affected by the action

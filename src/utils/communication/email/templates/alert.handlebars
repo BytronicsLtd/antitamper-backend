@@ -1,7 +1,19 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=battery_1_bar" />
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+    </style>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -9,7 +21,7 @@
             padding: 20px;
             background-color: #f5f7fa;
         }
-        
+
         .alert-container {
             max-width: 600px;
             margin: 0 auto;
@@ -18,49 +30,58 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
-        
+
         .alert-header {
             background: #dc2626;
             color: white;
             padding: 20px;
-            text-align: center;
             animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-            0% { background-color: #dc2626; }
-            50% { background-color: #991b1b; }
-            100% { background-color: #dc2626; }
+            0% {
+                background-color: #dc2626;
+            }
+
+            50% {
+                background-color: #991b1b;
+            }
+
+            100% {
+                background-color: #dc2626;
+            }
         }
-        
+
         .alert-header h1 {
             margin: 0;
             font-size: 18px;
             font-weight: 600;
+            text-align: left;
+            margin: 10px 0px;
         }
-        
+
         .device-info {
             background: #1e3a8a;
             color: white;
             padding: 15px 20px;
             font-size: 14px;
         }
-        
+
         .status-grid {
             padding: 20px;
         }
-        
+
         .status-item {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px 20px;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 10px;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
         }
-        
+
         .status-icon {
             width: 24px;
             height: 24px;
@@ -71,28 +92,36 @@
             font-weight: bold;
             flex-shrink: 0;
         }
-        
+
+        .battery-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .icon-success {
             background: #22c55e;
             color: white;
         }
-        
+
         .icon-error {
             background: #dc2626;
             color: white;
             animation: pulse 2s infinite;
         }
-        
+
         .status-label {
             font-weight: 500;
             color: #1e293b;
         }
-        
+
         .status-value {
             font-family: monospace;
             color: #475569;
         }
-        
+
         .status-alert {
             color: #dc2626;
             font-weight: 600;
@@ -105,66 +134,53 @@
         }
     </style>
 </head>
+
 <body>
     <div class="alert-container">
         <div class="alert-header">
-            <h1>
-                {{#ifEquals interrupt_type "calibration switch"}}
-                    ⚠️ SECURITY ALERT: Calibration Switch Tampering Detected
-                {{/ifEquals}}
-                {{#ifEquals interrupt_type "enclosure"}}
-                    ⚠️ SECURITY ALERT: Enclosure Tampering Detected
-                {{/ifEquals}}
-                {{#ifEquals interrupt_type "rtc_alarm"}}
-                    ⏰ ALERT: RTC Alarm Triggered
-                {{/ifEquals}}
-                {{#unless interrupt_type}}
-                    ⚠️ DEVICE STATUS ALERT
-                {{/unless}}
-            </h1>
+            {{#ifEquals alert_type "enclosure"}}
+            <h1> ⚠️ ALERT: Enclosure Tampering Detected <br> </h1>
+            {{/ifEquals}}
+            {{#ifEquals alert_type "calibration-switch"}}
+            <h1>⚠️ ALERT: Calibration Switch Tampering Detected </h1>
+            {{/ifEquals}}
+
+            {{#ifEquals alert_type "battery-voltage"}}
+            <h1> ⏰ ALERT: Low battery voltage <br> </h1>
+            {{/ifEquals}}
         </div>
-        
+
         <div class="device-info">
-            <div>Device ID: {{device_id}}</div>
-            <div class="timestamp">{{rtc_timestamp}}</div>
-            {{#if interrupt_type}}
-                <div class="timestamp">Interrupt Type: {{interrupt_type}}</div>
-            {{/if}}
+            <div>Device: {{company_id}}</div>
+            <div>Factory: {{factory_name}}</div>
+            <div class="timestamp">{{timestamp}}</div>
         </div>
-        
+
         <div class="status-grid">
-            <div class="status-item">
-                <div class="status-icon {{#ifEquals enclosure 0}}icon-success{{else}}icon-error{{/ifEquals}}">
-                    {{#ifEquals enclosure 0}}✓{{else}}!{{/ifEquals}}
-                </div>
-                <div>
-                    <div class="status-label">Enclosure</div>
-                    <div class="status-value">{{#ifEquals enclosure 0}}CLOSED{{else}}OPEN{{/ifEquals}} ({{enclosure}})</div>
-                </div>
-            </div>
-
-            <div class="status-item">
-                <div class="status-icon {{#ifEquals calib_switch 0}}icon-error{{else}}icon-success{{/ifEquals}}">
-                    {{#ifEquals calib_switch 0}}!{{else}}✓{{/ifEquals}}
-                </div>
-                <div>
-                    <div class="status-label">Calibration Switch</div>
-                    <div class="status-value {{#ifEquals calib_switch 0}}status-alert{{/ifEquals}}">
-                        {{#ifEquals calib_switch 1}}OFF{{else}}ON{{/ifEquals}} ({{calib_switch}})
-                    </div>
-                </div>
-            </div>
-
-            <div class="status-item">
+            
+            {{!-- sd card available --}}
+            {{!-- <div class="status-item">
                 <div class="status-icon {{#if sd_card_available}}icon-success{{else}}icon-error{{/if}}">
                     {{#if sd_card_available}}✓{{else}}!{{/if}}
                 </div>
-                <div>
+                <div style="margin: 0px 0px  0px 10px;">
                     <div class="status-label">SD Card</div>
                     <div class="status-value">{{#if sd_card_available}}Available{{else}}Not Available{{/if}}</div>
+                </div>
+            </div> --}}
+            {{!-- Battery voltage --}}
+            <div class="status-item">
+                <div>
+                    <img src="https://i.fbcd.co/products/resized/resized-750-500/9d63762998e6beae228599b41ec88c805b6daf681cdad4ea0771439c41254e46.webp"
+                        alt="" class="battery-icon">
+                </div>
+                <div style="margin: 0px 0px  0px 10px;">
+                    <div class="status-label">Battery voltage</div>
+                    <div class="status-value">{{battery_voltage}}</div>
                 </div>
             </div>
         </div>
     </div>
 </body>
+
 </html>
