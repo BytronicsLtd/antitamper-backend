@@ -317,6 +317,9 @@ const controller = {
         });
       }
 
+      // Get the BT device's factory
+      const btFactory = await FactoryModel.findById(scale.factory);
+
       // Base response with device info
       const response = {
         success: true,
@@ -325,72 +328,126 @@ const controller = {
           company_id: scale.company_id,
           factory_name: scale.factory_name,
           scale_model: scale.scale_model,
-          device_id: scale.device_id
+          device_id: scale.device_id,
+          factory_id: btFactory?._id,
         },
         message: "Scale verified successfully"
       };
 
-      // If PDA serial provided, handle PDA registration/status
-      if (pda_serial) {
-        const factory = await FactoryModel.findById(scale.factory);
-
-        if (factory) {
+      // Check if invalid key was provided - put PDA in staging
+      if (req.pdaKeyProvided && req.pdaKeyInvalid) {
+        // Key was provided but invalid - find PDA by serial and put in staging
+        if (pda_serial) {
           let pda = await PDAModel.findOne({ serial_number: pda_serial });
+          if (pda) {
+            pda.factory = btFactory._id;
+            pda.factory_name = btFactory.name;
+            pda.factory_location = btFactory.location;
+            pda.region = btFactory.region;
+            pda.status = 'staging';
+            pda.api_key = null;
+            pda.api_key_created_at = null;
+            pda.approved_by = null;
+            pda.approved_at = null;
+            pda.device_info = req.body.pda_device;
+            await pda.save();
+          }
+        }
 
-          if (!pda) {
-            // Create new PDA in staging
-            pda = new PDAModel({
-              serial_number: pda_serial,
-              factory: factory._id,
-              factory_name: factory.name,
-              factory_location: factory.location,
-              region: factory.region,
-              status: 'staging',
-              device_info: req.body.pda_device // Store PDA device info
-            });
+        return res.status(401).send({
+          success: false,
+          status: 'invalid_key',
+          pda_status: 'staging',
+          pda_message: req.pdaKeyInvalidReason || 'Invalid API key - PDA moved to staging',
+          results: response.results
+        });
+      }
+
+      // Check if request has valid API key (set by optionalPdaAuth middleware)
+      if (req.pda) {
+        // PDA has valid API key - check factory match
+        if (req.pda.factory.toString() !== scale.factory.toString()) {
+          // Factory mismatch - BT device belongs to different factory
+          // Move PDA to staging for the BT device's factory, revoke key
+          req.pda.factory = btFactory._id;
+          req.pda.factory_name = btFactory.name;
+          req.pda.factory_location = btFactory.location;
+          req.pda.region = btFactory.region;
+          req.pda.status = 'staging';
+          req.pda.api_key = null;
+          req.pda.api_key_created_at = null;
+          req.pda.approved_by = null;
+          req.pda.approved_at = null;
+          req.pda.device_info = req.body.pda_device;
+          await req.pda.save();
+
+          return res.status(200).send({
+            success: true,
+            status: 'factory_mismatch',
+            pda_status: 'staging',
+            pda_message: 'PDA moved to staging for new factory - key revoked',
+            results: response.results
+          });
+        }
+
+        // Same factory - all good
+        response.pda_status = 'approved';
+        response.pda_message = 'PDA approved';
+        req.pda.last_seen_at = new Date();
+        await req.pda.save();
+      }
+      // No valid API key - handle PDA registration/status based on pda_serial
+      else if (pda_serial) {
+        let pda = await PDAModel.findOne({ serial_number: pda_serial });
+
+        if (!pda) {
+          // Create new PDA in staging
+          pda = new PDAModel({
+            serial_number: pda_serial,
+            factory: btFactory._id,
+            factory_name: btFactory.name,
+            factory_location: btFactory.location,
+            region: btFactory.region,
+            status: 'staging',
+            device_info: req.body.pda_device
+          });
+          await pda.save();
+
+          response.pda_status = 'staging';
+          response.pda_message = 'PDA registered and pending approval';
+        } else {
+          // PDA exists but no valid key provided
+          response.pda_status = pda.status;
+
+          if (pda.status === 'approved') {
+            response.pda_message = 'PDA approved - retrieve key from /pda/{serial}/status';
+          } else if (pda.status === 'staging') {
+            response.pda_message = 'PDA pending approval';
+          } else if (pda.status === 'disabled') {
+            response.pda_message = 'PDA is disabled';
+          }
+
+          // Check factory association
+          if (!pda.factory || pda.factory.toString() !== btFactory._id.toString()) {
+            // Different factory - move to staging
+            pda.factory = btFactory._id;
+            pda.factory_name = btFactory.name;
+            pda.factory_location = btFactory.location;
+            pda.region = btFactory.region;
+            pda.status = 'staging';
+            pda.api_key = null;
+            pda.api_key_created_at = null;
+            pda.approved_by = null;
+            pda.approved_at = null;
+            pda.device_info = req.body.pda_device;
             await pda.save();
 
             response.pda_status = 'staging';
-            response.pda_message = 'PDA registered and pending approval';
-          } else {
-            // PDA exists - check factory association
-            if (pda.factory && pda.factory.toString() === factory._id.toString()) {
-              // Same factory
-              response.pda_status = pda.status;
-
-              if (pda.status === 'approved') {
-                // PDA is approved - SDK should already have key from /pda/{serial}/status
-                response.pda_message = 'PDA approved';
-              } else if (pda.status === 'staging') {
-                response.pda_message = 'PDA pending approval';
-              } else if (pda.status === 'disabled') {
-                response.pda_message = 'PDA is disabled';
-              }
-            } else {
-              // Different factory - move to staging for new factory
-              pda.factory = factory._id;
-              pda.factory_name = factory.name;
-              pda.factory_location = factory.location;
-              pda.region = factory.region;
-              pda.status = 'staging';
-              pda.api_key = null;
-              pda.api_key_created_at = null;
-              pda.approved_by = null;
-              pda.approved_at = null;
-              pda.device_info = req.body.pda_device;
-              await pda.save();
-
-              response.pda_status = 'staging';
-              response.pda_message = 'PDA moved to staging for new factory';
-            }
-
-            // Update last seen
-            pda.last_seen_at = new Date();
-            await pda.save();
+            response.pda_message = 'PDA moved to staging for new factory';
           }
 
-          response.results.factory_id = factory._id;
-          response.results.factory_name = factory.name;
+          pda.last_seen_at = new Date();
+          await pda.save();
         }
       }
 

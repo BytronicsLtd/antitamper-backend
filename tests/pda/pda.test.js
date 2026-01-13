@@ -233,8 +233,8 @@ describe('PDA Devices Endpoint', () => {
             expect(response.statusCode).toBe(200);
             const body = JSON.parse(response.payload);
             expect(body.success).toBe(true);
-            expect(body.devices).toHaveLength(2);
-            expect(body.devices[0].mac_address).toBeDefined();
+            expect(body.results).toHaveLength(2);
+            expect(body.results[0].bluetooth_mac_address).toBeDefined();
         });
 
         it('should only return devices from PDAs factory', async () => {
@@ -254,7 +254,7 @@ describe('PDA Devices Endpoint', () => {
 
             expect(response.statusCode).toBe(200);
             const body = JSON.parse(response.payload);
-            expect(body.devices).toHaveLength(1);
+            expect(body.results).toHaveLength(1);
             expect(body.factory_name).toBe('Factory 1');
         });
     });

@@ -65,6 +65,7 @@ const pdaAuth = async (request, reply) => {
 
 /**
  * Optional PDA Auth - doesn't fail if no key, just sets req.pda if valid
+ * Also sets req.pdaKeyInvalid if a key was provided but is invalid
  */
 const optionalPdaAuth = async (request, reply) => {
     try {
@@ -72,27 +73,54 @@ const optionalPdaAuth = async (request, reply) => {
 
         if (!apiKey) {
             request.pda = null;
+            request.pdaKeyProvided = false;
+            request.pdaKeyInvalid = false;
             return;
         }
+
+        request.pdaKeyProvided = true;
 
         const payload = PDAModel.verifyApiKey(apiKey);
 
         if (!payload) {
             request.pda = null;
+            request.pdaKeyInvalid = true;
+            request.pdaKeyInvalidReason = 'Invalid key format or signature';
             return;
         }
 
         const pda = await PDAModel.findById(payload.pda).select('+api_key');
 
-        if (pda && pda.status === 'approved' && pda.api_key === apiKey) {
-            request.pda = pda;
-        } else {
+        if (!pda) {
             request.pda = null;
+            request.pdaKeyInvalid = true;
+            request.pdaKeyInvalidReason = 'PDA not found';
+            return;
         }
+
+        if (pda.status !== 'approved') {
+            request.pda = null;
+            request.pdaKeyInvalid = true;
+            request.pdaKeyInvalidReason = pda.status === 'staging' ? 'PDA pending approval' : 'PDA is disabled';
+            return;
+        }
+
+        if (pda.api_key !== apiKey) {
+            request.pda = null;
+            request.pdaKeyInvalid = true;
+            request.pdaKeyInvalidReason = 'API key mismatch - key may have been revoked';
+            return;
+        }
+
+        // Valid key
+        request.pda = pda;
+        request.pdaKeyInvalid = false;
 
     } catch (error) {
         console.error("Optional PDA Auth Error:", error);
         request.pda = null;
+        request.pdaKeyInvalid = true;
+        request.pdaKeyInvalidReason = 'Authentication error';
     }
 };
 

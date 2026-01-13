@@ -1,6 +1,7 @@
 const deviceController = require("../../controllers/devices/devices.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
 const checkRole = require("../../middlewares/checkRole.middleware");
+const { optionalPdaAuth } = require("../../middlewares/pdaAuth.middleware");
 
 module.exports = ({ app }) => {
   // create device
@@ -15,8 +16,8 @@ module.exports = ({ app }) => {
   app.post('/api/v1/devices/m2m/id/', { preHandler: [] }, (req, res) => {
     deviceController.getCompanyID(req, res);
   });
-  //  m2m get time
-  app.post('/api/v1/devices/m2m/verify/', { preHandler: [] }, (req, res) => {
+  //  m2m verify scale - optionalPdaAuth sets req.pda if valid key provided
+  app.post('/api/v1/devices/m2m/verify/', { preHandler: [optionalPdaAuth] }, (req, res) => {
     deviceController.verifyScale(req, res);
   });
   // fetch many devices
