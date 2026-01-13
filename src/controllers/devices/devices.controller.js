@@ -359,10 +359,8 @@ const controller = {
               response.pda_status = pda.status;
 
               if (pda.status === 'approved') {
-                // Return API key for approved PDA
-                const pdaWithKey = await PDAModel.findById(pda._id).select('+api_key');
-                response.api_key = pdaWithKey.api_key;
-                response.factory_id = factory._id;
+                // PDA is approved - SDK should already have key from /pda/{serial}/status
+                response.pda_message = 'PDA approved';
               } else if (pda.status === 'staging') {
                 response.pda_message = 'PDA pending approval';
               } else if (pda.status === 'disabled') {
