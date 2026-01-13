@@ -55,6 +55,11 @@ const Schema = {
         type: Date,
         default: null
     },
+    // PDA device hardware info (manufacturer, model, brand, etc.)
+    device_info: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
+    },
     soft_deleted: {
         type: Boolean,
         default: false

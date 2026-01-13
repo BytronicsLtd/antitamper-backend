@@ -40,6 +40,16 @@ const Schema = {
     synced_at: {
         type: Date,
         default: null
+    },
+    // Full Bluetooth device info (address, name, type, bondState, deviceClass)
+    device_info: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
+    },
+    // Full PDA device info (manufacturer, model, brand, device, serial, android_version, sdk_int)
+    pda_device_info: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
     }
 };
 

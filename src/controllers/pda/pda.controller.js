@@ -208,9 +208,14 @@ const controller = {
                 success: true,
                 factory_id: pda.factory,
                 factory_name: pda.factory_name,
-                devices: devices.map(d => ({
-                    mac_address: d.bluetooth_mac_address,
+                // Return as 'results' array with 'bluetooth_mac_address' field for SDK compatibility
+                results: devices.map(d => ({
+                    id: d._id,
                     device_id: d.device_id,
+                    bluetooth_mac_address: d.bluetooth_mac_address,
+                    factory: pda.factory,
+                    factory_name: pda.factory_name,
+                    status: 'active',
                     company_id: d.company_id,
                     serial_number: d.serial_number,
                     scale_model: d.scale_model
