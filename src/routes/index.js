@@ -7,6 +7,7 @@ const globalRoutes = require("./globals.routes");
 const regionRoutes = require("./regions/regions.routes");
 const alertsRoutes = require("./alerts/alerts.route");
 const testRoutes = require("./test/test.route");
+const pdaRoutes = require("./pda/pda.route");
 
 module.exports = ({ app }) => {
     deviceRoutes({ app });
@@ -18,6 +19,7 @@ module.exports = ({ app }) => {
     globalRoutes({ app });
     alertsRoutes({ app });
     testRoutes({ app });
-  
+    pdaRoutes({ app });
+
 };
   

@@ -6,7 +6,7 @@ const activityLogController = {
 
 
     try {
-      let = {
+      let {
         start_datetime,
         end_datetime,
         search_term

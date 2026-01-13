@@ -4,12 +4,20 @@
   "main": "index.js",
   "scripts": {
     "dev": "cross-env DEV=true LOG_ROUTES=true nodemon src/main.js",
-    "production": "cross-env DEV= LOG_ROUTES= node src/main.js"
+    "production": "cross-env DEV= LOG_ROUTES= node src/main.js",
+    "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit",
+    "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand --forceExit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^10.0.0",
+    "supertest": "^7.0.0"
+  },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
     "@fastify/multipart": "^9.0.2",

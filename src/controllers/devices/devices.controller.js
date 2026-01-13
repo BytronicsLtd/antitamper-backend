@@ -47,7 +47,7 @@ const controller = {
   //fetch many devices
   fetchMany: async (req, res) => {
     try {
-      let = {
+      let {
         search_term,
         soft_deleted
       } = req.query;

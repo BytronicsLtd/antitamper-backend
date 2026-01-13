@@ -5,7 +5,7 @@ const controller = {
   // fetch many data
   fetchMany: async (req, res) => {
     try {
-      let = {
+      let {
         device_id,
         start_datetime,
         end_datetime,
@@ -17,7 +17,6 @@ const controller = {
         saved_to_sd,
         sd_card_available,
         region,
-        factory_name,
         scale_model,
         company_id,
       } = req.query;
@@ -204,24 +203,4 @@ function checkAccess({ query, req }) {
     query.region = region;
   }
   return query;
-}
-
-
-// check access
-function checkAccess({ query, req }) {
-    const user = req.user;
-    const role = user.role;
-    const level = user.level;
-    const factory = user.factory
-    const region = user.region
-    // filter by factory
-    if (level === "factory") {
-        query.factory = factory
-    }
-    // filter by region
-    if (level === "region") {
-        query.region = region
-    }
-    return query
-
 }
