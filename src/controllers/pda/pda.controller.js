@@ -557,6 +557,131 @@ const controller = {
     },
 
     /**
+     * Delete PDA - Admin endpoint (only staging PDAs)
+     */
+    delete: async (req, res) => {
+        const session = await mongoose.startSession();
+        try {
+            session.startTransaction();
+            const { serial } = req.params;
+
+            const pda = await PDAModel.findOne({ serial_number: serial });
+
+            if (!pda) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(404).send({
+                    success: false,
+                    message: "PDA not found"
+                });
+            }
+
+            if (pda.status !== 'staging') {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(400).send({
+                    success: false,
+                    message: "Only staging PDAs can be deleted"
+                });
+            }
+
+            await PDAModel.deleteOne({ _id: pda._id }, { session });
+
+            // Log activity
+            await ActivityModel.create([{
+                action: "delete",
+                user: req.user.id,
+                email: req.user.email,
+                role: req.user.role,
+                timestamp: Date.now(),
+                model: "PDA",
+                affected_id: pda._id,
+                deleted_data: { serial_number: pda.serial_number, factory_name: pda.factory_name }
+            }], { session });
+
+            await session.commitTransaction();
+            session.endSession();
+
+            res.status(200).send({
+                success: true,
+                message: "PDA deleted successfully"
+            });
+
+        } catch (error) {
+            console.log(chalk.red("Error deleting PDA"), error);
+            await session.abortTransaction();
+            session.endSession();
+            res.status(500).send({ success: false, message: error.message });
+        }
+    },
+
+    /**
+     * Unapprove/Decommission PDA - Admin endpoint
+     * Moves approved PDA back to staging
+     */
+    unapprove: async (req, res) => {
+        const session = await mongoose.startSession();
+        try {
+            session.startTransaction();
+            const { serial } = req.params;
+
+            const pda = await PDAModel.findOne({ serial_number: serial });
+
+            if (!pda) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(404).send({
+                    success: false,
+                    message: "PDA not found"
+                });
+            }
+
+            if (pda.status !== 'approved') {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(400).send({
+                    success: false,
+                    message: "Only approved PDAs can be unapproved"
+                });
+            }
+
+            pda.status = 'staging';
+            pda.api_key = null;
+            pda.api_key_created_at = null;
+            pda.approved_by = null;
+            pda.approved_at = null;
+
+            await pda.save({ session });
+
+            // Log activity
+            await ActivityModel.create([{
+                action: "unapprove",
+                user: req.user.id,
+                email: req.user.email,
+                role: req.user.role,
+                timestamp: Date.now(),
+                model: "PDA",
+                affected_id: pda._id,
+                edited_data: { status: 'staging', serial_number: pda.serial_number }
+            }], { session });
+
+            await session.commitTransaction();
+            session.endSession();
+
+            res.status(200).send({
+                success: true,
+                message: "PDA unapproved - moved back to staging"
+            });
+
+        } catch (error) {
+            console.log(chalk.red("Error unapproving PDA"), error);
+            await session.abortTransaction();
+            session.endSession();
+            res.status(500).send({ success: false, message: error.message });
+        }
+    },
+
+    /**
      * Get unregistered BT attempts - Admin reporting endpoint
      */
     getUnregisteredAttempts: async (req, res) => {

@@ -83,6 +83,26 @@ module.exports = ({ app }) => {
     });
 
     /**
+     * Delete PDA (only staging)
+     * Requires root or sys-admin role
+     */
+    app.delete('/api/v1/pda/:serial', {
+        preHandler: [authenticate, checkRole(["root", "sys-admin", "admin", "Manager"])]
+    }, (req, res) => {
+        pdaController.delete(req, res);
+    });
+
+    /**
+     * Unapprove/Decommission PDA (move approved back to staging)
+     * Requires root or sys-admin role
+     */
+    app.post('/api/v1/pda/:serial/unapprove', {
+        preHandler: [authenticate, checkRole(["root", "sys-admin", "admin", "Manager"])]
+    }, (req, res) => {
+        pdaController.unapprove(req, res);
+    });
+
+    /**
      * Get unregistered BT attempts report
      * Requires authentication
      */
