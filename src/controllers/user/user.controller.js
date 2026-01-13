@@ -1,10 +1,11 @@
 const { default: mongoose } = require("mongoose");
+const chalk = require("chalk");
 const ActivityModel = require('../../models/activityLog.js');
 const UserModel = require("../../models/user");
 // Retrieve all users
 exports.getUsers = async (req, res) => {
   try {
-    let = {
+    let {
       email_confirmed,
       search_term,
       soft_deleted
@@ -149,12 +150,12 @@ exports.remove = async (req, res) => {
       created_data: null,// created data
     }], { session })
     // delete
-    device = await UserModel.findByIdAndDelete(id).session(session)
+    user = await UserModel.findByIdAndDelete(id).session(session)
     await session.commitTransaction();
     session.endSession();
-    res.status(200).send({ success: true, message: "User successfully deleted", results: device })
+    res.status(200).send({ success: true, message: "User successfully deleted", results: user })
   } catch (error) {
-    console.log(chalk.red("Error deleting device"), error);
+    console.log(chalk.red("Error deleting user"), error);
     await session.abortTransaction();
     session.endSession();
     res.status(500).send({ success: false, error: error.message })

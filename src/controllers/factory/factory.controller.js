@@ -46,7 +46,7 @@ async function createFactory(req, res) {
 // Retrieve all factories
 async function getFactories(req, res) {
   try {
-    let = {
+    let {
       search_term,
       soft_deleted
     } = req.query;
@@ -176,14 +176,14 @@ async function remove(req, res) {
       created_data: null,// created data
     }], { session })
     // delete
-    device = await FactoryModel.findByIdAndUpdate(id, {
+    factory = await FactoryModel.findByIdAndUpdate(id, {
       $set: {
         soft_deleted: true
       }
     }, { runValidators: true, new: true }).session(session)
     await session.commitTransaction();
     session.endSession();
-    res.status(200).send({ success: true, message: "Device successfully deleted", results: device })
+    res.status(200).send({ success: true, message: "Factory successfully deleted", results: factory })
   } catch (error) {
     console.log(chalk.red("Error deleting device"), error);
     await session.abortTransaction();

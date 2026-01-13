@@ -9,7 +9,7 @@ const controller = {
   // fetch many data
   fetchMany: async (req, res) => {
     try {
-      let = {
+      let {
         device_id,
         start_datetime,
         end_datetime,
@@ -22,7 +22,6 @@ const controller = {
         saved_to_sd,
         has_gp_coords,
         region,
-        factory_name,
         company_id,
         scale_model,
         sd_card_available,
@@ -215,7 +214,7 @@ const controller = {
   // this is for fetching raw data as received from the devices
   fetchManyRaw: async (req, res) => {
     try {
-      let = {
+      let {
         device_id,
         start_datetime,
         end_datetime,
