@@ -17,6 +17,16 @@ const controller = {
       const payload = req.body;
       console.log("create device payload ", payload);
 
+      // Populate factory details if factory ID is provided
+      if (payload.factory) {
+        const factory = await FactoryModel.findById(payload.factory);
+        if (factory) {
+          payload.factory_name = factory.name;
+          payload.factory_location = factory.location;
+          payload.region = factory.region;
+        }
+      }
+
       const device = new DeviceModel(payload)
       await ActivityModel.create([{
         action: "create", // edit, create, delete actions
@@ -326,7 +336,7 @@ const controller = {
         status: 'valid',
         results: {
           company_id: scale.company_id,
-          factory_name: scale.factory_name,
+          factory_name: btFactory?.name || scale.factory_name,
           scale_model: scale.scale_model,
           device_id: scale.device_id,
           factory_id: btFactory?._id,
