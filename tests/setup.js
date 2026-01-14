@@ -7,6 +7,8 @@ let mongoServer;
 process.env.SECRET_KEY = 'test_secret_key_for_jwt';
 process.env.AES_KEY = '123456789ABCDEF01122334455667788';
 process.env.DEV = 'true';
+// M2M Encryption key (64 hex chars = 32 bytes for AES-256)
+process.env.M2M_ENCRYPTION_KEY = 'ebcb10ca9c3e474fb018a4c59acd57883a6923dc3274e4567457b92a2698ad2e';
 
 beforeAll(async () => {
     // Create an in-memory MongoDB replica set
