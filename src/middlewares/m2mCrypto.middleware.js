@@ -15,6 +15,28 @@ const ENCRYPTION_VERSION_HEADER = 'x-encryption-version';
 const CURRENT_VERSION = '1';
 
 /**
+ * Helper to setup response encryption
+ */
+const setupResponseEncryption = (request, reply) => {
+    reply.header(ENCRYPTION_VERSION_HEADER, CURRENT_VERSION);
+
+    const originalSend = reply.send.bind(reply);
+    reply.send = (payload) => {
+        if (payload !== null && typeof payload === 'object') {
+            try {
+                const encrypted = encrypt(payload);
+                reply.type(ENCRYPTED_CONTENT_TYPE);
+                return originalSend(encrypted);
+            } catch (error) {
+                console.error('[m2mCrypto] Encryption failed:', error.message);
+                return originalSend(payload);
+            }
+        }
+        return originalSend(payload);
+    };
+};
+
+/**
  * Middleware to decrypt M2M requests and encrypt responses
  * When encryption is enabled, REQUIRES encrypted requests - rejects plain JSON
  * @param {FastifyRequest} request
@@ -26,7 +48,14 @@ const m2mCrypto = async (request, reply) => {
         return;
     }
 
-    const contentType = request.headers['content-type'];
+    // GET requests don't have bodies - allow them through but encrypt response
+    if (request.method === 'GET') {
+        request.isEncrypted = true;
+        setupResponseEncryption(request, reply);
+        return;
+    }
+
+    const contentType = request.headers['content-type']?.split(';')[0]?.trim(); // Strip charset
 
     // Check if request is encrypted
     if (contentType === ENCRYPTED_CONTENT_TYPE) {
@@ -62,25 +91,8 @@ const m2mCrypto = async (request, reply) => {
         });
     }
 
-    // Hook to encrypt response (request was encrypted)
-    reply.header(ENCRYPTION_VERSION_HEADER, CURRENT_VERSION);
-
-    const originalSend = reply.send.bind(reply);
-    reply.send = (payload) => {
-        // Only encrypt object responses (JSON)
-        if (payload !== null && typeof payload === 'object') {
-            try {
-                const encrypted = encrypt(payload);
-                reply.type(ENCRYPTED_CONTENT_TYPE);
-                return originalSend(encrypted);
-            } catch (error) {
-                console.error('[m2mCrypto] Encryption failed:', error.message);
-                // Fall back to unencrypted response on error
-                return originalSend(payload);
-            }
-        }
-        return originalSend(payload);
-    };
+    // Hook to encrypt response
+    setupResponseEncryption(request, reply);
 };
 
 /**
@@ -92,7 +104,7 @@ const optionalM2mCrypto = async (request, reply) => {
         return;
     }
 
-    const contentType = request.headers['content-type'];
+    const contentType = request.headers['content-type']?.split(';')[0]?.trim(); // Strip charset
 
     if (contentType === ENCRYPTED_CONTENT_TYPE) {
         try {
@@ -106,21 +118,7 @@ const optionalM2mCrypto = async (request, reply) => {
 
     // Setup response encryption if needed
     if (request.isEncrypted) {
-        reply.header(ENCRYPTION_VERSION_HEADER, CURRENT_VERSION);
-
-        const originalSend = reply.send.bind(reply);
-        reply.send = (payload) => {
-            if (payload !== null && typeof payload === 'object') {
-                try {
-                    const encrypted = encrypt(payload);
-                    reply.type(ENCRYPTED_CONTENT_TYPE);
-                    return originalSend(encrypted);
-                } catch (error) {
-                    return originalSend(payload);
-                }
-            }
-            return originalSend(payload);
-        };
+        setupResponseEncryption(request, reply);
     }
 };
 
