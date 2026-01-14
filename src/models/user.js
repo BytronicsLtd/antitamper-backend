@@ -99,6 +99,13 @@ const schema = new Schema({
     type: Boolean,
     default: false
   },
+  // user settings (for sys-admin preferences)
+  settings: {
+    showTestRegions: {
+      type: Boolean,
+      default: false
+    }
+  },
 
   password: {
     type: String,

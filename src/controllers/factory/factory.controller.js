@@ -3,6 +3,7 @@ const { default: mongoose } = require("mongoose");
 const ActivityModel = require('../../models/activityLog.js');
 const FactoryModel = require('../../models/factory.js');
 const formatValidationErrors = require("../../utils/formatValidationErrors.util.js");
+const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
 
 // Create a new factory
 async function createFactory(req, res) {
@@ -78,7 +79,7 @@ async function getFactories(req, res) {
       };
     }
     query = {
-      ...checkAccess({ query, req }),
+      ...(await checkAccess({ query, req })),
     }
     const { page, size } = req.query;
     const limit = size ? +size : 100;
@@ -200,21 +201,28 @@ module.exports = {
   updateFactory,
   remove
 };
-// check access
-function checkAccess({ query, req }) {
+// check access - now async to support test region filtering
+async function checkAccess({ query, req }) {
   const user = req.user;
-  const role = user.role;
   const level = user.level;
-  const factory = user.factory
-  const region = user.region
+  const factory = user.factory;
+  const region = user.region;
+
   // filter by factory
   if (level === "factory") {
-    query._id = factory
+    query._id = factory;
+    return query;
   }
+
   // filter by region
   if (level === "region") {
-    query.region = region
+    query.region = region;
+    return query;
   }
-  return query
 
+  // For national/global users, filter by visible regions (excludes test regions unless enabled)
+  const visibleRegions = await getVisibleRegions(user);
+  query = applyRegionFilter(query, visibleRegions);
+
+  return query;
 }

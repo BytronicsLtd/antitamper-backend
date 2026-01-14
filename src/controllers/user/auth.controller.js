@@ -328,5 +328,84 @@ const controller = {
             });
         }
     },
+
+    // Login as another user (sys-admin only)
+    loginAs: async (req, res) => {
+        try {
+            const { targetUserId } = req.body;
+            const adminUser = req.user;
+
+            // Verify requester is sys-admin
+            if (!['root', 'sys-admin'].includes(adminUser.role)) {
+                return res.status(403).send({
+                    success: false,
+                    message: "Only system administrators can use this feature"
+                });
+            }
+
+            // Find target user
+            const targetUser = await UserModel.findById(targetUserId)
+                .populate([
+                    { path: 'factory', select: "name location", transform: (doc) => doc?.toJSON() || doc }
+                ]);
+
+            if (!targetUser) {
+                return res.status(404).send({
+                    success: false,
+                    message: "Target user not found"
+                });
+            }
+
+            // Create impersonation token with metadata (1 hour expiry for security)
+            const impersonationToken = jwt.sign(
+                {
+                    id: targetUser._id,
+                    impersonatedBy: adminUser._id,
+                    isImpersonation: true
+                },
+                process.env.SECRET_KEY,
+                { expiresIn: 3600 } // 1 hour max
+            );
+
+            // Log the impersonation
+            await ActivityModel.create({
+                action: "login-as",
+                user: adminUser._id,
+                email: adminUser.email,
+                role: adminUser.role,
+                timestamp: Date.now(),
+                model: "User",
+                affected_id: targetUser._id,
+                deleted_data: null,
+                edited_data: { impersonatedUser: targetUser.email },
+                created_data: null
+            });
+
+            const { password, token, createdAt, updatedAt, ...userData } = targetUser.toJSON();
+
+            res.status(200).send({
+                success: true,
+                message: "Impersonation session started",
+                results: {
+                    ...userData,
+                    isImpersonation: true,
+                    originalAdmin: {
+                        id: adminUser._id,
+                        name: adminUser.name,
+                        email: adminUser.email
+                    }
+                },
+                token: impersonationToken
+            });
+
+        } catch (error) {
+            console.log(chalk.red("Error in login-as"), error);
+            res.status(500).send({
+                success: false,
+                message: "Error starting impersonation session",
+                error: error.message
+            });
+        }
+    },
 }
 module.exports = controller;

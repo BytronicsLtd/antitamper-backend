@@ -9,6 +9,7 @@ const { default: mongoose } = require("mongoose");
 const formatValidationErrors = require("../../utils/formatValidationErrors.util");
 const { addSeconds } = require("date-fns");
 const scalesDumpModel = require("../../models/scales-dump.model.js");
+const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
 const controller = {
   create: async (req, res) => {
     const session = await mongoose.startSession();
@@ -95,7 +96,7 @@ const controller = {
         };
       }
       query = {
-        ...checkAccess({ query, req }),
+        ...(await checkAccess({ query, req })),
       }
       const { page, size } = req.query;
       const limit = size ? +size : 100;
@@ -471,20 +472,28 @@ const controller = {
 
 module.exports = controller;
 
-// check access
-function checkAccess({ query, req }) {
+// check access - now async to support test region filtering
+async function checkAccess({ query, req }) {
   const user = req.user;
-  const role = user.role;
   const level = user.level;
   const factory = user.factory;
   const region = user.region;
+
   // filter by factory
   if (level === "factory") {
     query.factory = factory;
+    return query;
   }
+
   // filter by region
   if (level === "region") {
     query.region = region;
+    return query;
   }
+
+  // For national/global users, filter by visible regions (excludes test regions unless enabled)
+  const visibleRegions = await getVisibleRegions(user);
+  query = applyRegionFilter(query, visibleRegions);
+
   return query;
 }

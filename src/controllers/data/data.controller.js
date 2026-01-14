@@ -4,6 +4,7 @@ const DataModel = require("../../models/data.model");
 const RawDataModel = require("../../models/raw-data.model");
 const emailSender = require("../../utils/communication/email/email.util");
 const { addHours, isSameYear } = require("date-fns");
+const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
 
 const controller = {
   // fetch many data
@@ -131,7 +132,7 @@ const controller = {
         };
       }
       query = {
-        ...checkAccess({ query, req }),
+        ...(await checkAccess({ query, req })),
       };
       const { page, size } = req.query;
       const limit = size ? +size : 100;
@@ -283,7 +284,7 @@ const controller = {
         };
       }
       query = {
-        ...checkAccess({ query, req }),
+        ...(await checkAccess({ query, req })),
       };
       const { page, size } = req.query;
       const limit = size ? +size : 100;
@@ -314,20 +315,28 @@ function isWithinCurrentYear(time) {
   return isSameYear(timestamp, now);
 }
 
-// check access
-function checkAccess({ query, req }) {
+// check access - now async to support test region filtering
+async function checkAccess({ query, req }) {
   const user = req.user;
-  const role = user.role;
   const level = user.level;
   const factory = user.factory;
   const region = user.region;
+
   // filter by factory
   if (level === "factory") {
     query.factory = factory;
+    return query;
   }
+
   // filter by region
   if (level === "region") {
     query.region = region;
+    return query;
   }
+
+  // For national/global users, filter by visible regions (excludes test regions unless enabled)
+  const visibleRegions = await getVisibleRegions(user);
+  query = applyRegionFilter(query, visibleRegions);
+
   return query;
 }

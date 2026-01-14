@@ -1,11 +1,30 @@
-// 
 const authenticate = require("../../middlewares/authenticate.middleware");
 const checkRole = require("../../middlewares/checkRole.middleware");
+const regionController = require("../../controllers/regions/regions.controller");
 
-const regions = require("./regions.json")
 module.exports = ({ app }) => {
-    // fetch regions
-    app.get("/api/v1/regions/", { preHandler: [authenticate, checkRole(['root', 'sys-admin'])] }, (req, res) => {
-        res.status(200).send({ success: true, results: regions });
-    });
-}
+  // Fetch regions - available to all authenticated users (filtering handled in controller)
+  app.get("/api/v1/regions/", {
+    preHandler: [authenticate]
+  }, regionController.getRegions);
+
+  // Get region by ID
+  app.get("/api/v1/regions/details/", {
+    preHandler: [authenticate, checkRole(['root', 'sys-admin'])]
+  }, regionController.getRegionById);
+
+  // Create region - sys-admin only
+  app.post("/api/v1/regions/", {
+    preHandler: [authenticate, checkRole(['root', 'sys-admin'])]
+  }, regionController.createRegion);
+
+  // Update region - sys-admin only
+  app.patch("/api/v1/regions/update/", {
+    preHandler: [authenticate, checkRole(['root', 'sys-admin'])]
+  }, regionController.updateRegion);
+
+  // Delete region - sys-admin only
+  app.delete("/api/v1/regions/remove/", {
+    preHandler: [authenticate, checkRole(['root', 'sys-admin'])]
+  }, regionController.removeRegion);
+};

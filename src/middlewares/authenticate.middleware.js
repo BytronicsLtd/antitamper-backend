@@ -35,6 +35,14 @@ const authenticate = async (request, reply) => {
             });
         }
 
+        // Handle impersonation tokens (don't check stored token for impersonation)
+        if (decoded.isImpersonation) {
+            request.user = user;
+            request.user.isImpersonation = true;
+            request.user.impersonatedBy = decoded.impersonatedBy;
+            return;
+        }
+
         // Check if token is present and matches user's stored token
         if (!user.token || user.token !== token) {
             return reply.code(401).send({

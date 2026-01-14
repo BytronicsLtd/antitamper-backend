@@ -2,6 +2,7 @@ const { default: mongoose } = require("mongoose");
 const chalk = require("chalk");
 const ActivityModel = require('../../models/activityLog.js');
 const UserModel = require("../../models/user");
+const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
 // Retrieve all users
 exports.getUsers = async (req, res) => {
   try {
@@ -50,7 +51,7 @@ exports.getUsers = async (req, res) => {
       query.email_confirmed = email_confirmed === "false" ? false : true
     }
     query = {
-      ...checkAccess({ query, req }),
+      ...(await checkAccess({ query, req })),
     }
     const { page, size } = req.query;
     const limit = size ? +size : 100;
@@ -162,20 +163,60 @@ exports.remove = async (req, res) => {
   }
 };
 
-// check access
-function checkAccess({ query, req }) {
+// check access - now async to support test region filtering
+async function checkAccess({ query, req }) {
   const user = req.user;
-  const role = user.role;
   const level = user.level;
-  const factory = user.factory
-  const region = user.region
+  const factory = user.factory;
+  const region = user.region;
+
   // filter by factory
   if (level === "factory") {
-    query.factory = factory
+    query.factory = factory;
+    return query;
   }
+
   // filter by region
   if (level === "region") {
-    query.region = region
+    query.region = region;
+    return query;
   }
-  return query
+
+  // For national/global users, filter by visible regions (excludes test regions unless enabled)
+  const visibleRegions = await getVisibleRegions(user);
+  query = applyRegionFilter(query, visibleRegions);
+
+  return query;
 }
+
+// Update user settings
+exports.updateSettings = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { showTestRegions } = req.body;
+
+    // Only sys-admins can toggle test region visibility
+    if (showTestRegions !== undefined) {
+      if (!['root', 'sys-admin'].includes(req.user.role)) {
+        return res.status(403).send({
+          success: false,
+          message: "Only system administrators can modify this setting"
+        });
+      }
+    }
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: { 'settings.showTestRegions': showTestRegions } },
+      { new: true }
+    ).select('-password -token');
+
+    res.status(200).send({ success: true, results: updatedUser });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: 'Error updating settings',
+      error: error.message
+    });
+  }
+};

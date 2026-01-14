@@ -58,5 +58,13 @@ module.exports = ({ app }) => {
     userController.remove(req, res);
   });
 
+  // Login as another user (sys-admin only)
+  app.post('/api/v1/users/login-as/', { preHandler: [authenticate, checkRole(['root', 'sys-admin'])] }, (req, res) => {
+    authController.loginAs(req, res);
+  });
 
+  // Update user settings
+  app.patch('/api/v1/users/settings/', { preHandler: [authenticate] }, (req, res) => {
+    userController.updateSettings(req, res);
+  });
 };
