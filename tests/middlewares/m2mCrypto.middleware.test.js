@@ -43,14 +43,19 @@ describe('M2M Crypto Middleware', () => {
         });
 
         describe('Request decryption', () => {
-            it('should pass through non-encrypted requests unchanged', async () => {
+            it('should reject non-encrypted requests with 403 when encryption is enabled', async () => {
                 mockRequest.headers['content-type'] = 'application/json';
                 mockRequest.body = { test: 'data' };
 
                 await m2mCrypto(mockRequest, mockReply);
 
-                expect(mockRequest.body).toEqual({ test: 'data' });
-                expect(mockRequest.isEncrypted).toBeFalsy();
+                expect(mockReply.status).toHaveBeenCalledWith(403);
+                expect(mockReply.send).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        success: false,
+                        message: 'Encryption required. Use Content-Type: application/x-bytronics-encrypted'
+                    })
+                );
             });
 
             it('should decrypt encrypted requests', async () => {
@@ -186,8 +191,24 @@ describe('M2M Crypto Middleware', () => {
             });
         });
 
-        describe('Encryption disabled', () => {
-            it('should skip processing when encryption is disabled', async () => {
+        describe('Encryption disabled (backward compatibility)', () => {
+            it('should allow non-encrypted requests when encryption is disabled', async () => {
+                const originalKey = process.env.M2M_ENCRYPTION_KEY;
+                delete process.env.M2M_ENCRYPTION_KEY;
+
+                mockRequest.headers['content-type'] = 'application/json';
+                mockRequest.body = { test: 'data' };
+
+                await m2mCrypto(mockRequest, mockReply);
+
+                // Should pass through without rejection
+                expect(mockRequest.body).toEqual({ test: 'data' });
+                expect(mockReply.status).not.toHaveBeenCalled();
+
+                process.env.M2M_ENCRYPTION_KEY = originalKey;
+            });
+
+            it('should skip decryption processing when encryption is disabled', async () => {
                 const originalKey = process.env.M2M_ENCRYPTION_KEY;
                 delete process.env.M2M_ENCRYPTION_KEY;
 
