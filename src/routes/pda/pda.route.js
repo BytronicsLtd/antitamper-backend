@@ -7,16 +7,8 @@ const { m2mCrypto } = require("../../middlewares/m2mCrypto.middleware");
 module.exports = ({ app }) => {
     // =====================================================
     // M2M ENDPOINTS (SDK to Backend communication)
+    // Note: PDA registration is handled automatically in /devices/m2m/verify/
     // =====================================================
-
-    /**
-     * Register PDA - First time connection
-     * No auth required - creates PDA in staging
-     * Supports encrypted requests (m2mCrypto)
-     */
-    app.post('/api/v1/pda/register', { preHandler: [m2mCrypto] }, (req, res) => {
-        pdaController.register(req, res);
-    });
 
     /**
      * Get PDA status - Polling endpoint

@@ -4,7 +4,8 @@
  * Handles transparent encryption/decryption for SDK ↔ Backend communication.
  * - Decrypts incoming requests with Content-Type: application/x-bytronics-encrypted
  * - Encrypts responses if the request was encrypted
- * - Falls back to normal JSON for non-encrypted requests (backward compatibility)
+ * - REJECTS unencrypted requests when encryption is enabled (security enforcement)
+ * - Falls back to normal JSON only when encryption is NOT configured (backward compatibility)
  */
 
 const { encrypt, decrypt, isEnabled } = require('../utils/m2mCrypto.util');
@@ -15,11 +16,12 @@ const CURRENT_VERSION = '1';
 
 /**
  * Middleware to decrypt M2M requests and encrypt responses
+ * When encryption is enabled, REQUIRES encrypted requests - rejects plain JSON
  * @param {FastifyRequest} request
  * @param {FastifyReply} reply
  */
 const m2mCrypto = async (request, reply) => {
-    // Skip if encryption is not configured
+    // If encryption is not configured, allow all requests (backward compatibility)
     if (!isEnabled()) {
         return;
     }
@@ -51,29 +53,34 @@ const m2mCrypto = async (request, reply) => {
                 error: process.env.DEV === 'true' ? error.message : undefined
             });
         }
+    } else {
+        // Encryption is enabled but request is not encrypted - REJECT
+        // This enforces that M2M endpoints require encryption when server has it configured
+        return reply.status(403).send({
+            success: false,
+            message: 'Encryption required. Use Content-Type: application/x-bytronics-encrypted'
+        });
     }
 
-    // Hook to encrypt response if request was encrypted
-    if (request.isEncrypted) {
-        reply.header(ENCRYPTION_VERSION_HEADER, CURRENT_VERSION);
+    // Hook to encrypt response (request was encrypted)
+    reply.header(ENCRYPTION_VERSION_HEADER, CURRENT_VERSION);
 
-        const originalSend = reply.send.bind(reply);
-        reply.send = (payload) => {
-            // Only encrypt object responses (JSON)
-            if (payload !== null && typeof payload === 'object') {
-                try {
-                    const encrypted = encrypt(payload);
-                    reply.type(ENCRYPTED_CONTENT_TYPE);
-                    return originalSend(encrypted);
-                } catch (error) {
-                    console.error('[m2mCrypto] Encryption failed:', error.message);
-                    // Fall back to unencrypted response on error
-                    return originalSend(payload);
-                }
+    const originalSend = reply.send.bind(reply);
+    reply.send = (payload) => {
+        // Only encrypt object responses (JSON)
+        if (payload !== null && typeof payload === 'object') {
+            try {
+                const encrypted = encrypt(payload);
+                reply.type(ENCRYPTED_CONTENT_TYPE);
+                return originalSend(encrypted);
+            } catch (error) {
+                console.error('[m2mCrypto] Encryption failed:', error.message);
+                // Fall back to unencrypted response on error
+                return originalSend(payload);
             }
-            return originalSend(payload);
-        };
-    }
+        }
+        return originalSend(payload);
+    };
 };
 
 /**
