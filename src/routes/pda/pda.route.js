@@ -2,6 +2,7 @@ const pdaController = require("../../controllers/pda/pda.controller");
 const authenticate = require("../../middlewares/authenticate.middleware");
 const checkRole = require("../../middlewares/checkRole.middleware");
 const { pdaAuth, optionalPdaAuth } = require("../../middlewares/pdaAuth.middleware");
+const { m2mCrypto } = require("../../middlewares/m2mCrypto.middleware");
 
 module.exports = ({ app }) => {
     // =====================================================
@@ -11,32 +12,36 @@ module.exports = ({ app }) => {
     /**
      * Register PDA - First time connection
      * No auth required - creates PDA in staging
+     * Supports encrypted requests (m2mCrypto)
      */
-    app.post('/api/v1/pda/register', { preHandler: [] }, (req, res) => {
+    app.post('/api/v1/pda/register', { preHandler: [m2mCrypto] }, (req, res) => {
         pdaController.register(req, res);
     });
 
     /**
      * Get PDA status - Polling endpoint
      * Returns status and API key if approved
+     * Supports encrypted requests (m2mCrypto)
      */
-    app.get('/api/v1/pda/:serial/status', { preHandler: [] }, (req, res) => {
+    app.get('/api/v1/pda/:serial/status', { preHandler: [m2mCrypto] }, (req, res) => {
         pdaController.getStatus(req, res);
     });
 
     /**
      * Get devices for PDA's factory
      * Requires valid API key
+     * Supports encrypted requests (m2mCrypto before pdaAuth)
      */
-    app.get('/api/v1/pda/:serial/devices', { preHandler: [pdaAuth] }, (req, res) => {
+    app.get('/api/v1/pda/:serial/devices', { preHandler: [m2mCrypto, pdaAuth] }, (req, res) => {
         pdaController.getDevices(req, res);
     });
 
     /**
      * Sync unregistered BT attempts from SDK
      * Requires valid API key
+     * Supports encrypted requests (m2mCrypto before pdaAuth)
      */
-    app.post('/api/v1/pda/sync/unregistered-attempts', { preHandler: [pdaAuth] }, (req, res) => {
+    app.post('/api/v1/pda/sync/unregistered-attempts', { preHandler: [m2mCrypto, pdaAuth] }, (req, res) => {
         pdaController.syncUnregisteredAttempts(req, res);
     });
 

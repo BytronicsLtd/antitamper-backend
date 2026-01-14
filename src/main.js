@@ -17,6 +17,15 @@ app.register(require('@fastify/multipart'), {
     limits: { fileSize: 1000000000 } // 1GB
 })
 
+// Content type parser for encrypted M2M requests
+app.addContentTypeParser(
+    'application/x-bytronics-encrypted',
+    { parseAs: 'string' },
+    (req, body, done) => {
+        done(null, body);
+    }
+);
+
 //connect to database
 const dbConnect = require("./config/db.config.js");
 // setup mqtt
