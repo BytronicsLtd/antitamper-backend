@@ -39,22 +39,23 @@ module.exports = ({ app }) => {
     userController.getUsers(req, res);
   });
 
-  // Retrieve a specific user by ID
-  app.get('/api/v1/users/details/', { preHandler: [authenticate, checkRole(['root', 'sys-admin'])] }, (req, res) => {
-    userController.getUserById(req, res);
-  });
-  // Retrieve login in user details
+  // Retrieve login in user details (must be before :id route)
   app.get('/api/v1/users/me/', { preHandler: [authenticate,] }, (req, res) => {
     userController.getMe(req, res);
   });
 
+  // Retrieve a specific user by ID
+  app.get('/api/v1/users/:id', { preHandler: [authenticate, checkRole(['root', 'sys-admin'])] }, (req, res) => {
+    userController.getUserById(req, res);
+  });
+
   // Update a user by ID
-  app.patch('/api/v1/users/update/', { preHandler: [authenticate,] }, (req, res) => {
+  app.patch('/api/v1/users/:id', { preHandler: [authenticate,] }, (req, res) => {
     userController.updateUser(req, res);
   });
 
   // Delete a user by ID
-  app.delete('/api/v1/users/remove/', { preHandler: [authenticate,] }, (req, res) => {
+  app.delete('/api/v1/users/:id', { preHandler: [authenticate,] }, (req, res) => {
     userController.remove(req, res);
   });
 

@@ -7,6 +7,7 @@ const PDAModel = require("../../models/pda.model");
 const UnregisteredBTAttemptModel = require("../../models/unregistered-bt-attempt.model");
 const { default: mongoose } = require("mongoose");
 const formatValidationErrors = require("../../utils/formatValidationErrors.util");
+const { parseMongoError } = require("../../utils/mongoErrorHandler.util");
 const { addSeconds } = require("date-fns");
 const scalesDumpModel = require("../../models/scales-dump.model.js");
 const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
@@ -49,12 +50,8 @@ const controller = {
       console.log(chalk.red("Error creating device"), error);
       await session.abortTransaction();
       session.endSession();
-      let errors = []
-      if (error.name === 'ValidationError') {
-        errors = formatValidationErrors(error.errors)
-      }
-      res.status(500).send({ success: false, message: 'Error creating device', errors })
-
+      const { status, message } = parseMongoError(error);
+      res.status(status).send({ success: false, message });
     }
   },
   //fetch many devices
@@ -128,7 +125,7 @@ const controller = {
   // fetch  device details
   getOne: async (req, res) => {
     try {
-      const id = req.query.id
+      const id = req.params.id;
       let device = await DeviceModel.findById(id)
       device = device?.toJSON()
       if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
@@ -144,9 +141,9 @@ const controller = {
     const session = await mongoose.startSession();
     try {
       session.startTransaction();
-      const id = req.body.id
-      let { soft_deleted, ...data } = req.body
-      let device = await DeviceModel.findById(id); // Use `findById` method
+      const id = req.params.id;
+      let { soft_deleted, ...data } = req.body;
+      let device = await DeviceModel.findById(id);
       if (!device) {
         await session.abortTransaction();
         session.endSession();
@@ -184,22 +181,19 @@ const controller = {
       session.endSession();
       res.status(200).send({ success: true, message: "Device updated successfully" })
     } catch (error) {
-      console.log(chalk.red("Error fetching device details"), error);
+      console.log(chalk.red("Error updating device"), error);
       await session.abortTransaction();
       session.endSession();
-      let errors = []
-      if (error.name === 'ValidationError') {
-        errors = formatValidationErrors(error.errors)
-      }
-      res.status(500).send({ success: false, error: error.message, errors })
+      const { status, message } = parseMongoError(error);
+      res.status(status).send({ success: false, message });
     }
   },
-  // remove 
+  // remove
   remove: async (req, res) => {
     const session = await mongoose.startSession();
     try {
       session.startTransaction();
-      const id = req.body.id;
+      const id = req.params.id;
       let device = await DeviceModel.findById(id);
 
       if (!device) {

@@ -3,6 +3,7 @@ const { default: mongoose } = require("mongoose");
 const ActivityModel = require('../../models/activityLog.js');
 const FactoryModel = require('../../models/factory.js');
 const formatValidationErrors = require("../../utils/formatValidationErrors.util.js");
+const { parseMongoError } = require("../../utils/mongoErrorHandler.util.js");
 const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
 
 // Create a new factory
@@ -34,13 +35,10 @@ async function createFactory(req, res) {
     session.endSession();
     res.status(201).send({ success: true, message: "Factory created successfully" });
   } catch (error) {
-    let errors = []
-    if (error.name === 'ValidationError') {
-      errors = formatValidationErrors(error.errors)
-    }
     await session.abortTransaction();
     session.endSession();
-    res.status(400).send({ message: 'Error creating factory', error: error.message, errors });
+    const { status, message } = parseMongoError(error);
+    res.status(status).send({ success: false, message });
   }
 }
 
@@ -108,8 +106,8 @@ async function getFactories(req, res) {
 // Retrieve a specific factory by ID
 async function getFactoryById(req, res) {
   try {
-    const id = req.query.id
-    const factory = await FactoryModel.findById(id); // Use `findById` method
+    const id = req.params.id;
+    const factory = await FactoryModel.findById(id);
     if (!factory) return res.status(404).send({ message: 'FactoryModel not found' });
     res.status(200).send({ success: true, results: factory });
   } catch (err) {
@@ -122,9 +120,10 @@ async function updateFactory(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    let { soft_deleted, ...data } = req.body
+    const id = req.params.id;
+    let { soft_deleted, ...data } = req.body;
     const factory = await FactoryModel.findByIdAndUpdate(
-      req.body.id,
+      id,
       {
         $set: data
       },
@@ -149,7 +148,8 @@ async function updateFactory(req, res) {
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    res.status(500).send({ success: false, message: 'Error updating factory', error: err.message });
+    const { status, message } = parseMongoError(err);
+    res.status(status).send({ success: false, message });
   }
 }
 
@@ -158,7 +158,7 @@ async function remove(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    const id = req.body.id;
+    const id = req.params.id;
     let factory = await FactoryModel.findById(id);
     if (!factory) {
       return res.status(404).send({ success: false, message: "Factory with given ID not found" })

@@ -3,6 +3,7 @@ const chalk = require("chalk");
 const ActivityModel = require('../../models/activityLog.js');
 const UserModel = require("../../models/user");
 const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
+const { parseMongoError } = require("../../utils/mongoErrorHandler.util.js");
 // Retrieve all users
 exports.getUsers = async (req, res) => {
   try {
@@ -96,7 +97,7 @@ exports.getMe = async (req, res) => {
 // Retrieve a specific user by ID
 exports.getUserById = async (req, res) => {
   try {
-    const id = req.query.id
+    const id = req.params.id;
     const user = await UserModel.findById(id)
       .select('-password -token ')
       .populate([
@@ -112,7 +113,8 @@ exports.getUserById = async (req, res) => {
 // Update user details
 exports.updateUser = async (req, res) => {
   try {
-    const { password, id, ...rest } = req.body
+    const id = req.params.id;
+    const { password, ...rest } = req.body;
 
     let query = {
       _id: id,
@@ -123,7 +125,8 @@ exports.updateUser = async (req, res) => {
     if (!updatedUser) return res.status(404).send({ success: false, message: "User not found" });
     res.status(200).send({ success: true, results: updatedUser });
   } catch (err) {
-    res.status(500).send({ success: false, message: "Error updating user", error: err.message });
+    const { status, message } = parseMongoError(err);
+    res.status(status).send({ success: false, message });
   }
 };
 
@@ -132,7 +135,7 @@ exports.remove = async (req, res) => {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    const id = req.body.id;
+    const id = req.params.id;
     let user = await UserModel.findById(id);
     if (!user) {
       return res.status(404).send({ success: false, message: "User with given ID not found" })

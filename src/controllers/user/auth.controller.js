@@ -8,7 +8,8 @@ const passwordValidationUtil = require("../../utils/passwordValidate.util");
 const emailSender = require("../../utils/communication/email/email.util");
 const { addMinutes, format } = require("date-fns");
 const formatValidationErrors = require("../../utils/formatValidationErrors.util");
-// 
+const { parseMongoError } = require("../../utils/mongoErrorHandler.util");
+//
 const UserModel = require("../../models/user");
 const ActivityModel = require("../../models/activityLog");
 
@@ -104,11 +105,8 @@ const controller = {
             console.log(chalk.red("Error creating  user "), error);
             await session.abortTransaction();
             session.endSession();
-            let errors = []
-            if (error.name === 'ValidationError') {
-                errors = formatValidationErrors(error.errors)
-            }
-            res.status(400).send({ message: "Error creating user", error: error.message, errors });
+            const { status, message } = parseMongoError(error);
+            res.status(status).send({ success: false, message });
         }
     },
     // login user

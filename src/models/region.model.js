@@ -6,7 +6,6 @@ const schema = new Schema({
   name: {
     type: String,
     required: true,
-    unique: true,
     trim: true
   },
   isTest: {
@@ -23,6 +22,9 @@ const schema = new Schema({
 });
 
 schema.plugin(mongoosePaginate);
+
+// Case-insensitive unique index for region name
+schema.index({ name: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
 
 schema.method('toJSON', function () {
   const { __v, _id, ...object } = this.toObject();

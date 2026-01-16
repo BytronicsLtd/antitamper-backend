@@ -4,6 +4,7 @@ const ActivityModel = require('../../models/activityLog.js');
 const RegionModel = require('../../models/region.model.js');
 const { buildRegionVisibilityQuery } = require('../../utils/testRegionFilter.util.js');
 const formatValidationErrors = require("../../utils/formatValidationErrors.util.js");
+const { parseMongoError } = require("../../utils/mongoErrorHandler.util.js");
 
 // Create a new region
 async function createRegion(req, res) {
@@ -12,12 +13,13 @@ async function createRegion(req, res) {
     session.startTransaction();
     const { name, isTest } = req.body;
 
-    // Check if region already exists
-    const existing = await RegionModel.findOne({ name });
+    // Check if region already exists (case-insensitive)
+    const existing = await RegionModel.findOne({ name })
+      .collation({ locale: 'en', strength: 2 });
     if (existing) {
-      return res.status(400).send({
+      return res.status(409).send({
         success: false,
-        message: "Region with this name already exists"
+        message: "A record with this name already exists"
       });
     }
 
@@ -46,17 +48,12 @@ async function createRegion(req, res) {
       results: region
     });
   } catch (error) {
-    let errors = [];
-    if (error.name === 'ValidationError') {
-      errors = formatValidationErrors(error.errors);
-    }
     await session.abortTransaction();
     session.endSession();
-    res.status(400).send({
+    const { status, message } = parseMongoError(error);
+    res.status(status).send({
       success: false,
-      message: 'Error creating region',
-      error: error.message,
-      errors
+      message
     });
   }
 }
@@ -120,7 +117,7 @@ async function getRegions(req, res) {
 // Get region by ID
 async function getRegionById(req, res) {
   try {
-    const id = req.query.id;
+    const id = req.params.id;
     const region = await RegionModel.findById(id);
 
     if (!region) {
@@ -145,7 +142,25 @@ async function updateRegion(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    const { id, soft_deleted, ...data } = req.body;
+    const id = req.params.id;
+    const { soft_deleted, ...data } = req.body;
+
+    // Check if name is being updated and if it conflicts with another region (case-insensitive)
+    if (data.name) {
+      const existing = await RegionModel.findOne({
+        name: data.name,
+        _id: { $ne: id }
+      }).collation({ locale: 'en', strength: 2 });
+
+      if (existing) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(409).send({
+          success: false,
+          message: "A record with this name already exists"
+        });
+      }
+    }
 
     const region = await RegionModel.findByIdAndUpdate(
       id,
@@ -182,10 +197,10 @@ async function updateRegion(req, res) {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    res.status(500).send({
+    const { status, message } = parseMongoError(error);
+    res.status(status).send({
       success: false,
-      message: 'Error updating region',
-      error: error.message
+      message
     });
   }
 }
@@ -195,7 +210,7 @@ async function removeRegion(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    const id = req.body.id;
+    const id = req.params.id;
 
     let region = await RegionModel.findById(id);
     if (!region) {

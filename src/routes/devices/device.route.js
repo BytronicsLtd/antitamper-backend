@@ -26,17 +26,19 @@ module.exports = ({ app }) => {
   app.get('/api/v1/devices/', { preHandler: [authenticate,] }, (req, res) => {
     deviceController.fetchMany(req, res);
   });
+
   // fetch device details
-  app.get('/api/v1/devices/details/', { preHandler: [authenticate,] }, (req, res) => {
+  app.get('/api/v1/devices/:id', { preHandler: [authenticate,] }, (req, res) => {
     deviceController.getOne(req, res);
   });
 
-  // fetch device details
-  app.patch('/api/v1/devices/update/', { preHandler: [authenticate,checkRole(["root", "sys-admin"])] }, (req, res) => {
+  // update device
+  app.patch('/api/v1/devices/:id', { preHandler: [authenticate,checkRole(["root", "sys-admin"])] }, (req, res) => {
     deviceController.update(req, res);
   });
-  // fetch device details
-  app.delete('/api/v1/devices/remove/', { preHandler: [authenticate, checkRole(["root", "sys-admin"])] }, (req, res) => {
+
+  // delete device
+  app.delete('/api/v1/devices/:id', { preHandler: [authenticate, checkRole(["root", "sys-admin"])] }, (req, res) => {
     deviceController.remove(req, res);
   });
 
