@@ -69,9 +69,12 @@ require('./models/index');
 // Route discovery
 const all_routes = [];
 app.addHook('onRoute', (route) => {
-    const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
-    if (methods.includes(route.method.toUpperCase())) {
-        all_routes.push({ method: route.method, url: route.url });
+    const allowed = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+    const methods = Array.isArray(route.method) ? route.method : [route.method];
+    for (const m of methods) {
+        if (allowed.includes(String(m).toUpperCase())) {
+            all_routes.push({ method: m, url: route.url });
+        }
     }
 });
 

@@ -56,13 +56,13 @@ module.exports = {
         tags,
         summary: 'PDA status (M2M, polling)',
         params: serialParam,
-        response: { 4: errorResponse, 5: errorResponse },
+        response: { "4xx": errorResponse, "5xx": errorResponse },
     },
     getDevices: {
         tags,
         summary: 'Allowed devices for PDA factory (M2M)',
         params: serialParam,
-        response: { 4: errorResponse, 5: errorResponse },
+        response: { "4xx": errorResponse, "5xx": errorResponse },
     },
     syncUnregisteredAttempts: {
         tags,
@@ -72,7 +72,7 @@ module.exports = {
         // in the m2mCrypto preHandler before the route body is populated.
         // Documented body shape after decryption:
         description: 'Body (decrypted): ' + JSON.stringify(unregisteredAttemptsBody),
-        response: { 4: errorResponse, 5: errorResponse },
+        response: { "4xx": errorResponse, "5xx": errorResponse },
     },
     fetchMany: {
         tags,
