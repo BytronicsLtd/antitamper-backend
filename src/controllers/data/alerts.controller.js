@@ -133,6 +133,10 @@ const controller = {
                 ...(await checkAccess({ query, req })),
             }
             console.log("alerts  filter ", query)
+            const uid = req.user && (req.user.id || req.user._id);
+            const { read } = req.query;
+            if (read === 'true' && uid) query.read_by = { $in: [uid] };
+            else if (read === 'false' && uid) query.read_by = { $nin: [uid] };
             const { page, size } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
@@ -144,10 +148,11 @@ const controller = {
             });
             const docs = results.docs.map(result => {
                 // Destructure result._doc and rename _id to id
-                const { _id, __v, ...rest } = result._doc;
+                const { _id, __v, read_by = [], ...rest } = result._doc;
                 let modifiedResult = {
                     id: _id,
                     ...rest,
+                    isRead: uid ? read_by.map(String).includes(String(uid)) : false,
                 };
 
         if (result?.gsm_lat && result?.gsm_lon) {
@@ -183,6 +188,70 @@ const controller = {
           en: "Error fetching scales",
         },
       });
+    }
+  },
+
+  // Per-user read tracking — kept here so the data-alerts surface owns
+  // its own read state (separate from system /alerts).
+  markRead: async (req, res) => {
+    try {
+      const uid = req.user && (req.user.id || req.user._id);
+      if (!uid) return res.status(401).send({ success: false, message: 'Unauthorised' });
+      const id = req.params.id || req.query.id;
+      const r = await DataModel.updateOne({ _id: id }, { $addToSet: { read_by: uid } });
+      if (r.matchedCount === 0) return res.status(404).send({ success: false, message: 'Alert not found' });
+      res.status(200).send({ success: true });
+    } catch (e) {
+      res.status(500).send({ success: false, message: 'Error marking alert read', error: e.message });
+    }
+  },
+
+  markManyRead: async (req, res) => {
+    try {
+      const uid = req.user && (req.user.id || req.user._id);
+      if (!uid) return res.status(401).send({ success: false, message: 'Unauthorised' });
+      const ids = Array.isArray(req.body && req.body.ids) ? req.body.ids : [];
+      if (!ids.length) return res.status(200).send({ success: true, modified: 0 });
+      const r = await DataModel.updateMany(
+        { _id: { $in: ids }, read_by: { $nin: [uid] } },
+        { $addToSet: { read_by: uid } },
+      );
+      res.status(200).send({ success: true, modified: r.modifiedCount });
+    } catch (e) {
+      res.status(500).send({ success: false, message: 'Error bulk marking read', error: e.message });
+    }
+  },
+
+  markUnread: async (req, res) => {
+    try {
+      const uid = req.user && (req.user.id || req.user._id);
+      if (!uid) return res.status(401).send({ success: false, message: 'Unauthorised' });
+      const id = req.params.id || req.query.id;
+      const r = await DataModel.updateOne({ _id: id }, { $pull: { read_by: uid } });
+      if (r.matchedCount === 0) return res.status(404).send({ success: false, message: 'Alert not found' });
+      res.status(200).send({ success: true });
+    } catch (e) {
+      res.status(500).send({ success: false, message: 'Error marking alert unread', error: e.message });
+    }
+  },
+
+  unreadCount: async (req, res) => {
+    try {
+      const uid = req.user && (req.user.id || req.user._id);
+      if (!uid) return res.status(401).send({ success: false, message: 'Unauthorised' });
+      // Same alert-defining $or used by fetchMany so the count matches the list.
+      const baseAlertQuery = {
+        $or: [
+          { interrupt_types: { $exists: true, $ne: '' } },
+          { alert_types: { $ne: [] } },
+        ],
+      };
+      const count = await DataModel.countDocuments({
+        $and: [baseAlertQuery, { read_by: { $nin: [uid] } }],
+      });
+      res.status(200).send({ success: true, results: { count } });
+    } catch (e) {
+      res.status(500).send({ success: false, message: 'Error counting unread alerts', error: e.message });
     }
   },
 };

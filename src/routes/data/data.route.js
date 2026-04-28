@@ -21,6 +21,19 @@ module.exports = ({ app }) => {
     app.get('/api/v1/data/alerts/', { preHandler: [authenticate] }, (req, res) => {
       alertsController.fetchMany(req,res);
     });
+    // Per-user read tracking for the Data Alerts surface
+    app.get('/api/v1/data/alerts/unread-count/', { preHandler: [authenticate] }, (req, res) => {
+      alertsController.unreadCount(req,res);
+    });
+    app.post('/api/v1/data/alerts/mark-read/', { preHandler: [authenticate] }, (req, res) => {
+      alertsController.markManyRead(req,res);
+    });
+    app.post('/api/v1/data/alerts/:id/read/', { preHandler: [authenticate] }, (req, res) => {
+      alertsController.markRead(req,res);
+    });
+    app.post('/api/v1/data/alerts/:id/unread/', { preHandler: [authenticate] }, (req, res) => {
+      alertsController.markUnread(req,res);
+    });
     // 
     app.get('/api/v1/data/details/', { preHandler: [authenticate] }, (req, res) => {
       dataController.fetchOne(req,res);

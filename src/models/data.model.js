@@ -65,6 +65,9 @@ const schema = new mongoose.Schema(
     strict: false
 });
 
+// Per-user read tracking for the Data Alerts surface.
+schema.add({ read_by: { type: [mongoose.Schema.Types.ObjectId], default: [], index: true } });
+
 
 schema.plugin(mongoosePaginate);
 schema.method("toJSON", function () {
