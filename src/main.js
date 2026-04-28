@@ -1,23 +1,33 @@
-// npm i cross-env fastify @fastify/cors dotenv mqtt mongoose-paginate-v2 nodemon date-fns mongoose chalk@3 @fastify/multipart @fastify/static
-
-const dotenv = require('dotenv')
+const dotenv = require('dotenv');
 dotenv.config();
-const fastify = require('fastify')
-const cors = require('@fastify/cors');
-const chalk = require("chalk");
-const { format } = require("date-fns");
 
-//http server
-const app = fastify();
-//setup cors
+const fastify = require('fastify');
+const cors = require('@fastify/cors');
+
+const isDev = !!process.env.DEV;
+const app = fastify({
+    logger: {
+        level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
+        ...(isDev && {
+            transport: {
+                target: 'pino-pretty',
+                options: { translateTime: 'HH:MM:ss.l', ignore: 'pid,hostname' },
+            },
+        }),
+    },
+    disableRequestLogging: !process.env.LOG_ROUTES,
+    genReqId: () => `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+});
+
+// CORS
 app.register(cors, {});
-// file upload
-const path = require("path");
+
+// File upload
 app.register(require('@fastify/multipart'), {
     limits: { fileSize: 1000000000 } // 1GB
-})
+});
 
-// Content type parser for encrypted M2M requests
+// Encrypted M2M content-type parser
 app.addContentTypeParser(
     'application/x-bytronics-encrypted',
     { parseAs: 'string' },
@@ -26,75 +36,101 @@ app.addContentTypeParser(
     }
 );
 
-//connect to database
-const dbConnect = require("./config/db.config.js");
-// setup mqtt
+// OpenAPI / Swagger
+app.register(require('@fastify/swagger'), {
+    openapi: {
+        info: {
+            title: 'Bytronics Anti-Tamper API',
+            description: 'Backend API for PDA registration, device validation, and factory management.',
+            version: '1.0.0',
+        },
+        servers: [
+            { url: process.env.API_BASE_URL || 'http://localhost:4000/api/v1' },
+        ],
+        components: {
+            securitySchemes: {
+                bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+            },
+        },
+    },
+});
+
+app.register(require('@fastify/swagger-ui'), {
+    routePrefix: '/docs',
+    uiConfig: { docExpansion: 'list', deepLinking: true },
+});
+
+// DB + MQTT
+const dbConnect = require('./config/db.config.js');
 setupMQTT();
 dbConnect();
-//register models
-require("./models/index")
-//log routes and times
-let all_routes = []
-app.addHook('onRoute', route => {
-    let reg_route;
-    const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+require('./models/index');
+
+// Route discovery
+const all_routes = [];
+app.addHook('onRoute', (route) => {
+    const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
     if (methods.includes(route.method.toUpperCase())) {
-        reg_route = {
-            method: route.method,
-            url: route.url
-        }
+        all_routes.push({ method: route.method, url: route.url });
     }
-    if (reg_route) all_routes.push(reg_route)
-})
-app.addHook('onRequest', (req, res, done) => {
-    const now = Date.now();
-    req.timestamp = now;
-    done();
-})
-app.addHook('onResponse', (req, res, done) => {
-    if (process.env.LOG_ROUTES) {
-        const timestamp = req.timestamp
-        const now = Date.now()
-        if (process.env.LOG_ROUTES && req.method != 'OPTIONS') {
-            console.log(chalk.hex('#9155fd').bold(`[${format(now, 'dd-MM-yyyy HH:mm:ss a')}]:`),
-                chalk.hex('#ff9800').bold(req.method, '', req.headers.host), " url: ", chalk.blue(req.url), `time:`, now - timestamp, "ms", res.statusCode);
-        }
-    }
-    done()
 });
-// routes
-require('./routes/index.js')({ app });
+
+// Fastify's pino logger handles per-request access logs when LOG_ROUTES is set.
+
+// Centralised error handler — produces a consistent JSON shape for any thrown
+// or validation error. Existing controllers that respond with res.status().send()
+// are unaffected; this only fires for uncaught throws.
+app.setErrorHandler((err, req, reply) => {
+    const status = err.statusCode || 500;
+    if (status >= 500) {
+        req.log.error({ err, reqId: req.id }, 'request failed');
+    } else {
+        req.log.warn({ err: err.message, reqId: req.id }, 'request rejected');
+    }
+    reply.status(status).send({
+        success: false,
+        message: err.message || 'Internal Server Error',
+        code: err.code,
+        validation: err.validation,
+        requestId: req.id,
+    });
+});
+
+// Wrap route registration in a plugin so it runs AFTER swagger has been initialised
+// (Fastify processes registered plugins in order).
+app.register(async (instance) => {
+    require('./routes/index.js')({ app: instance });
+});
+
 async function main() {
-    const port = process.env.PORT || 3001
-    app.listen({ port, host: "0.0.0.0" });
-    console.log(chalk.yellow("server running on port", port));
-    const { setRoutes } = require("./globals/variables.globals.js");
+    const port = process.env.PORT || 3001;
+    await app.listen({ port, host: '0.0.0.0' });
+    app.log.info(`OpenAPI docs at http://localhost:${port}/docs`);
 
+    const { setRoutes } = require('./globals/variables.globals.js');
     setRoutes(all_routes);
-    if (process.env.LOG_ROUTES) console.log(chalk.blue("Registered routes: "), all_routes);
-
+    if (process.env.LOG_ROUTES) app.log.debug({ routes: all_routes }, 'registered routes');
 }
-// 
 
-main();
+main().catch((err) => {
+    app.log.error(err);
+    process.exit(1);
+});
 
 function setupMQTT() {
-    const mqtt = require("./config/mqtt.conf.js")
+    const mqtt = require('./config/mqtt.conf.js');
     const mqtt_instance = new mqtt({
-        topic: "#",
+        topic: '#',
         host: process.env.MQTT_HOST,
         port: process.env.MQTT_PORT,
         custom_name: process.env.MQTT_CUSTOM_NAME,
         username: process.env.MQTT_USERNAME,
-        password:process.env.MQTT_PASSWORD,
+        password: process.env.MQTT_PASSWORD,
     });
-    mqtt_instance.connect()
+    mqtt_instance.connect();
     mqtt_instance.onMessage((topic, message) => {
-        if (topic === "scale-antitamper/data") {
-            console.log(topic, "message ", JSON.parse(message));
+        if (topic === 'scale-antitamper/data') {
+            app.log.info({ topic, message: JSON.parse(message) }, 'mqtt message');
         }
-
-    })
+    });
 }
-
-

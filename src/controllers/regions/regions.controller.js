@@ -11,7 +11,7 @@ async function createRegion(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    const { name, isTest } = req.body;
+    const { name, isTest, coordinates } = req.body;
 
     // Check if region already exists (case-insensitive)
     const existing = await RegionModel.findOne({ name })
@@ -23,7 +23,11 @@ async function createRegion(req, res) {
       });
     }
 
-    const region = new RegionModel({ name, isTest: isTest || false });
+    const region = new RegionModel({
+      name,
+      isTest: isTest || false,
+      ...(coordinates ? { coordinates } : {}),
+    });
     await region.save({ session });
 
     await ActivityModel.create([{

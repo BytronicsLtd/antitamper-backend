@@ -24,6 +24,20 @@ const schema = new Schema({
     enum: ['active', 'inactive'],
     default: 'active'
   },
+  // Optional geographic position of the factory.
+  coordinates: {
+    lat: {
+      type: Number,
+      min: -90,
+      max: 90,
+    },
+    lng: {
+      type: Number,
+      min: -180,
+      max: 180,
+    },
+    _id: false,
+  },
   soft_deleted: {
     type: Boolean,
     default: false

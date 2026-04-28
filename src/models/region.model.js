@@ -13,6 +13,20 @@ const schema = new Schema({
     default: false,
     index: true
   },
+  // Optional geographic centre point of the region. Used for map views.
+  coordinates: {
+    lat: {
+      type: Number,
+      min: -90,
+      max: 90,
+    },
+    lng: {
+      type: Number,
+      min: -180,
+      max: 180,
+    },
+    _id: false,
+  },
   soft_deleted: {
     type: Boolean,
     default: false
