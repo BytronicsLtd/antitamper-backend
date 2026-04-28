@@ -19,8 +19,17 @@ const app = fastify({
     genReqId: () => `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
 });
 
-// CORS
-app.register(cors, {});
+// CORS — @fastify/cors v8+ defaults to `origin: false` (rejects all),
+// so the dashboard preflight at iot.bytronics.io was being blocked.
+// Allowed origins are configurable via CORS_ORIGINS (comma-separated).
+const corsOrigins = (process.env.CORS_ORIGINS ||
+    'https://iot.bytronics.io,https://api.bytronics.io,http://localhost:5173,http://localhost:5174'
+).split(',').map((s) => s.trim()).filter(Boolean);
+app.register(cors, {
+    origin: corsOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+});
 
 // File upload
 app.register(require('@fastify/multipart'), {
