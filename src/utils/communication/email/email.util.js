@@ -29,14 +29,15 @@ const emailSender = async ({ template, emails, subject, text, payload, attachmen
   try {
     const source = fs.readFileSync(path.join(template_path, template), "utf8");
     const compiledTemplate = handlebars.compile(source);
+    const port = Number(process.env.EMAIL_PORT) || 587;
     const transporter = nodemailer.createTransport({
-      secure: false, // true for 465, false for other ports
       host: process.env.EMAIL_HOST,
-      post: process.env.EMAIL_PORT,
-
+      port,
+      secure: port === 465,        // implicit TLS only for 465
+      requireTLS: port === 587,    // STARTTLS for 587 (Gmail submission)
       auth: {
         user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD, //qzzs mozz fhjr fpcx
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
     const mailOptions = {
@@ -51,8 +52,14 @@ const emailSender = async ({ template, emails, subject, text, payload, attachmen
     const response = await transporter.sendMail(mailOptions);
     return { success: true, response };
   } catch (error) {
-    console.log(chalk.red("Error sending email  "), error);
-    return { success: false };
+    // Surface the real reason — every silent failure for months was caused
+    // by `post` being ignored and nodemailer falling back to port 25.
+    console.log(chalk.red('Error sending email'), error);
+    return {
+      success: false,
+      error: error && error.message ? error.message : String(error),
+      code: error && error.code,
+    };
   }
 };
 
