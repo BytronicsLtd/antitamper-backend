@@ -25,6 +25,13 @@ module.exports = ({ app }) => {
         preHandler: [m2mCrypto, pdaAuth],
     }, (req, res) => pdaController.syncUnregisteredAttempts(req, res));
 
+    // ---------- User-driven registration (PDA app <-> backend) ----------
+
+    app.post('/api/v1/pda/register', {
+        schema: schemas.register,
+        preHandler: [authenticate],
+    }, (req, res) => pdaController.register(req, res));
+
     // ---------- Admin (dashboard <-> backend) ----------
 
     app.get('/api/v1/pda/', {

@@ -51,7 +51,23 @@ const unregisteredAttemptsBody = {
     },
 };
 
+const registerBody = {
+    type: 'object',
+    required: ['serial_number'],
+    properties: {
+        serial_number: { type: 'string', minLength: 1 },
+        device_info: { type: 'object', additionalProperties: true },
+    },
+    additionalProperties: false,
+};
+
 module.exports = {
+    register: {
+        tags,
+        security,
+        summary: 'Register a PDA from a logged-in factory user (creates in staging)',
+        body: registerBody,
+    },
     getStatus: {
         tags,
         summary: 'PDA status (M2M, polling)',

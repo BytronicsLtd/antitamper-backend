@@ -15,16 +15,42 @@ const app = fastify({
             },
         }),
     },
-    disableRequestLogging: !process.env.LOG_ROUTES,
+    // We log requests ourselves below so we can skip CORS preflights (OPTIONS).
+    disableRequestLogging: true,
     genReqId: () => `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
 });
 
-// CORS — @fastify/cors v8+ defaults to `origin: false` (rejects all),
-// so the dashboard preflight at iot.bytronics.io was being blocked.
-// Allowed origins are configurable via CORS_ORIGINS (comma-separated).
-const corsOrigins = (process.env.CORS_ORIGINS ||
-    'https://iot.bytronics.io,https://api.bytronics.io,http://localhost:5173,http://localhost:5174'
-).split(',').map((s) => s.trim()).filter(Boolean);
+// Custom request logger — logs real API calls but ignores OPTIONS preflights.
+if (process.env.LOG_ROUTES) {
+    app.addHook('onRequest', async (req) => {
+        if (req.method === 'OPTIONS') return;
+        req.log.info({
+            reqId: req.id,
+            req: {
+                method: req.method,
+                url: req.url,
+                host: req.headers.host,
+                remoteAddress: req.ip,
+            },
+        }, 'incoming request');
+    });
+    app.addHook('onResponse', async (req, reply) => {
+        if (req.method === 'OPTIONS') return;
+        req.log.info({
+            reqId: req.id,
+            res: { statusCode: reply.statusCode },
+            responseTime: reply.elapsedTime,
+        }, 'request completed');
+    });
+}
+
+// CORS — in dev (DEV=true) we reflect any origin so local UIs on arbitrary
+// ports/hosts just work. In prod we honor the CORS_ORIGINS allowlist.
+const corsOrigins = isDev
+    ? true
+    : (process.env.CORS_ORIGINS ||
+        'https://iot.bytronics.io,https://api.bytronics.io,http://localhost:5173,http://localhost:5174'
+      ).split(',').map((s) => s.trim()).filter(Boolean);
 app.register(cors, {
     origin: corsOrigins,
     credentials: true,

@@ -19,6 +19,11 @@ const controller = {
       const payload = req.body;
       console.log("create device payload ", payload);
 
+      // Factory-level users can only create scales for their own factory.
+      if (req.user.level === 'factory') {
+        payload.factory = req.user.factory;
+      }
+
       // Populate factory details if factory ID is provided
       if (payload.factory) {
         const factory = await FactoryModel.findById(payload.factory);
@@ -26,6 +31,9 @@ const controller = {
           payload.factory_name = factory.name;
           payload.factory_location = factory.location;
           payload.region = factory.region;
+          if (!payload.status || payload.status === 'unassigned') {
+            payload.status = 'active';
+          }
         }
       }
 

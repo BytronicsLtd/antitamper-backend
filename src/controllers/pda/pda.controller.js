@@ -9,6 +9,106 @@ const formatValidationErrors = require("../../utils/formatValidationErrors.util"
 
 const controller = {
     /**
+     * Register PDA from a logged-in factory user.
+     * Idempotent: if a PDA with the serial already exists for the user's factory, returns it as-is.
+     * Creates in 'staging'; admin must approve via the existing /pda/:serial/approve endpoint.
+     */
+    register: async (req, res) => {
+        const session = await mongoose.startSession();
+        try {
+            session.startTransaction();
+            const { serial_number, device_info } = req.body;
+            const user = req.user;
+
+            if (!user.factory) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(400).send({
+                    success: false,
+                    message: "Your account has no factory associated; cannot register a PDA"
+                });
+            }
+
+            const factory = await FactoryModel.findById(user.factory).session(session);
+            if (!factory) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(404).send({
+                    success: false,
+                    message: "User factory not found"
+                });
+            }
+
+            let pda = await PDAModel.findOne({ serial_number }).session(session);
+            let created = false;
+
+            if (pda) {
+                // Idempotent re-register: if PDA belongs to the same factory, just return it.
+                if (pda.factory && pda.factory.toString() === factory._id.toString()) {
+                    if (device_info) {
+                        pda.device_info = device_info;
+                        await pda.save({ session });
+                    }
+                } else {
+                    // Different factory (or unassigned) — refuse rather than steal it from another tenant.
+                    await session.abortTransaction();
+                    session.endSession();
+                    return res.status(409).send({
+                        success: false,
+                        message: "PDA serial already registered to a different factory"
+                    });
+                }
+            } else {
+                pda = new PDAModel({
+                    serial_number,
+                    factory: factory._id,
+                    factory_name: factory.name,
+                    factory_location: factory.location,
+                    region: factory.region,
+                    status: 'staging',
+                    device_info: device_info || null,
+                });
+                await pda.save({ session });
+                created = true;
+
+                await ActivityModel.create([{
+                    action: "register",
+                    user: user.id,
+                    email: user.email,
+                    role: user.role,
+                    timestamp: Date.now(),
+                    model: "PDA",
+                    affected_id: pda._id,
+                    edited_data: {
+                        status: 'staging',
+                        serial_number: pda.serial_number,
+                        factory_name: pda.factory_name
+                    }
+                }], { session });
+            }
+
+            await session.commitTransaction();
+            session.endSession();
+
+            res.status(created ? 201 : 200).send({
+                success: true,
+                message: created ? "PDA registered and pending approval" : "PDA already registered",
+                results: pda
+            });
+
+        } catch (error) {
+            console.log(chalk.red("Error registering PDA"), error);
+            await session.abortTransaction();
+            session.endSession();
+            const status = error.code === 11000 ? 409 : 500;
+            res.status(status).send({
+                success: false,
+                message: error.code === 11000 ? "PDA serial already registered" : error.message
+            });
+        }
+    },
+
+    /**
      * Get PDA status - Polling endpoint
      * Returns status and API key if approved
      */
