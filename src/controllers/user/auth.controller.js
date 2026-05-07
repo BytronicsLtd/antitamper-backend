@@ -139,6 +139,12 @@ const controller = {
                     message: "Invalid email or password.",
                 });
             }
+            if (user.status && user.status !== 'active') {
+                return res.status(403).send({
+                    success: false,
+                    message: `Your account is ${user.status}. Contact an administrator.`,
+                });
+            }
             //create token valid for one month
             const new_token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
                 expiresIn: 2592000, // 30 days

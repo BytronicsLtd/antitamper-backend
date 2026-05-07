@@ -116,12 +116,22 @@ exports.updateUser = async (req, res) => {
     const id = req.params.id;
     const { password, ...rest } = req.body;
 
-    let query = {
-      _id: id,
+    // If status is moving away from "active" (or soft_deleted is being set),
+    // also clear the stored token so any open sessions are dropped on the
+    // next request even before the auth-status check kicks in.
+    const update = { ...rest };
+    const deactivating =
+      (Object.prototype.hasOwnProperty.call(rest, 'status') && rest.status && rest.status !== 'active') ||
+      rest.soft_deleted === true;
+    if (deactivating) {
+      update.token = null;
     }
-    const updatedUser = await UserModel.findOneAndUpdate(query, {
-      $set: rest
-    }, { new: true });
+
+    const updatedUser = await UserModel.findOneAndUpdate(
+      { _id: id },
+      { $set: update },
+      { new: true },
+    );
     if (!updatedUser) return res.status(404).send({ success: false, message: "User not found" });
     res.status(200).send({ success: true, results: updatedUser });
   } catch (err) {

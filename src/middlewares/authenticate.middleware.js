@@ -35,6 +35,18 @@ const authenticate = async (request, reply) => {
             });
         }
 
+        // Reject deactivated, suspended, or soft-deleted users — their existing
+        // tokens must stop working as soon as an admin flips the status.
+        if (user.soft_deleted || (user.status && user.status !== 'active')) {
+            return reply.code(401).send({
+                success: false,
+                results: { force_logout: true },
+                message: user.soft_deleted
+                    ? "Account has been removed"
+                    : `Account is ${user.status || 'inactive'}`
+            });
+        }
+
         // Handle impersonation tokens (don't check stored token for impersonation)
         if (decoded.isImpersonation) {
             request.user = user;
