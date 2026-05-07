@@ -2,8 +2,9 @@ const { default: mongoose } = require("mongoose");
 const chalk = require("chalk");
 const ActivityModel = require('../../models/activityLog.js');
 const UserModel = require("../../models/user");
-const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
+const { getVisibleRegionIds, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
 const { parseMongoError } = require("../../utils/mongoErrorHandler.util.js");
+const { isLevel, LEVELS } = require('../../permissions');
 // Retrieve all users
 exports.getUsers = async (req, res) => {
   try {
@@ -17,7 +18,7 @@ exports.getUsers = async (req, res) => {
     let query = {
       soft_deleted: { $ne: true }
     };
-    if (user.level === 'factory') {
+    if (isLevel(user, LEVELS.FACTORY)) {
       query.factory = user.factory
     }
     // add query for elevated roles
@@ -40,7 +41,6 @@ exports.getUsers = async (req, res) => {
         $or: [
           { name: { $regex: new RegExp(search_term, "i") } },
           { email: { $regex: new RegExp(search_term, "i") } },
-          { region: { $regex: new RegExp(search_term, "i") } },
           { phone_number: { $regex: new RegExp(search_term, "i") } },
           { status: { $regex: new RegExp(search_term, "i") } },
           { role: { $regex: new RegExp(search_term, "i") } },
@@ -169,37 +169,26 @@ exports.remove = async (req, res) => {
 // check access - now async to support test region filtering
 async function checkAccess({ query, req }) {
   const user = req.user;
-  const level = user.level;
-  const factory = user.factory;
-  const region = user.region;
-
-  // filter by factory
-  if (level === "factory") {
-    query.factory = factory;
+  if (user.level === "factory" && user.factory) {
+    query.factory = user.factory;
     return query;
   }
-
-  // filter by region
-  if (level === "region") {
-    query.region = region;
+  if (user.level === "region" && user.region) {
+    query.region = user.region;
     return query;
   }
-
-  // For national/global users, filter by visible regions (excludes test regions unless enabled)
-  const visibleRegions = await getVisibleRegions(user);
-  query = applyRegionFilter(query, visibleRegions);
-
-  return query;
+  const regionIds = await getVisibleRegionIds(user);
+  return applyRegionFilter(query, regionIds);
 }
 
 // Update user settings
 exports.updateSettings = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { showTestRegions } = req.body;
+    // Backwards-compat: accept either showTestData (new) or showTestRegions (old).
+    const showTestData = req.body.showTestData ?? req.body.showTestRegions;
 
-    // Only sys-admins can toggle test region visibility
-    if (showTestRegions !== undefined) {
+    if (showTestData !== undefined) {
       if (!['root', 'sys-admin'].includes(req.user.role)) {
         return res.status(403).send({
           success: false,
@@ -210,7 +199,7 @@ exports.updateSettings = async (req, res) => {
 
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
-      { $set: { 'settings.showTestRegions': showTestRegions } },
+      { $set: { 'settings.showTestData': !!showTestData } },
       { new: true }
     ).select('-password -token');
 

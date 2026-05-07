@@ -27,7 +27,7 @@ describe('PDA Model', () => {
             const factory = await FactoryModel.create({
                 name: 'Test Factory',
                 location: 'Test Location',
-                region: 'Test Region',
+                region: new mongoose.Types.ObjectId(),
                 status: 'active'
             });
 
@@ -86,7 +86,7 @@ describe('PDA Model', () => {
             const factory = await FactoryModel.create({
                 name: 'Key Test Factory',
                 location: 'Test Location',
-                region: 'Test Region'
+                region: new mongoose.Types.ObjectId()
             });
 
             const pda = await PDAModel.create({
@@ -106,7 +106,7 @@ describe('PDA Model', () => {
             const factory = await FactoryModel.create({
                 name: 'Verify Test Factory',
                 location: 'Test Location',
-                region: 'Test Region'
+                region: new mongoose.Types.ObjectId()
             });
 
             const pda = await PDAModel.create({
@@ -137,7 +137,7 @@ describe('PDA Model', () => {
             const factory = await FactoryModel.create({
                 name: 'Tamper Test Factory',
                 location: 'Test Location',
-                region: 'Test Region'
+                region: new mongoose.Types.ObjectId()
             });
 
             const pda = await PDAModel.create({
@@ -178,7 +178,7 @@ describe('Device Model', () => {
             const factory = await FactoryModel.create({
                 name: 'Device Test Factory',
                 location: 'Test Location',
-                region: 'Test Region'
+                region: new mongoose.Types.ObjectId()
             });
 
             const device = await DeviceModel.create({
@@ -196,7 +196,7 @@ describe('Device Model', () => {
             const factory = await FactoryModel.create({
                 name: 'Find Test Factory',
                 location: 'Test Location',
-                region: 'Test Region'
+                region: new mongoose.Types.ObjectId()
             });
 
             await DeviceModel.create({
@@ -242,15 +242,16 @@ describe('Unregistered BT Attempt Model', () => {
 
 describe('Factory Model', () => {
     it('should create factory with all fields', async () => {
+        const regionId = new mongoose.Types.ObjectId();
         const factory = await FactoryModel.create({
             name: 'Complete Factory',
             location: 'Full Location',
-            region: 'Complete Region',
+            region: regionId,
             status: 'active'
         });
 
         expect(factory._id).toBeDefined();
         expect(factory.name).toBe('Complete Factory');
-        expect(factory.region).toBe('Complete Region');
+        expect(factory.region.toString()).toBe(regionId.toString());
     });
 });

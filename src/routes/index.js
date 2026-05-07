@@ -8,6 +8,7 @@ const regionRoutes = require("./regions/regions.routes");
 const alertsRoutes = require("./alerts/alerts.route");
 const testRoutes = require("./test/test.route");
 const pdaRoutes = require("./pda/pda.route");
+const invitationRoutes = require("./invitations/invitation.routes");
 
 module.exports = ({ app }) => {
     deviceRoutes({ app });
@@ -20,6 +21,6 @@ module.exports = ({ app }) => {
     alertsRoutes({ app });
     testRoutes({ app });
     pdaRoutes({ app });
-
+    invitationRoutes({ app });
 };
   

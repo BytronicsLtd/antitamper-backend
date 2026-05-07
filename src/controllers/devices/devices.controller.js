@@ -10,7 +10,7 @@ const formatValidationErrors = require("../../utils/formatValidationErrors.util"
 const { parseMongoError } = require("../../utils/mongoErrorHandler.util");
 const { addSeconds } = require("date-fns");
 const scalesDumpModel = require("../../models/scales-dump.model.js");
-const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
+const { getVisibleFactoryIds, applyFactoryFilter } = require('../../utils/testRegionFilter.util.js');
 const controller = {
   create: async (req, res) => {
     const session = await mongoose.startSession();
@@ -85,7 +85,6 @@ const controller = {
           $or: [
             { device_id: { $regex: new RegExp(search_term, "i") } },
             { factory_name: { $regex: new RegExp(search_term, "i") } },
-            { region: { $regex: new RegExp(search_term, "i") } },
             { serial_number: { $regex: new RegExp(search_term, "i") } },
             { phone_number: { $regex: new RegExp(search_term, "i") } },
             { status: { $regex: new RegExp(search_term, "i") } },
@@ -466,28 +465,17 @@ const controller = {
 
 module.exports = controller;
 
-// check access - now async to support test region filtering
+// check access — resolves a user's visibility scope to a factory filter.
 async function checkAccess({ query, req }) {
   const user = req.user;
   const level = user.level;
-  const factory = user.factory;
-  const region = user.region;
 
-  // filter by factory
-  if (level === "factory") {
-    query.factory = factory;
+  if (level === "factory" && user.factory) {
+    query.factory = user.factory;
     return query;
   }
 
-  // filter by region
-  if (level === "region") {
-    query.region = region;
-    return query;
-  }
-
-  // For national/global users, filter by visible regions (excludes test regions unless enabled)
-  const visibleRegions = await getVisibleRegions(user);
-  query = applyRegionFilter(query, visibleRegions);
-
-  return query;
+  // region/national/global: filter by the set of factories the user can see.
+  const factoryIds = await getVisibleFactoryIds(user);
+  return applyFactoryFilter(query, factoryIds);
 }

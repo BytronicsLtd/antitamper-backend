@@ -71,7 +71,7 @@ app.register(require('@fastify/swagger-ui'), {
 
 // DB + MQTT
 const dbConnect = require('./config/db.config.js');
-setupMQTT();
+if (process.env.MQTT_HOST) setupMQTT();
 dbConnect();
 require('./models/index');
 

@@ -2,15 +2,23 @@ const chalk = require("chalk");
 const { default: mongoose } = require("mongoose");
 const ActivityModel = require('../../models/activityLog.js');
 const FactoryModel = require('../../models/factory.js');
+const RegionModel = require('../../models/region.model.js');
 const formatValidationErrors = require("../../utils/formatValidationErrors.util.js");
 const { parseMongoError } = require("../../utils/mongoErrorHandler.util.js");
-const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
+const { getVisibleRegionIds, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
 
 // Create a new factory
 async function createFactory(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
+    if (!req.body.region || !mongoose.Types.ObjectId.isValid(req.body.region)) {
+      return res.status(400).send({ success: false, message: "A valid region id is required" });
+    }
+    const region = await RegionModel.findById(req.body.region);
+    if (!region) {
+      return res.status(400).send({ success: false, message: "Region not found" });
+    }
     let query = { name: req.body.name, location: req.body.location };
     const results = await FactoryModel.findOne(query)
     if (results) {
@@ -71,7 +79,6 @@ async function getFactories(req, res) {
         ...query,
         $or: [
           { name: { $regex: new RegExp(search_term, "i") } },
-          { region: { $regex: new RegExp(search_term, "i") } },
           { location: { $regex: new RegExp(search_term, "i") } },
         ],
       };
@@ -86,7 +93,7 @@ async function getFactories(req, res) {
       page, limit, offset,
       select: ``,
       sort: '-createdAt',
-
+      populate: { path: 'region', select: 'name code isTest' },
     });
     const metadata = {
       searchable_parameters: {
@@ -122,6 +129,15 @@ async function updateFactory(req, res) {
     session.startTransaction();
     const id = req.params.id;
     let { soft_deleted, ...data } = req.body;
+    if (data.region !== undefined) {
+      if (!mongoose.Types.ObjectId.isValid(data.region)) {
+        return res.status(400).send({ success: false, message: "A valid region id is required" });
+      }
+      const region = await RegionModel.findById(data.region);
+      if (!region) {
+        return res.status(400).send({ success: false, message: "Region not found" });
+      }
+    }
     const factory = await FactoryModel.findByIdAndUpdate(
       id,
       {
@@ -201,28 +217,16 @@ module.exports = {
   updateFactory,
   remove
 };
-// check access - now async to support test region filtering
 async function checkAccess({ query, req }) {
   const user = req.user;
-  const level = user.level;
-  const factory = user.factory;
-  const region = user.region;
-
-  // filter by factory
-  if (level === "factory") {
-    query._id = factory;
+  if (user.level === "factory" && user.factory) {
+    query._id = user.factory;
     return query;
   }
-
-  // filter by region
-  if (level === "region") {
-    query.region = region;
+  if (user.level === "region" && user.region) {
+    query.region = user.region;
     return query;
   }
-
-  // For national/global users, filter by visible regions (excludes test regions unless enabled)
-  const visibleRegions = await getVisibleRegions(user);
-  query = applyRegionFilter(query, visibleRegions);
-
-  return query;
+  const regionIds = await getVisibleRegionIds(user);
+  return applyRegionFilter(query, regionIds);
 }

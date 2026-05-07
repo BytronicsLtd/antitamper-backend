@@ -2,6 +2,13 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const mongoosePaginate = require('mongoose-paginate-v2');
 
+const {
+  LEVELS,
+  LEVEL_LIST,
+  ROLES,
+  ROLE_LIST,
+  levelForRole,
+} = require('../permissions');
 
 const Schema = mongoose.Schema;
 
@@ -56,13 +63,13 @@ const schema = new Schema({
   //
   role: {
     type: String,
-    enum: ['root', 'sys-admin', 'admin', 'Manager', 'ICT Manager', 'FUM', 'FSC',"user"],
+    enum: ROLE_LIST,
     required: true
   },
   //
   level: {
     type: String,
-    enum: ['factory', 'region', 'national', 'global'],
+    enum: LEVEL_LIST,
     required: true,
     validate: [{ validator: validateLevel('level') },
     ],
@@ -75,8 +82,9 @@ const schema = new Schema({
     defaul: null,
   },
   region: {
-    type: String,
-    defaul: null,
+    type: Schema.Types.ObjectId,
+    ref: 'Region',
+    default: null,
     validate: [{ validator: regionRequired('region') }],
   },
   //user status
@@ -101,7 +109,8 @@ const schema = new Schema({
   },
   // user settings (for sys-admin preferences)
   settings: {
-    showTestRegions: {
+    // Show test data (test regions, test factories, etc.) for debugging.
+    showTestData: {
       type: Boolean,
       default: false
     }
@@ -130,63 +139,50 @@ function isPhoneNumber(value) {
   if (!kenya_phone_regex.test(clean_phone)) throw new Error("Please enter a valid phone number.")
 }
 
-// ensure sys-admin have a level of global
+// Level/role agreement: a role's home level (per the registry) must match
+// the user's level. The registry is the single source of truth.
 function validateLevel(field) {
   return function (value) {
-    if (this.role === 'sys-admin' && value != 'global') {
-      throw new Error("System administrators must have a global level");
-    }
-    if (this.role !== 'sys-admin' && value === 'global') {
-      throw new Error("Only system administrators can have a global level");
+    const expected = levelForRole(this.role);
+    if (expected && expected !== value) {
+      throw new Error(`Role ${this.role} requires level ${expected}, got ${value}`);
     }
     return true;
   }
 }
 
+// FACTORY users must point at an existing Factory; broader-scope users
+// must not carry a factory ref.
 function factoryRequired(field) {
   return async function (value) {
-    const levels = ['region', 'national', 'global'];
-    if (!this.factory && !levels.includes(this.level)) {
-      throw new Error("Factory is required for non-admin users during creation");
-    }
-    // confirm if provided factory exists for users with a level of factory
-    if (!levels.includes(this.level) && this.factory) {
-      const results = await mongoose.model('Factory').findById(this.factory)
+    if (this.level === LEVELS.FACTORY) {
+      if (!this.factory) {
+        throw new Error("Factory is required for factory-level users");
+      }
+      const results = await mongoose.model('Factory').findById(this.factory);
       if (!results) {
         throw new Error("Provided factory does not exist");
       }
       this.region = results.region;
-    }
-    // remove factory if users have the roles in the array
-    if (levels.includes(this.level)) {
+    } else {
+      // SYSTEM / NATIONAL / REGIONAL users have no factory binding.
       this.factory = null;
     }
-
-    return true
+    return true;
   }
 }
-// Region validation
+
+// REGIONAL users must point at a region; FACTORY inherits region from the
+// referenced factory (set in factoryRequired); SYSTEM / NATIONAL must not
+// carry a region ref.
 function regionRequired(field) {
   return async function (value) {
-    const data = this
-    // console.log(value, " validate region ==== ", data);
-    const levels = ['national', 'global'];
-    // Region is required for regional level users
-    if (data.level === 'region' && !value) {
-      throw new Error("Region is required");
+    const data = this;
+    if (data.level === LEVELS.REGIONAL && !value) {
+      throw new Error("Region is required for regional-level users");
     }
-    // Region user must have the role of Manager
-    if (data.role != 'Manager' && value) {
-      throw new Error("Regional users must have the role of Manager");
-    }
-    // Level must be region if region is provided
-    if (data.level !== 'region' && value) {
-      throw new Error("Level must be region if region is provided");
-    }
-
-    // Global and national users don't need region
-    if (levels.includes(data.level) && value) {
-      throw new Error("Global and national users do not require a region");
+    if ((data.level === LEVELS.SYSTEM || data.level === LEVELS.NATIONAL) && value) {
+      throw new Error("System and national users do not have a region");
     }
     return true;
   }

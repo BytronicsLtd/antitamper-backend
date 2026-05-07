@@ -8,6 +8,17 @@ const schema = new Schema({
     required: true,
     trim: true
   },
+  // Short code used in legacy refs and compact UIs (e.g. "1", "12").
+  code: {
+    type: String,
+    trim: true,
+    default: null,
+  },
+  // Counties this region covers.
+  counties: {
+    type: [String],
+    default: [],
+  },
   isTest: {
     type: Boolean,
     default: false,
@@ -39,6 +50,8 @@ schema.plugin(mongoosePaginate);
 
 // Case-insensitive unique index for region name
 schema.index({ name: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
+// Code is unique when set
+schema.index({ code: 1 }, { unique: true, sparse: true });
 
 schema.method('toJSON', function () {
   const { __v, _id, ...object } = this.toObject();

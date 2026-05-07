@@ -1,6 +1,6 @@
 const chalk = require("chalk");
 const DataModel = require("../../models/data.model");
-const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
+const { getVisibleFactoryIds, applyFactoryFilter } = require('../../utils/testRegionFilter.util.js');
 
 const controller = {
   // fetch many data
@@ -257,28 +257,12 @@ const controller = {
 };
 module.exports = controller;
 
-// check access - now async to support test region filtering
 async function checkAccess({ query, req }) {
   const user = req.user;
-  const level = user.level;
-  const factory = user.factory;
-  const region = user.region;
-
-  // filter by factory
-  if (level === "factory") {
-    query.factory = factory;
+  if (user.level === "factory" && user.factory) {
+    query.factory = user.factory;
     return query;
   }
-
-  // filter by region
-  if (level === "region") {
-    query.region = region;
-    return query;
-  }
-
-  // For national/global users, filter by visible regions (excludes test regions unless enabled)
-  const visibleRegions = await getVisibleRegions(user);
-  query = applyRegionFilter(query, visibleRegions);
-
-  return query;
+  const factoryIds = await getVisibleFactoryIds(user);
+  return applyFactoryFilter(query, factoryIds);
 }
