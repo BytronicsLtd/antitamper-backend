@@ -21,7 +21,37 @@ const TOKEN_TTL_DAYS = 7;
 const generateToken = () => crypto.randomBytes(32).toString('hex');
 const hashToken = (t) => crypto.createHash('sha256').update(t).digest('hex');
 const asString = (v) => (v == null ? null : typeof v === 'string' ? v : String(v));
-const frontendBaseUrl = () => process.env.FRONTEND_URL || 'http://localhost:5173';
+// Build the frontend origin to use for invite links. Prefer the request's
+// Origin / Referer header (so links point back to whichever frontend the
+// inviter is actually using). In dev we trust whatever the browser sent;
+// in prod we restrict to the CORS allowlist so a spoofed header can't
+// poison an outgoing email link.
+const allowedFrontendOrigins = () =>
+  (process.env.CORS_ORIGINS ||
+    'https://iot.bytronics.io,https://api.bytronics.io,http://localhost:5173,http://localhost:5174')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+const isDev = () => !!process.env.DEV;
+
+const refererOrigin = (referer) => {
+  if (!referer) return null;
+  try {
+    const u = new URL(referer);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return null;
+  }
+};
+
+const frontendBaseUrl = (req) => {
+  const origin = req?.headers?.origin || refererOrigin(req?.headers?.referer);
+  if (origin) {
+    if (isDev() || allowedFrontendOrigins().includes(origin)) return origin;
+  }
+  return process.env.FRONTEND_URL || 'http://localhost:5173';
+};
 
 function expiryDate() {
   const d = new Date();
@@ -110,7 +140,7 @@ const controller = {
         }
       }
 
-      const acceptUrl = `${frontendBaseUrl()}/accept-invite?token=${rawToken}`;
+      const acceptUrl = `${frontendBaseUrl(req)}/accept-invite?token=${rawToken}`;
       const scope = await describeScope({ level, region: invitation.region, factory: invitation.factory });
 
       try {
@@ -208,6 +238,63 @@ const controller = {
       res.status(200).send(envelope(inv));
     } catch (err) {
       console.log(chalk.red('Error revoking invitation'), err);
+      fail(res, 500, err.message);
+    }
+  },
+
+  /**
+   * POST /api/v1/invitations/:id/resend  — re-mint token and re-send email
+   * for a pending invitation. Old links die.
+   */
+  resend: async (req, res) => {
+    try {
+      const inviter = req.user;
+      const inv = await InvitationModel.findById(req.params.id);
+      if (!inv) return fail(res, 404, 'Invitation not found');
+
+      const ownInvite = asString(inv.invitedBy) === asString(inviter.id || inviter._id);
+      const stillOk = canInvite(inviter, {
+        level: inv.level,
+        role: inv.role,
+        regionId: inv.region,
+        factoryId: inv.factory,
+      }).ok;
+      if (!ownInvite && !stillOk) return fail(res, 403, 'You cannot resend this invitation');
+      if (inv.status !== 'pending') return fail(res, 400, `Invitation already ${inv.status}`);
+
+      const rawToken = generateToken();
+      inv.tokenHash = hashToken(rawToken);
+      inv.expiresAt = expiryDate();
+      await inv.save();
+
+      const acceptUrl = `${frontendBaseUrl(req)}/accept-invite?token=${rawToken}`;
+      const scope = await describeScope({ level: inv.level, region: inv.region, factory: inv.factory });
+
+      try {
+        await emailSender({
+          template: 'invitation.handlebars',
+          emails: inv.email,
+          subject: 'You have been invited to Bytronics Antitamper',
+          payload: {
+            inviterName: inviter.name || inviter.email,
+            email: inv.email,
+            role: inv.role,
+            scope,
+            acceptUrl,
+            expiresAt: inv.expiresAt.toUTCString(),
+          },
+        });
+      } catch (mailErr) {
+        console.log(chalk.yellow('Resend saved but email send failed:'), mailErr.message);
+        return fail(res, 502, `Token re-issued but email failed: ${mailErr.message}`);
+      }
+
+      await logActivity(req, 'update', 'Invitation', inv, {
+        updated_data: { resent: true },
+      });
+      res.status(200).send(envelope(inv));
+    } catch (err) {
+      console.log(chalk.red('Error resending invitation'), err);
       fail(res, 500, err.message);
     }
   },

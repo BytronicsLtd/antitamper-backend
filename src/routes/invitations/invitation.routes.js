@@ -23,6 +23,13 @@ module.exports = ({ app }) => {
     invitationController.create
   );
 
+  // AUTH — re-mint token + resend the invitation email.
+  app.post(
+    '/api/v1/invitations/:id/resend',
+    { preHandler: [authenticate] },
+    invitationController.resend
+  );
+
   // AUTH — revoke a pending invitation.
   app.delete(
     '/api/v1/invitations/:id',
