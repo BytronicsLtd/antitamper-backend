@@ -2,7 +2,7 @@ const { default: mongoose } = require("mongoose");
 const chalk = require("chalk");
 const ActivityModel = require('../../models/activityLog.js');
 const UserModel = require("../../models/user");
-const { getVisibleRegionIds, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
+const { getVisibleRegionIds, isSysAdmin } = require('../../utils/testRegionFilter.util.js');
 const { parseMongoError } = require("../../utils/mongoErrorHandler.util.js");
 const { isLevel, LEVELS } = require('../../permissions');
 // Retrieve all users
@@ -177,8 +177,19 @@ async function checkAccess({ query, req }) {
     query.region = user.region;
     return query;
   }
+  if (isSysAdmin(user)) {
+    return query;
+  }
+  // National-level non-elevated (Manager / ICT Manager): restrict to
+  // visible regions, but keep users without a region (admins/peers) visible —
+  // user accounts often have no region even when they should be listable.
   const regionIds = await getVisibleRegionIds(user);
-  return applyRegionFilter(query, regionIds);
+  query.$or = [
+    { region: { $in: regionIds } },
+    { region: { $exists: false } },
+    { region: null },
+  ];
+  return query;
 }
 
 // Update user settings
