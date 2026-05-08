@@ -36,16 +36,29 @@ function showTestData(user) {
  */
 function buildRegionVisibilityQuery(user) {
   const base = { soft_deleted: { $ne: true } };
+
+  // Sys-admin / root with the showTestData toggle on → see every region,
+  // including test ones.
   if (isSysAdmin(user) && showTestData(user)) return base;
-  if (user.region) {
-    return {
-      ...base,
-      $or: [
-        { isTest: false },
-        { _id: user.region },
-      ],
-    };
+
+  // Regional users are strictly bound to their own region. The previous
+  // implementation OR'd { isTest: false } here, which leaked every
+  // non-test region to a regional manager — making them effectively
+  // national-scope.
+  if (isLevel(user, LEVELS.REGIONAL) && user.region) {
+    return { ...base, _id: user.region };
   }
+
+  // Factory users — only their factory's region. getVisibleFactoryIds
+  // shortcuts factory-level users without going through this query, so
+  // this branch only matters for region-list reads. Resolve to "no
+  // regions visible" if the binding is unset; the FactoryModel.findById
+  // fallback in getVisibleFactoryIds covers the user.factory case.
+  if (isLevel(user, LEVELS.FACTORY)) {
+    return { ...base, _id: { $in: [] } };
+  }
+
+  // National (and sys-admin without showTestData) → all non-test regions.
   return { ...base, isTest: false };
 }
 
@@ -106,6 +119,37 @@ function toId(v) {
   return v;
 }
 
+/**
+ * Authorization gate for write operations against a specific factory.
+ * Resolves to true if the user is allowed to create/update/delete records
+ * scoped to factoryId (e.g. a Device under that factory).
+ */
+async function canActOnFactory(user, factoryId) {
+  if (!factoryId) return false;
+  if (isSysAdmin(user)) return true;
+  if (isLevel(user, LEVELS.FACTORY)) {
+    return asString(user.factory) === asString(factoryId);
+  }
+  if (isLevel(user, LEVELS.REGIONAL)) {
+    if (!user.region) return false;
+    const factory = await FactoryModel.findById(factoryId).select('region').lean();
+    if (!factory) return false;
+    return asString(factory.region) === asString(user.region);
+  }
+  // National-level: must be a factory in a visible (non-test) region.
+  const factory = await FactoryModel.findById(factoryId).select('region').lean();
+  if (!factory) return false;
+  const regionIds = await getVisibleRegionIds(user);
+  return regionIds.some((id) => asString(id) === asString(factory.region));
+}
+
+function asString(v) {
+  if (v == null) return null;
+  if (typeof v === 'string') return v;
+  if (v._bsontype === 'ObjectId') return v.toString();
+  return String(v);
+}
+
 module.exports = {
   buildRegionVisibilityQuery,
   getVisibleRegionIds,
@@ -113,6 +157,7 @@ module.exports = {
   applyRegionFilter,
   applyFactoryFilter,
   canAccessRegion,
+  canActOnFactory,
   isSysAdmin,
   showTestData,
 };

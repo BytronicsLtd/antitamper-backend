@@ -1,6 +1,7 @@
 const chalk = require("chalk");
 const DataModel = require("../../models/data.model");
-const { getVisibleFactoryIds, applyFactoryFilter } = require('../../utils/testRegionFilter.util.js');
+const { getVisibleFactoryIds, applyFactoryFilter, canActOnFactory } = require('../../utils/testRegionFilter.util.js');
+const { isLevel, LEVELS } = require('../../permissions');
 
 const controller = {
   // fetch many data
@@ -198,8 +199,12 @@ const controller = {
       const uid = req.user && (req.user.id || req.user._id);
       if (!uid) return res.status(401).send({ success: false, message: 'Unauthorised' });
       const id = req.params.id || req.query.id;
-      const r = await DataModel.updateOne({ _id: id }, { $addToSet: { read_by: uid } });
-      if (r.matchedCount === 0) return res.status(404).send({ success: false, message: 'Alert not found' });
+      const alert = await DataModel.findById(id).select('factory').lean();
+      if (!alert) return res.status(404).send({ success: false, message: 'Alert not found' });
+      if (!(await canActOnFactory(req.user, alert.factory))) {
+        return res.status(403).send({ success: false, message: 'You cannot act on this alert' });
+      }
+      await DataModel.updateOne({ _id: id }, { $addToSet: { read_by: uid } });
       res.status(200).send({ success: true });
     } catch (e) {
       res.status(500).send({ success: false, message: 'Error marking alert read', error: e.message });
@@ -212,8 +217,15 @@ const controller = {
       if (!uid) return res.status(401).send({ success: false, message: 'Unauthorised' });
       const ids = Array.isArray(req.body && req.body.ids) ? req.body.ids : [];
       if (!ids.length) return res.status(200).send({ success: true, modified: 0 });
+      // Restrict to alerts in factories the user can see — prevents
+      // enumerating ids and toggling read state on alerts outside scope.
+      const visibleFactoryIds = await getVisibleFactoryIds(req.user);
       const r = await DataModel.updateMany(
-        { _id: { $in: ids }, read_by: { $nin: [uid] } },
+        {
+          _id: { $in: ids },
+          factory: { $in: visibleFactoryIds },
+          read_by: { $nin: [uid] },
+        },
         { $addToSet: { read_by: uid } },
       );
       res.status(200).send({ success: true, modified: r.modifiedCount });
@@ -227,8 +239,12 @@ const controller = {
       const uid = req.user && (req.user.id || req.user._id);
       if (!uid) return res.status(401).send({ success: false, message: 'Unauthorised' });
       const id = req.params.id || req.query.id;
-      const r = await DataModel.updateOne({ _id: id }, { $pull: { read_by: uid } });
-      if (r.matchedCount === 0) return res.status(404).send({ success: false, message: 'Alert not found' });
+      const alert = await DataModel.findById(id).select('factory').lean();
+      if (!alert) return res.status(404).send({ success: false, message: 'Alert not found' });
+      if (!(await canActOnFactory(req.user, alert.factory))) {
+        return res.status(403).send({ success: false, message: 'You cannot act on this alert' });
+      }
+      await DataModel.updateOne({ _id: id }, { $pull: { read_by: uid } });
       res.status(200).send({ success: true });
     } catch (e) {
       res.status(500).send({ success: false, message: 'Error marking alert unread', error: e.message });
@@ -259,7 +275,7 @@ module.exports = controller;
 
 async function checkAccess({ query, req }) {
   const user = req.user;
-  if (user.level === "factory" && user.factory) {
+  if (isLevel(user, LEVELS.FACTORY) && user.factory) {
     query.factory = user.factory;
     return query;
   }

@@ -5,6 +5,7 @@ const RawDataModel = require("../../models/raw-data.model");
 const emailSender = require("../../utils/communication/email/email.util");
 const { addHours, isSameYear } = require("date-fns");
 const { getVisibleFactoryIds, applyFactoryFilter } = require('../../utils/testRegionFilter.util.js');
+const { isLevel, LEVELS } = require('../../permissions');
 
 const controller = {
   // fetch many data
@@ -316,7 +317,7 @@ function isWithinCurrentYear(time) {
 
 async function checkAccess({ query, req }) {
   const user = req.user;
-  if (user.level === "factory" && user.factory) {
+  if (isLevel(user, LEVELS.FACTORY) && user.factory) {
     query.factory = user.factory;
     return query;
   }

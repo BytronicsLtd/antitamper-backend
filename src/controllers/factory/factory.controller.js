@@ -5,19 +5,30 @@ const FactoryModel = require('../../models/factory.js');
 const RegionModel = require('../../models/region.model.js');
 const formatValidationErrors = require("../../utils/formatValidationErrors.util.js");
 const { parseMongoError } = require("../../utils/mongoErrorHandler.util.js");
-const { getVisibleRegionIds, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
+const { getVisibleRegionIds, applyRegionFilter, canAccessRegion } = require('../../utils/testRegionFilter.util.js');
+const { isLevel, LEVELS } = require('../../permissions');
 
 // Create a new factory
 async function createFactory(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
+
+    // Regional users can only create factories in their own region;
+    // force it server-side regardless of what the body says.
+    if (isLevel(req.user, LEVELS.REGIONAL) && req.user.region) {
+      req.body.region = String(req.user.region);
+    }
+
     if (!req.body.region || !mongoose.Types.ObjectId.isValid(req.body.region)) {
       return res.status(400).send({ success: false, message: "A valid region id is required" });
     }
     const region = await RegionModel.findById(req.body.region);
     if (!region) {
       return res.status(400).send({ success: false, message: "Region not found" });
+    }
+    if (!(await canAccessRegion(req.user, region._id))) {
+      return res.status(403).send({ success: false, message: "You cannot create a factory in this region" });
     }
     let query = { name: req.body.name, location: req.body.location };
     const results = await FactoryModel.findOne(query)
@@ -129,21 +140,47 @@ async function updateFactory(req, res) {
     session.startTransaction();
     const id = req.params.id;
     let { soft_deleted, ...data } = req.body;
-    if (data.region !== undefined) {
+
+    // Load the existing factory and verify the caller can act on its region.
+    const existing = await FactoryModel.findById(id);
+    if (!existing) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).send({ success: false, message: "Factory not found" });
+    }
+    if (!(await canAccessRegion(req.user, existing.region))) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(403).send({ success: false, message: "You cannot update this factory" });
+    }
+
+    // Regional users can't move a factory out of their region — silently
+    // strip the field so the existing region is preserved.
+    if (isLevel(req.user, LEVELS.REGIONAL)) {
+      delete data.region;
+    } else if (data.region !== undefined) {
       if (!mongoose.Types.ObjectId.isValid(data.region)) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(400).send({ success: false, message: "A valid region id is required" });
       }
       const region = await RegionModel.findById(data.region);
       if (!region) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(400).send({ success: false, message: "Region not found" });
       }
+      if (!(await canAccessRegion(req.user, region._id))) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(403).send({ success: false, message: "You cannot move this factory to that region" });
+      }
     }
+
     const factory = await FactoryModel.findByIdAndUpdate(
       id,
-      {
-        $set: data
-      },
-      { new: true } // Return the updated document
+      { $set: data },
+      { new: true },
     ).session(session);
     if (!factory) return res.status(404).send({ message: 'factory not found' });
     await ActivityModel.create([{
@@ -177,7 +214,15 @@ async function remove(req, res) {
     const id = req.params.id;
     let factory = await FactoryModel.findById(id);
     if (!factory) {
-      return res.status(404).send({ success: false, message: "Factory with given ID not found" })
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).send({ success: false, message: "Factory with given ID not found" });
+    }
+
+    if (!(await canAccessRegion(req.user, factory.region))) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(403).send({ success: false, message: "You cannot delete this factory" });
     }
 
     await ActivityModel.create([{
@@ -219,11 +264,14 @@ module.exports = {
 };
 async function checkAccess({ query, req }) {
   const user = req.user;
-  if (user.level === "factory" && user.factory) {
+  // Use isLevel — raw user.level === "region" was missing canonical
+  // "REGIONAL" (used by freshly invited users), letting them fall through
+  // to the broader visibility filter and see all non-test factories.
+  if (isLevel(user, LEVELS.FACTORY) && user.factory) {
     query._id = user.factory;
     return query;
   }
-  if (user.level === "region" && user.region) {
+  if (isLevel(user, LEVELS.REGIONAL) && user.region) {
     query.region = user.region;
     return query;
   }

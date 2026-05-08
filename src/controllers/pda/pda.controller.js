@@ -7,6 +7,7 @@ const UnregisteredBTAttemptModel = require("../../models/unregistered-bt-attempt
 const ActivityModel = require("../../models/activityLog.js");
 const formatValidationErrors = require("../../utils/formatValidationErrors.util");
 const { isLevel, LEVELS } = require('../../permissions');
+const { canActOnFactory } = require('../../utils/testRegionFilter.util.js');
 
 const controller = {
     /**
@@ -127,6 +128,12 @@ const controller = {
                 });
             }
 
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot approve this PDA" });
+            }
+
             if (pda.status === 'approved') {
                 await session.abortTransaction();
                 session.endSession();
@@ -200,6 +207,12 @@ const controller = {
                 });
             }
 
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot disable this PDA" });
+            }
+
             pda.status = 'disabled';
             pda.api_key = null;
             await pda.save({ session });
@@ -250,6 +263,12 @@ const controller = {
                     success: false,
                     message: "PDA not found"
                 });
+            }
+
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot enable this PDA" });
             }
 
             if (pda.status !== 'disabled') {
@@ -453,6 +472,12 @@ const controller = {
                 });
             }
 
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot delete this PDA" });
+            }
+
             if (pda.status !== 'staging') {
                 await session.abortTransaction();
                 session.endSession();
@@ -511,6 +536,12 @@ const controller = {
                     success: false,
                     message: "PDA not found"
                 });
+            }
+
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot unapprove this PDA" });
             }
 
             if (pda.status !== 'approved') {
