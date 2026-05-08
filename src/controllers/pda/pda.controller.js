@@ -6,6 +6,8 @@ const FactoryModel = require("../../models/factory.js");
 const UnregisteredBTAttemptModel = require("../../models/unregistered-bt-attempt.model");
 const ActivityModel = require("../../models/activityLog.js");
 const formatValidationErrors = require("../../utils/formatValidationErrors.util");
+const { isLevel, LEVELS } = require('../../permissions');
+const { canActOnFactory } = require('../../utils/testRegionFilter.util.js');
 
 const controller = {
     /**
@@ -226,6 +228,12 @@ const controller = {
                 });
             }
 
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot approve this PDA" });
+            }
+
             if (pda.status === 'approved') {
                 await session.abortTransaction();
                 session.endSession();
@@ -299,6 +307,12 @@ const controller = {
                 });
             }
 
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot disable this PDA" });
+            }
+
             pda.status = 'disabled';
             pda.api_key = null;
             await pda.save({ session });
@@ -349,6 +363,12 @@ const controller = {
                     success: false,
                     message: "PDA not found"
                 });
+            }
+
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot enable this PDA" });
             }
 
             if (pda.status !== 'disabled') {
@@ -433,14 +453,13 @@ const controller = {
                 query.$or = [
                     { serial_number: { $regex: new RegExp(search_term, "i") } },
                     { factory_name: { $regex: new RegExp(search_term, "i") } },
-                    { region: { $regex: new RegExp(search_term, "i") } }
                 ];
             }
 
             // Access control based on user level
-            if (user.level === 'factory') {
+            if (isLevel(user, LEVELS.FACTORY)) {
                 query.factory = user.factory;
-            } else if (user.level === 'region') {
+            } else if (isLevel(user, LEVELS.REGIONAL)) {
                 query.region = user.region;
             }
 
@@ -553,6 +572,12 @@ const controller = {
                 });
             }
 
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot delete this PDA" });
+            }
+
             if (pda.status !== 'staging') {
                 await session.abortTransaction();
                 session.endSession();
@@ -611,6 +636,12 @@ const controller = {
                     success: false,
                     message: "PDA not found"
                 });
+            }
+
+            if (!(await canActOnFactory(req.user, pda.factory))) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(403).send({ success: false, message: "You cannot unapprove this PDA" });
             }
 
             if (pda.status !== 'approved') {
@@ -678,9 +709,9 @@ const controller = {
             }
 
             // Access control
-            if (user.level === 'factory') {
+            if (isLevel(user, LEVELS.FACTORY)) {
                 query.factory = user.factory;
-            } else if (user.level === 'region') {
+            } else if (isLevel(user, LEVELS.REGIONAL)) {
                 // Get factories in region, then filter
                 const Factory = require("../../models/factory.js");
                 const factories = await Factory.find({ region: user.region }).select('_id');

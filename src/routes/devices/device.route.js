@@ -6,7 +6,7 @@ const { m2mCrypto } = require("../../middlewares/m2mCrypto.middleware");
 
 module.exports = ({ app }) => {
   // create device
-  app.post('/api/v1/devices/', { preHandler: [authenticate, checkRole(["root", "sys-admin", "admin", "Manager", "ICT Manager", "FUM", "FSC"])] }, (req, res) => {
+  app.post('/api/v1/devices/', { preHandler: [authenticate, checkRole(["sys-admin", "national-manager", "regional-manager", "factory-admin"])] }, (req, res) => {
     deviceController.create(req, res)
   });
   //  m2m get time - supports encrypted requests

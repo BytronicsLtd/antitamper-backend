@@ -2,8 +2,32 @@ const { default: mongoose } = require("mongoose");
 const chalk = require("chalk");
 const ActivityModel = require('../../models/activityLog.js');
 const UserModel = require("../../models/user");
-const { getVisibleRegions, applyRegionFilter } = require('../../utils/testRegionFilter.util.js');
+const { getVisibleRegionIds, isSysAdmin } = require('../../utils/testRegionFilter.util.js');
 const { parseMongoError } = require("../../utils/mongoErrorHandler.util.js");
+const { isLevel, LEVELS, canInvite } = require('../../permissions');
+
+// Fields a user is NOT allowed to change about themselves — only an admin
+// with the right scope can flip role/level/status/region/factory.
+const PRIVILEGED_FIELDS = ['role', 'level', 'status', 'soft_deleted', 'region', 'factory'];
+
+function asString(v) {
+  if (v == null) return null;
+  if (typeof v === 'string') return v;
+  if (v._bsontype === 'ObjectId') return v.toString();
+  return String(v);
+}
+
+// Authorisation gate for modifying or deleting an existing user. Mirrors
+// the invite matrix: if you can invite someone at this level/role/region/
+// factory, you can manage them.
+function canManageUser(actor, target) {
+  return canInvite(actor, {
+    level: target.level,
+    role: target.role,
+    regionId: asString(target.region),
+    factoryId: asString(target.factory),
+  });
+}
 // Retrieve all users
 exports.getUsers = async (req, res) => {
   try {
@@ -17,7 +41,7 @@ exports.getUsers = async (req, res) => {
     let query = {
       soft_deleted: { $ne: true }
     };
-    if (user.level === 'factory') {
+    if (isLevel(user, LEVELS.FACTORY)) {
       query.factory = user.factory
     }
     // add query for elevated roles
@@ -40,7 +64,6 @@ exports.getUsers = async (req, res) => {
         $or: [
           { name: { $regex: new RegExp(search_term, "i") } },
           { email: { $regex: new RegExp(search_term, "i") } },
-          { region: { $regex: new RegExp(search_term, "i") } },
           { phone_number: { $regex: new RegExp(search_term, "i") } },
           { status: { $regex: new RegExp(search_term, "i") } },
           { role: { $regex: new RegExp(search_term, "i") } },
@@ -116,13 +139,42 @@ exports.updateUser = async (req, res) => {
     const id = req.params.id;
     const { password, ...rest } = req.body;
 
-    let query = {
-      _id: id,
+    const target = await UserModel.findById(id).lean();
+    if (!target) return res.status(404).send({ success: false, message: "User not found" });
+
+    const isSelf = asString(target._id) === asString(req.user.id || req.user._id);
+    const update = { ...rest };
+
+    if (isSelf) {
+      // Self-edit: strip privileged fields. A user can't promote themselves
+      // or flip their own status. Use the dedicated /users/settings endpoint
+      // for self-settings only.
+      for (const f of PRIVILEGED_FIELDS) delete update[f];
+    } else {
+      const result = canManageUser(req.user, target);
+      if (!result.ok) {
+        return res.status(403).send({
+          success: false,
+          message: `You cannot manage this user: ${result.reason}`,
+        });
+      }
     }
-    const updatedUser = await UserModel.findOneAndUpdate(query, {
-      $set: rest
-    }, { new: true });
-    if (!updatedUser) return res.status(404).send({ success: false, message: "User not found" });
+
+    // If status is moving away from "active" (or soft_deleted is being set),
+    // also clear the stored token so any open sessions are dropped on the
+    // next request even before the auth-status check kicks in.
+    const deactivating =
+      (Object.prototype.hasOwnProperty.call(update, 'status') && update.status && update.status !== 'active') ||
+      update.soft_deleted === true;
+    if (deactivating) {
+      update.token = null;
+    }
+
+    const updatedUser = await UserModel.findOneAndUpdate(
+      { _id: id },
+      { $set: update },
+      { new: true },
+    );
     res.status(200).send({ success: true, results: updatedUser });
   } catch (err) {
     const { status, message } = parseMongoError(err);
@@ -138,57 +190,80 @@ exports.remove = async (req, res) => {
     const id = req.params.id;
     let user = await UserModel.findById(id);
     if (!user) {
-      return res.status(404).send({ success: false, message: "User with given ID not found" })
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).send({ success: false, message: "User with given ID not found" });
+    }
+
+    const isSelf = asString(user._id) === asString(req.user.id || req.user._id);
+    if (isSelf) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).send({ success: false, message: "You cannot delete your own account" });
+    }
+
+    const result = canManageUser(req.user, user);
+    if (!result.ok) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(403).send({
+        success: false,
+        message: `You cannot delete this user: ${result.reason}`,
+      });
     }
 
     await ActivityModel.create([{
-      action: "delete", // edit, create, delete actions
-      user: req.user.id, //user id performing the action
-      email: req.user.email, //email of the user performinng the action
-      role: req.user.role, //role of the user performing the action
-      timestamp: Date.now(), // time the action was performed
-      model: "User", //data model affected by the action
-      affected_id: user.id, //id of the item affected by the action
-      deleted_data: user, // deleted data
-      edited_data: null, // edited data
-      created_data: null,// created data
-    }], { session })
+      action: "delete",
+      user: req.user.id,
+      email: req.user.email,
+      role: req.user.role,
+      timestamp: Date.now(),
+      model: "User",
+      affected_id: user.id,
+      deleted_data: user,
+      edited_data: null,
+      created_data: null,
+    }], { session });
     // delete
-    user = await UserModel.findByIdAndDelete(id).session(session)
+    user = await UserModel.findByIdAndDelete(id).session(session);
     await session.commitTransaction();
     session.endSession();
-    res.status(200).send({ success: true, message: "User successfully deleted", results: user })
+    res.status(200).send({ success: true, message: "User successfully deleted", results: user });
   } catch (error) {
     console.log(chalk.red("Error deleting user"), error);
     await session.abortTransaction();
     session.endSession();
-    res.status(500).send({ success: false, error: error.message })
+    res.status(500).send({ success: false, error: error.message });
   }
 };
 
 // check access - now async to support test region filtering
 async function checkAccess({ query, req }) {
   const user = req.user;
-  const level = user.level;
-  const factory = user.factory;
-  const region = user.region;
-
-  // filter by factory
-  if (level === "factory") {
-    query.factory = factory;
+  // Use isLevel (handles legacy lowercase + canonical UPPERCASE) — direct
+  // string compare on user.level was missing freshly invited users whose
+  // level is canonically "REGIONAL"/"FACTORY" and silently widening their
+  // scope.
+  if (isLevel(user, LEVELS.FACTORY) && user.factory) {
+    query.factory = user.factory;
     return query;
   }
-
-  // filter by region
-  if (level === "region") {
-    query.region = region;
+  if (isLevel(user, LEVELS.REGIONAL) && user.region) {
+    query.region = user.region;
     return query;
   }
-
-  // For national/global users, filter by visible regions (excludes test regions unless enabled)
-  const visibleRegions = await getVisibleRegions(user);
-  query = applyRegionFilter(query, visibleRegions);
-
+  if (isSysAdmin(user)) {
+    return query;
+  }
+  // National-level non-elevated (Manager / ICT Manager): restrict to
+  // visible regions, but keep users without a region (admins/peers) visible —
+  // user accounts often have no region even when they should be listable.
+  const regionIds = await getVisibleRegionIds(user);
+  query.$or = [
+    { region: { $in: regionIds } },
+    { region: { $exists: false } },
+    { region: null },
+  ];
   return query;
 }
 
@@ -196,10 +271,10 @@ async function checkAccess({ query, req }) {
 exports.updateSettings = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { showTestRegions } = req.body;
+    // Backwards-compat: accept either showTestData (new) or showTestRegions (old).
+    const showTestData = req.body.showTestData ?? req.body.showTestRegions;
 
-    // Only sys-admins can toggle test region visibility
-    if (showTestRegions !== undefined) {
+    if (showTestData !== undefined) {
       if (!['root', 'sys-admin'].includes(req.user.role)) {
         return res.status(403).send({
           success: false,
@@ -210,7 +285,7 @@ exports.updateSettings = async (req, res) => {
 
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
-      { $set: { 'settings.showTestRegions': showTestRegions } },
+      { $set: { 'settings.showTestData': !!showTestData } },
       { new: true }
     ).select('-password -token');
 

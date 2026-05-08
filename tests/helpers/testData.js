@@ -17,7 +17,7 @@ async function createTestUser(overrides = {}) {
         email: `testuser_${Date.now()}@test.com`,
         password: await bcrypt.hash('password123', 10),
         role: 'sys-admin',
-        level: 'global',
+        level: 'SYSTEM',
         phone_number: '254700000000',
         verified: true,
         ...overrides
@@ -43,10 +43,11 @@ async function createTestUser(overrides = {}) {
  * Create a test factory
  */
 async function createTestFactory(overrides = {}) {
+    const mongoose = require('mongoose');
     const defaultFactory = {
         name: `Test Factory ${Date.now()}`,
         location: 'Test Location',
-        region: 'Test Region',
+        region: new mongoose.Types.ObjectId(),
         status: 'active',
         ...overrides
     };

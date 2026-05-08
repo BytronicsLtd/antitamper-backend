@@ -13,9 +13,10 @@ const schema = new Schema({
     type: String,
     required: true
   },
-  // region the factory belongs to
+  // region the factory belongs to (canonical reference)
   region: {
-    type: String,
+    type: Schema.Types.ObjectId,
+    ref: 'Region',
     required: true,
     index: true
   },

@@ -1,0 +1,62 @@
+{
+  "_comment": "Reviewable input to migrate-regions-canonical.js (task #3). Edit the action/target_region values before running the migration. After review, the migration script consumes this file: it creates the regions[] entries, then walks factories[] applying the action.",
+  "regions": [
+    { "code": "1",  "name": "Region 1 — Aberdares West",         "counties": ["Kiambu", "Murang'a"],                  "isTest": false },
+    { "code": "2",  "name": "Region 2 — Aberdares East",         "counties": ["Nyeri", "Murang'a"],                   "isTest": false },
+    { "code": "3",  "name": "Region 3 — Mt Kenya",               "counties": ["Kirinyaga", "Embu"],                   "isTest": false },
+    { "code": "4",  "name": "Region 4 — Mt Kenya / Nyambene",    "counties": ["Meru", "Tharaka-Nithi"],               "isTest": false },
+    { "code": "5",  "name": "Region 5 — Kericho Highlands",      "counties": ["Kericho", "Bomet"],                    "isTest": false },
+    { "code": "6",  "name": "Region 6 — Kisii Highlands",        "counties": ["Kisii", "Nyamira"],                    "isTest": false },
+    { "code": "7",  "name": "Region 7 — Nandi / Western",        "counties": ["Nandi", "Kakamega", "Vihiga"],         "isTest": false },
+    { "code": "9",  "name": "Region 9 — Test (legacy)",          "counties": [],                                      "isTest": true  },
+    { "code": "12", "name": "Region 12 — Test (legacy)",         "counties": [],                                      "isTest": true  }
+  ],
+  "factory_actions": [
+    { "_id": "681db2b47b969dda0fae05ad", "name": "KAGWE TEA FACTORY",        "current_region": "region 1",  "soft_deleted": false, "devices":  8, "data": 3557, "action": "keep",     "target_region_code": "1"  },
+    { "_id": "68286253d2691e4a7cb362b2", "name": "Kagwe Tea Factory",        "current_region": "region 1",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "1"  },
+    { "_id": "6828627bd2691e4a7cb362c4", "name": "Kagwi Tea Factory",        "current_region": "region 1",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "1"  },
+    { "_id": "67ae1cb1e9720a7e02edf957", "name": "Kiptagich",                "current_region": "region 1",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "5"  },
+    { "_id": "67c695f21a6ccebf200b2da5", "name": "Kiptagich1",               "current_region": "region 1",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "5"  },
+    { "_id": "680b56fc89fd525a437e34e1", "name": "Testing Factory",         "current_region": "region 1",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "9"  },
+
+    { "_id": "67c01de4243951d33367121a", "name": "Factory C1",              "current_region": "region 12", "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "12" },
+    { "_id": "67d3bc611d8463729259551d", "name": "Factory D",               "current_region": "region 12", "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "12" },
+
+    { "_id": "681db2d47b969dda0fae05b7", "name": "CHINGA TEA FACTORY",       "current_region": "region 2",  "soft_deleted": false, "devices":  3, "data": 1750, "action": "keep",     "target_region_code": "2"  },
+    { "_id": "681db2e97b969dda0fae05c1", "name": "KIRU TEA FACTORY",         "current_region": "region 2",  "soft_deleted": false, "devices":  3, "data": 2226, "action": "keep",     "target_region_code": "2"  },
+    { "_id": "67da90cc48396faf65bfa906", "name": "Kagwe Tea Factory ",       "current_region": "region 2",  "soft_deleted": true,  "devices":  0, "data":  670, "action": "migrate",  "target_region_code": "1"  },
+
+    { "_id": "67a9a136625be16a361eef29", "name": "Bytronics",                "current_region": "region 3",  "soft_deleted": true,  "devices":  0, "data": 1528, "action": "migrate",  "target_region_code": "9"  },
+    { "_id": "681b5ed3fe701af8951a412c", "name": "Gathuthi",                 "current_region": "region 3",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "2"  },
+    { "_id": "681db30f7b969dda0fae05cb", "name": "KANGAITA TEA FACTORY",     "current_region": "region 3",  "soft_deleted": false, "devices":  3, "data":  520, "action": "keep",     "target_region_code": "3"  },
+    { "_id": "67ae6a67af79539db964c858", "name": "Nalai",                    "current_region": "region 3",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "9"  },
+    { "_id": "67da907148396faf65bfa8fa", "name": "Nduti tea factory ",       "current_region": "region 3",  "soft_deleted": true,  "devices":  0, "data":  229, "action": "migrate",  "target_region_code": "1"  },
+
+    { "_id": "68d289bde54daacc814aee7f", "name": "BOITO TEA FACTORY",        "current_region": "region 4",  "soft_deleted": false, "devices":  2, "data":  202, "action": "move",     "target_region_code": "5"  },
+    { "_id": "67dac2ba3c9c4113c8800e72", "name": "Kambaa tea factory",       "current_region": "region 4",  "soft_deleted": true,  "devices":  0, "data":  698, "action": "migrate",  "target_region_code": "1"  },
+    { "_id": "68305b88e50499577dc050df", "name": "ROROK TEA FACTORY",        "current_region": "region 4",  "soft_deleted": false, "devices":  3, "data": 1615, "action": "move",     "target_region_code": "5"  },
+    { "_id": "67d7149a9aefd679291e473a", "name": "Test1",                    "current_region": "region 4",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "9"  },
+    { "_id": "68087ea69b1283487a7a3820", "name": "Testing Factory",         "current_region": "region 4",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "9"  },
+    { "_id": "681db33d7b969dda0fae05d5", "name": "WERU TEA FACTORY",         "current_region": "region 4",  "soft_deleted": false, "devices":  9, "data": 2235, "action": "keep",     "target_region_code": "4"  },
+
+    { "_id": "68d26d1fe54daacc814aebfb", "name": "CHELAL TEA FACTORY",       "current_region": "region 5",  "soft_deleted": false, "devices":  1, "data":  466, "action": "keep",     "target_region_code": "5"  },
+    { "_id": "681db3857b969dda0fae05df", "name": "MOMUL TEA FACTORY",        "current_region": "region 5",  "soft_deleted": false, "devices":  4, "data": 1686, "action": "keep",     "target_region_code": "5"  },
+
+    { "_id": "681b5c59fe701af8951a407c", "name": "Iriaini",                  "current_region": "region 6",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "2"  },
+    { "_id": "6900bee35ae9e2ee83996802", "name": "KEBIRIGO TEA FACTORY",     "current_region": "region 6",  "soft_deleted": false, "devices":  1, "data":  147, "action": "keep",     "target_region_code": "6"  },
+    { "_id": "6900c4605ae9e2ee8399687f", "name": "OGEMBO TEA FACTORY",       "current_region": "region 6",  "soft_deleted": false, "devices":  0, "data":    0, "action": "keep",     "target_region_code": "6"  },
+    { "_id": "681db39f7b969dda0fae05e9", "name": "TOMBE TEA FACTORY",        "current_region": "region 6",  "soft_deleted": false, "devices":  5, "data": 1510, "action": "keep",     "target_region_code": "6"  },
+
+    { "_id": "67d8089e9aefd679291e5090", "name": "Eldoret",                  "current_region": "region 7",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "9"  },
+    { "_id": "681db3bb7b969dda0fae05ff", "name": "KAPSARA TEA FACTORY",      "current_region": "region 7",  "soft_deleted": false, "devices":  3, "data": 1136, "action": "keep",     "target_region_code": "7"  },
+
+    { "_id": "67d95e5a468a0726699fd76a", "name": "Nyahururu Coffee Factory", "current_region": "region 9",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "9"  },
+    { "_id": "67d809719aefd679291e50ab", "name": "Olkarao",                  "current_region": "region 9",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "9"  },
+    { "_id": "67bee44b424b31b9447cee8c", "name": "Test",                     "current_region": "region 9",  "soft_deleted": true,  "devices":  0, "data":    0, "action": "migrate",  "target_region_code": "9"  }
+  ],
+  "_action_legend": {
+    "keep":    "Active, real factory in the right region — set region to ObjectId of target_region_code, no other change.",
+    "move":    "Active factory in WRONG region — set region to ObjectId of target_region_code (corrects mis-classification).",
+    "migrate": "Soft-deleted (or otherwise should-be-hidden). Set region to ObjectId of target_region_code so reference is valid; soft_deleted stays as-is."
+  }
+}

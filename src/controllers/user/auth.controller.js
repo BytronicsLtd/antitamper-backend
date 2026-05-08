@@ -112,7 +112,6 @@ const controller = {
     // login user
     login: async (req, res) => {
         try {
-            //get payload from request
             const body = req.body;
             const query = {
                 $or: [
@@ -121,23 +120,30 @@ const controller = {
                 ],
                 soft_deleted: { $ne: true }
             }
-            console.log("login  ", query);
 
-            // if email already exists return error
             let user = await UserModel.findOne(query)
                 .populate([
                     { path: 'factory', select: "name location", transform: (doc) => doc?.toJSON() || doc }
-                ])
-            if (!user) {
-                return res.status(404).send({ success: true, message: "User with given email or phone number not found", });
+                ]);
+
+            // Anti-enumeration: collapse "user not found" and "wrong password"
+            // into the same 401 response, and run a bcrypt comparison even when
+            // the user is missing so timing doesn't betray which case we hit.
+            const dummyHash = '$2a$10$CwTycUXWue0Thq9StjUM0uJ8u8e3wJlOqXY3ZnKBg9vV7DqXyWVAa';
+            const passwordToCheck = user?.password || dummyHash;
+            const password_is_valid = await bcrypt.compare(body.password || '', passwordToCheck);
+
+            if (!user || !password_is_valid) {
+                return res.status(401).send({
+                    success: false,
+                    message: "Invalid email or password.",
+                });
             }
-            //check if password is correct
-            const password_is_valid = await bcrypt.compare(
-                body.password,
-                user.password
-            );
-            if (!password_is_valid) {
-                return res.status(400).send({ success: true, message: "Invalid password", });
+            if (user.status && user.status !== 'active') {
+                return res.status(403).send({
+                    success: false,
+                    message: `Your account is ${user.status}. Contact an administrator.`,
+                });
             }
             //create token valid for one month
             const new_token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
