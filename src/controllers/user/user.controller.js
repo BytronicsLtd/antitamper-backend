@@ -2,7 +2,7 @@ const { default: mongoose } = require("mongoose");
 const chalk = require("chalk");
 const ActivityModel = require('../../models/activityLog.js');
 const UserModel = require("../../models/user");
-const { getVisibleRegionIds, isSysAdmin } = require('../../utils/testRegionFilter.util.js');
+const { getVisibleRegionIds, getVisibleFactoryIds, isSysAdmin, showTestData } = require('../../utils/testRegionFilter.util.js');
 const { parseMongoError } = require("../../utils/mongoErrorHandler.util.js");
 const { isLevel, LEVELS, canInvite } = require('../../permissions');
 
@@ -252,17 +252,32 @@ async function checkAccess({ query, req }) {
     query.region = user.region;
     return query;
   }
-  if (isSysAdmin(user)) {
+  if (isSysAdmin(user) && showTestData(user)) {
     return query;
   }
-  // National-level non-elevated (Manager / ICT Manager): restrict to
-  // visible regions, but keep users without a region (admins/peers) visible —
-  // user accounts often have no region even when they should be listable.
-  const regionIds = await getVisibleRegionIds(user);
-  query.$or = [
-    { region: { $in: regionIds } },
-    { region: { $exists: false } },
-    { region: null },
+  // Sys-admin without showTestData → same scoping as national: hide users
+  // whose region OR factory sits in a test region. Peer sys-admins / users
+  // with no scoping fields stay visible.
+  // National-level non-elevated (Manager / ICT Manager): same.
+  const [regionIds, factoryIds] = await Promise.all([
+    getVisibleRegionIds(user),
+    getVisibleFactoryIds(user),
+  ]);
+  query.$and = [
+    {
+      $or: [
+        { region: { $in: regionIds } },
+        { region: { $exists: false } },
+        { region: null },
+      ],
+    },
+    {
+      $or: [
+        { factory: { $in: factoryIds } },
+        { factory: { $exists: false } },
+        { factory: null },
+      ],
+    },
   ];
   return query;
 }

@@ -74,8 +74,23 @@ const schema = new mongoose.Schema(Schema, {
 schema.plugin(mongoosePaginate);
 
 schema.method("toJSON", function () {
-    const { __v, _id, api_key, ...object } = this.toObject();
+    // Use { virtuals: false } and re-do the _id → id mapping ourselves so
+    // populated subdocs (e.g. `factory`) keep their own document instances
+    // and we can invoke their toJSON recursively below — toObject() returns
+    // plain objects and would have stripped that.
+    const obj = this.toObject({ depopulate: false });
+    const { __v, _id, api_key, ...object } = obj;
     object.id = _id;
+    // Normalise populated subdocs so their _id is surfaced as `id` to match
+    // what the rest of the API returns. PDA-side filters on the dashboard
+    // expect populated.factory.id, not populated.factory._id.
+    for (const key of ["factory", "approved_by"]) {
+        const sub = object[key];
+        if (sub && typeof sub === "object" && !Array.isArray(sub) && sub._id != null) {
+            const { _id: subId, __v: subV, ...rest } = sub;
+            object[key] = { id: subId, ...rest };
+        }
+    }
     return object;
 });
 
