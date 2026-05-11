@@ -66,12 +66,17 @@ async function getFactories(req, res) {
   try {
     let {
       search_term,
-      soft_deleted
+      soft_deleted,
+      region,
     } = req.query;
     const user = req.user;
     let query = {
       soft_deleted: { $ne: true }
     };
+
+    // Note: a region filter is applied *after* checkAccess below, because
+    // checkAccess overwrites `query.region` with the caller's visible
+    // regions and would otherwise clobber the requested filter.
 
     if (user.role === 'sys-admin' && soft_deleted) {
       if (soft_deleted === "true") {
@@ -96,6 +101,24 @@ async function getFactories(req, res) {
     }
     query = {
       ...(await checkAccess({ query, req })),
+    }
+
+    // Apply the caller-requested region filter, intersected with the set
+    // checkAccess just allowed. If the requested region isn't in the
+    // visible set, force an empty result rather than leaking the broader
+    // list.
+    if (region && mongoose.Types.ObjectId.isValid(region)) {
+      const allowed = query.region;
+      const requestedStr = String(region);
+      let permitted = false;
+      if (Array.isArray(allowed?.$in)) {
+        permitted = allowed.$in.map(String).includes(requestedStr);
+      } else if (allowed) {
+        permitted = String(allowed) === requestedStr;
+      } else {
+        permitted = true; // FACTORY-scoped user — region wasn't applied
+      }
+      query.region = permitted ? region : new mongoose.Types.ObjectId();
     }
     const { page, size } = req.query;
     const limit = size ? +size : 100;
