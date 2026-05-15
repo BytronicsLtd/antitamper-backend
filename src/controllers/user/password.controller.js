@@ -12,30 +12,37 @@ const emailSender = require("../../utils/communication/email/email.util");
 const controller = {
     //request password reset
     requestReset: async (req, res) => {
+        // Anti-enumeration: always reply with the same generic success
+        // message so a caller can't tell whether the email/phone is on file.
+        // The actual mail send + DB update only happen when a user matches,
+        // but the response is identical either way.
+        const GENERIC_RESPONSE = {
+            success: true,
+            message: "If an account matches, a reset code has been sent.",
+        };
         try {
-            //get payload from request
             const body = req.body;
-            // check if user is already registered
+            if (!body || !body.email_or_phone_number) {
+                return res.status(200).send(GENERIC_RESPONSE);
+            }
             const query = {
                 $or: [
                     { phone_number: phoneNumberFormatter(body.email_or_phone_number) },
-                    { email: body.email_or_phone_number }
-                ]
-            }
-            // if email already exists return error
-            let user = await UserModel.findOne(query)
+                    { email: body.email_or_phone_number },
+                ],
+            };
+            let user = await UserModel.findOne(query);
             if (!user) {
-                return res.status(404).send({ success: false, message: "User with given email or phone number not found" });
+                // Don't reveal absence. Same response, no work done.
+                return res.status(200).send(GENERIC_RESPONSE);
             }
             //generate email confirmation code
             body.confirmation_code = crypto
-                .randomBytes(3)  // 3 bytes = 6 chars in base32
+                .randomBytes(3)
                 .toString('hex')
                 .substring(0, 5)
                 .toUpperCase();
-            //generate confirmation code expiration time with datefns
             body.confirmation_code_exp_time = addMinutes(new Date(), 30);
-            //send email
             emailSender({
                 template: "reset-password.handlebars",
                 subject: "Password reset confirmation",
@@ -43,16 +50,15 @@ const controller = {
                 payload: {
                     confirmation_code_exp_time: format(
                         body.confirmation_code_exp_time,
-                        "yyyy-MM-dd HH:mm a"
+                        "yyyy-MM-dd HH:mm a",
                     ),
                     confirmation_code: body.confirmation_code,
                 },
-            })
-            //update user with confirmation code and exp time
+            });
             user = await UserModel.findByIdAndUpdate(
                 user.id,
                 { $set: body },
-                { new: true }
+                { new: true },
             );
             await ActivityModel.create({
                 action: "request-password-reset",
@@ -64,16 +70,13 @@ const controller = {
                 affected_id: user.id,
                 deleted_data: null,
                 edited_data: null,
-            })
-            user = user.toJSON()
-            res.status(200).send({
-                success: true,
-                message: "Reset code has been sent to your email"
             });
+            return res.status(200).send(GENERIC_RESPONSE);
         } catch (error) {
             console.log(chalk.red("Error requesting password reset "), error);
             await ErrorModel.logError(req, error);
-            res.status(500).send({ success: false, message: "An error occurred while requesting password reset" });
+            // Even on error, don't leak whether the lookup half-succeeded.
+            return res.status(200).send(GENERIC_RESPONSE);
         }
     },
 
