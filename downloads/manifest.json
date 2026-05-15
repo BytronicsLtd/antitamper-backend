@@ -1,0 +1,10 @@
+[
+  {
+    "id": "device-registration",
+    "name": "Device Registration App",
+    "filename": "device-registration.apk",
+    "version": "0.1.0",
+    "description": "Android app technicians use to register scales and pair them with antitamper boards on-site.",
+    "platform": "Android"
+  }
+]
