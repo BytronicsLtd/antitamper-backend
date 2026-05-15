@@ -38,6 +38,25 @@ const controller = {
         return res.status(403).send({ success: false, message: "You cannot create devices for this factory" });
       }
 
+      // Antitamper board link must be unique across scales.
+      if (payload.antitamper_board === '' || payload.antitamper_board === undefined) {
+        payload.antitamper_board = null;
+      }
+      if (payload.antitamper_board) {
+        const existing = await DeviceModel.findOne({
+          antitamper_board: payload.antitamper_board,
+          soft_deleted: { $ne: true },
+        }).select('_id company_id');
+        if (existing) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(409).send({
+            success: false,
+            message: `That antitamper board is already linked to ${existing.company_id || existing._id}`,
+          });
+        }
+      }
+
       // Populate factory details for the device record.
       const factory = await FactoryModel.findById(payload.factory);
       if (factory) {
@@ -121,7 +140,9 @@ const controller = {
         page, limit, offset,
         select: ``,
         sort: '-createdAt',
-
+        populate: [
+          { path: 'antitamper_board', select: 'imei serial_number hardware_revision firmware_version' },
+        ],
       });
       // Add metadata for searchable parameters
       const metadata = {
@@ -145,7 +166,10 @@ const controller = {
   getOne: async (req, res) => {
     try {
       const id = req.params.id;
-      let device = await DeviceModel.findById(id)
+      let device = await DeviceModel.findById(id).populate({
+        path: 'antitamper_board',
+        select: 'imei serial_number hardware_revision firmware_version',
+      })
       device = device?.toJSON()
       if (!device) return res.status(404).send({ success: false, message: 'Device not found' });
 
@@ -198,6 +222,31 @@ const controller = {
         data.factory_name = factory.name;
         data.factory_location = factory.location
       }
+
+      // Antitamper board link is unique per device. Reject if the chosen
+      // board is already linked to a different scale. Accept null/"" to
+      // explicitly clear the link.
+      if ('antitamper_board' in data) {
+        const value = data.antitamper_board;
+        if (value === '' || value === null || value === undefined) {
+          data.antitamper_board = null;
+        } else {
+          const existing = await DeviceModel.findOne({
+            antitamper_board: value,
+            _id: { $ne: id },
+            soft_deleted: { $ne: true },
+          }).select('_id company_id');
+          if (existing) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(409).send({
+              success: false,
+              message: `That antitamper board is already linked to ${existing.company_id || existing._id}`,
+            });
+          }
+        }
+      }
+
       device = await DeviceModel.findByIdAndUpdate(id, {
         $set: data
       }, { runValidators: true, new: true }).session(session);

@@ -77,6 +77,14 @@ const Schema = {
         }
     },
     //
+    // Antitamper board installed on this scale, if any. Sparse so most
+    // scales (without a board) don't collide on the unique index.
+    antitamper_board: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'AntitamperBoard',
+        default: null,
+        index: { unique: true, sparse: true },
+    },
     soft_deleted: {
         type: Boolean,
         default: false
