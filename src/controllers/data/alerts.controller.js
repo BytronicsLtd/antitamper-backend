@@ -138,14 +138,22 @@ const controller = {
             const { read } = req.query;
             if (read === 'true' && uid) query.read_by = { $in: [uid] };
             else if (read === 'false' && uid) query.read_by = { $nin: [uid] };
-            const { page, size } = req.query;
+            const { page, size, sort } = req.query;
             const limit = size ? +size : 100;
             const offset = page ? (page - 1) * limit : 0;
+            // Whitelist sortable fields the UI can ask for; anything else
+            // falls back to newest-first by createdAt.
+            const SORTABLE = new Set([
+                'alert_timestamp', '-alert_timestamp',
+                'rtc_timestamp', '-rtc_timestamp',
+                'createdAt', '-createdAt',
+                'company_id', '-company_id',
+            ]);
+            const sortSpec = sort && SORTABLE.has(sort) ? sort : '-createdAt';
             const results = await DataModel.paginate(query, {
                 page, limit, offset,
                 select: ``,
-                sort: '-createdAt',
-
+                sort: sortSpec,
             });
             const docs = results.docs.map(result => {
                 // Destructure result._doc and rename _id to id
