@@ -103,39 +103,6 @@ const alertsController = {
     }
   },
 
-  // Mark every alert (matching the user's scope filter) as read for the
-  // calling user. No body required.
-  markAllRead: async (req, res) => {
-    try {
-      const uid = userId(req);
-      if (!uid) return res.status(401).send({ success: false, message: "Unauthorised" });
-      const result = await Alert.updateMany(
-        { read_by: { $nin: [uid] } },
-        { $addToSet: { read_by: uid } },
-      );
-      res.status(200).send({ success: true, modified: result.modifiedCount });
-    } catch (error) {
-      console.log("error mark-all-read ", error);
-      res.status(500).send({ success: false, message: "Error marking all read", error: error.message });
-    }
-  },
-
-  // Mark every alert as unread for the calling user.
-  markAllUnread: async (req, res) => {
-    try {
-      const uid = userId(req);
-      if (!uid) return res.status(401).send({ success: false, message: "Unauthorised" });
-      const result = await Alert.updateMany(
-        { read_by: { $in: [uid] } },
-        { $pull: { read_by: uid } },
-      );
-      res.status(200).send({ success: true, modified: result.modifiedCount });
-    } catch (error) {
-      console.log("error mark-all-unread ", error);
-      res.status(500).send({ success: false, message: "Error marking all unread", error: error.message });
-    }
-  },
-
   // Clear read state for the calling user.
   markUnread: async (req, res) => {
     try {

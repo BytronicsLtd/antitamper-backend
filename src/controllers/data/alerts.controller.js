@@ -262,12 +262,60 @@ const controller = {
           { alert_types: { $ne: [] } },
         ],
       };
-      const count = await DataModel.countDocuments({
-        $and: [baseAlertQuery, { read_by: { $nin: [uid] } }],
+      // Apply the same factory-scope filter as the alerts list so the
+      // badge can never show alerts the user wouldn't see in /data-alerts.
+      const scoped = await checkAccess({
+        query: { $and: [baseAlertQuery, { read_by: { $nin: [uid] } }] },
+        req,
       });
+      const count = await DataModel.countDocuments(scoped);
       res.status(200).send({ success: true, results: { count } });
     } catch (e) {
       res.status(500).send({ success: false, message: 'Error counting unread alerts', error: e.message });
+    }
+  },
+
+  // Mark every alert the user can see as read for them.
+  markAllRead: async (req, res) => {
+    try {
+      const uid = req.user && (req.user.id || req.user._id);
+      if (!uid) return res.status(401).send({ success: false, message: 'Unauthorised' });
+      const baseAlertQuery = {
+        $or: [
+          { interrupt_types: { $exists: true, $ne: '' } },
+          { alert_types: { $ne: [] } },
+        ],
+      };
+      const scoped = await checkAccess({
+        query: { $and: [baseAlertQuery, { read_by: { $nin: [uid] } }] },
+        req,
+      });
+      const r = await DataModel.updateMany(scoped, { $addToSet: { read_by: uid } });
+      res.status(200).send({ success: true, modified: r.modifiedCount });
+    } catch (e) {
+      res.status(500).send({ success: false, message: 'Error marking all read', error: e.message });
+    }
+  },
+
+  // Mark every alert the user can see as unread for them.
+  markAllUnread: async (req, res) => {
+    try {
+      const uid = req.user && (req.user.id || req.user._id);
+      if (!uid) return res.status(401).send({ success: false, message: 'Unauthorised' });
+      const baseAlertQuery = {
+        $or: [
+          { interrupt_types: { $exists: true, $ne: '' } },
+          { alert_types: { $ne: [] } },
+        ],
+      };
+      const scoped = await checkAccess({
+        query: { $and: [baseAlertQuery, { read_by: { $in: [uid] } }] },
+        req,
+      });
+      const r = await DataModel.updateMany(scoped, { $pull: { read_by: uid } });
+      res.status(200).send({ success: true, modified: r.modifiedCount });
+    } catch (e) {
+      res.status(500).send({ success: false, message: 'Error marking all unread', error: e.message });
     }
   },
 };
