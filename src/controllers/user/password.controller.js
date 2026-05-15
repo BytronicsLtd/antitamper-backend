@@ -55,18 +55,17 @@ const controller = {
                 { new: true }
             );
             await ActivityModel.create({
-                action: "request-password-reset", // edit, create, delete actions
-                user: user.id, //user id performing the action
-                email: user.email, //email of the user performinng the action
-                role: user.role, //role of the user performing the action
-                timestamp: Date.now(), // time the action was performed
-                model: "User", //data model affected by the action
-                affected_id: user.id, //id of the item affected by the action
-                deleted_data: null, // deleted data
-                edited_data: null, // edited data
+                action: "request-password-reset",
+                user: user.id,
+                email: user.email,
+                role: user.role,
+                timestamp: Date.now(),
+                model: "User",
+                affected_id: user.id,
+                deleted_data: null,
+                edited_data: null,
             })
             user = user.toJSON()
-            //respond to user
             res.status(200).send({
                 success: true,
                 message: "Reset code has been sent to your email"
@@ -92,49 +91,40 @@ const controller = {
             if (!user) {
                 return res.status(400).send({ success: false, message: "User with provided details not found" });
             }
-           
-            // compare confirmation_code with user confirmation_code
+
             if (user.confirmation_code !== body.confirmation_code) {
                 return res.status(400).send({ success: false, message: "Invalid confirmation code" });
             }
-            // check if confirmation_code has expired
             if (user.confirmation_code_exp_time < new Date()) {
                 return res.status(400).send({ success: false, message: "Confirmation code has expired" });
             }
-            //Check if password and confirm password match and provided
             if (body.password !== body.confirm_password || !body.password || !body.confirm_password) {
                 return res.status(400).send({ success: false, message: "Password and confirm password do not match" });
             }
-            //check if password contains at least 8 characters, one number and one letter and symbol
             const error_messages = passwordValidate(body.password);
             if (error_messages.length) {
                 return res.status(400).send({
                     success: false, message: "Password validation failed", errors: error_messages,
                 });
             }
-            // update user email confirmation status
             user.confirmation_code = null;
             user.confirmation_code_exp_time = null;
-            //hash password
             const salt = await bcrypt.genSalt(10);
             const hash = await bcrypt.hash(body.password, salt);
             user.password = hash;
-            console.log("user ====== ", user)
-            // update user with $set
             await UserModel.findOneAndUpdate(query, { $set: user }, { runValidators: false });
-            //
+
             await ActivityModel.create({
-                action: "password-reset", // edit, create, delete actions
-                user: user.id, //user id performing the action
-                email: user.email, //email of the user performinng the action
-                role: user.role, //role of the user performing the action
-                timestamp: Date.now(), // time the action was performed
-                model: "User", //data model affected by the action
-                affected_id: user.id, //id of the item affected by the action
-                deleted_data: null, // deleted data
-                edited_data: null, // edited data
+                action: "password-reset",
+                user: user.id,
+                email: user.email,
+                role: user.role,
+                timestamp: Date.now(),
+                model: "User",
+                affected_id: user.id,
+                deleted_data: null,
+                edited_data: null,
             })
-            // return success response
             res.status(200).send({ success: true, message: "Password successfully updated" });
         } catch (error) {
             console.log(chalk.red("Error resetting  password "), error);
@@ -142,7 +132,101 @@ const controller = {
             res.status(500).send({ success: false, message: "An error occurred while ressetting your password" });
         }
     },
+
+    // Change password while signed in. Requires the user's current password,
+    // a new password (validated with the same rules as reset-password), and a
+    // matching confirmation. Refuses to run inside an impersonation session
+    // so an admin cannot quietly hijack a user's credentials.
+    changePassword: async (req, res) => {
+        try {
+            if (req.user?.isImpersonation) {
+                return res.status(403).send({
+                    success: false,
+                    message: "Cannot change password while impersonating another user",
+                });
+            }
+
+            const { current_password, new_password, confirm_password } = req.body || {};
+
+            if (!current_password || !new_password || !confirm_password) {
+                return res.status(400).send({
+                    success: false,
+                    message: "current_password, new_password and confirm_password are required",
+                });
+            }
+
+            if (new_password !== confirm_password) {
+                return res.status(400).send({
+                    success: false,
+                    message: "New password and confirm password do not match",
+                });
+            }
+
+            const user = await UserModel.findById(req.user.id);
+            if (!user || !user.password) {
+                return res.status(404).send({ success: false, message: "User not found" });
+            }
+
+            const currentValid = await bcrypt.compare(current_password, user.password);
+            if (!currentValid) {
+                return res.status(400).send({
+                    success: false,
+                    message: "Current password is incorrect",
+                });
+            }
+
+            // Block trivial no-op changes — also avoids a confusing "success"
+            // when the user typed the same password twice.
+            const sameAsCurrent = await bcrypt.compare(new_password, user.password);
+            if (sameAsCurrent) {
+                return res.status(400).send({
+                    success: false,
+                    message: "New password must be different from the current password",
+                });
+            }
+
+            const error_messages = passwordValidate(new_password);
+            if (error_messages.length) {
+                return res.status(400).send({
+                    success: false,
+                    message: "Password validation failed",
+                    errors: error_messages,
+                });
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(new_password, salt);
+            // Clear any pending reset code so an old emailed code can't be
+            // reused after a successful in-app change.
+            user.confirmation_code = null;
+            user.confirmation_code_exp_time = null;
+            await user.save();
+
+            await ActivityModel.create({
+                action: "change-password",
+                user: user.id,
+                email: user.email,
+                role: user.role,
+                timestamp: Date.now(),
+                model: "User",
+                affected_id: user.id,
+                deleted_data: null,
+                edited_data: null,
+            });
+
+            return res.status(200).send({
+                success: true,
+                message: "Password successfully updated",
+            });
+        } catch (error) {
+            console.log(chalk.red("Error changing password "), error);
+            await ErrorModel.logError(req, error);
+            return res.status(500).send({
+                success: false,
+                message: "An error occurred while changing your password",
+            });
+        }
+    },
 }
 
 module.exports = controller;
-

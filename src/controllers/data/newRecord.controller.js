@@ -38,24 +38,25 @@ const controller = {
                     timestamp: [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()],
                 })
             }
-            //fetch users that belong to the same factory as the device
+            // Alert recipients: SYSTEM-level users (org-wide) plus FACTORY-level
+            // users pinned to this device's factory. In both cases the user
+            // must have opted in via at least one of the alert flags — no role
+            // bypasses the toggle anymore.
             let users = await UserModel.find({
                 soft_deleted: false,
                 $or: [
-                    { role: "sys-admin" },
+                    { can_receive_email_alerts: true },
+                    { can_receive_sms_alerts: true }
+                ],
+                $and: [
                     {
-                        $and: [
-                            { factory: device?.factory?.id },
-                            {
-                                $or: [
-                                    { can_receive_email_alerts: true },
-                                    { can_receive_sms_alerts: true }
-                                ]
-                            }
+                        $or: [
+                            { level: "SYSTEM" },
+                            { $and: [{ level: "FACTORY" }, { factory: device?.factory?.id }] }
                         ]
                     }
                 ]
-            }).select("-_id email phone_number can_receive_email_alerts can_receive_sms_alerts role factory");
+            }).select("-_id email phone_number can_receive_email_alerts can_receive_sms_alerts role level factory");
             const last_entry = await DataModel.findOne({ device_id: payload.device_id }).sort({ createdAt: -1 });
             //
             let { gps_lat, gps_lon, gsm_lat, gsm_lon, gps_datetime, gsm_datetime, rtc_datetime } = payload;

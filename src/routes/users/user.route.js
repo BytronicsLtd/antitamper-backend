@@ -29,6 +29,10 @@ module.exports = ({ app }) => {
   app.post('/api/v1/users/reset-password/', (req, res) => {
     passwordController.resetPassword(req, res);
   });
+  // change password (signed-in user)
+  app.post('/api/v1/users/change-password/', { preHandler: [authenticate] }, (req, res) => {
+    passwordController.changePassword(req, res);
+  });
 
   // logout
   app.post('/api/v1/users/logout/', { preHandler: [authenticate] }, (req, res) => {
