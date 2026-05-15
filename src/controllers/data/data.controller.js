@@ -197,6 +197,135 @@ const controller = {
       });
     }
   },
+  // Latest reading per device. Same filter surface as fetchMany — applies the
+  // same scope (factory/region) and search/state filters — but collapses to
+  // one document per device_id (the most recent one).
+  fetchLatest: async (req, res) => {
+    try {
+      let {
+        device_id,
+        start_datetime,
+        end_datetime,
+        search_term,
+        state,
+        enclosure,
+        battery_threshold,
+        interrupt_type,
+        factory_name,
+        saved_to_sd,
+        has_gp_coords,
+        region,
+        company_id,
+        scale_model,
+        sd_card_available,
+      } = req.query;
+
+      let query = {};
+      if (has_gp_coords === "true") {
+        query["gps_location.coordinates"] = { $not: { $size: 0 } };
+      }
+      if (device_id) query.device_id = device_id;
+      if (scale_model) query.scale_model = scale_model;
+      if (region) query.region = region;
+      if (factory_name) query.factory_name = factory_name;
+      if (company_id) query.company_id = company_id;
+      if (state) query.state = state;
+      if (interrupt_type) query.interrupt_type = interrupt_type;
+      if (enclosure) query.enclosure = enclosure;
+      if (saved_to_sd) query.saved_to_sd = saved_to_sd === "false" ? false : true;
+      if (sd_card_available) query.sd_card_available = sd_card_available === "false" ? false : true;
+      if (battery_threshold) {
+        query.battery_voltage = { $gte: Number(battery_threshold) };
+      }
+
+      if (start_datetime && end_datetime) {
+        const start = new Date(start_datetime);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(end_datetime);
+        end.setHours(23, 59, 59, 999);
+        query.$or = [
+          { gsm_timestamp: { $gte: start.toISOString(), $lte: end.toISOString() } },
+          { rtc_timestamp: { $gte: start.toISOString(), $lte: end.toISOString() } },
+        ];
+      } else if (start_datetime) {
+        const start = new Date(start_datetime);
+        start.setHours(0, 0, 0, 0);
+        query.$or = [
+          { gsm_timestamp: { $gte: start.toISOString() } },
+          { rtc_timestamp: { $gte: start.toISOString() } },
+        ];
+      } else if (end_datetime) {
+        const end = new Date(end_datetime);
+        end.setHours(23, 59, 59, 999);
+        query.$or = [
+          { gsm_timestamp: { $lte: end.toISOString() } },
+          { rtc_timestamp: { $lte: end.toISOString() } },
+        ];
+      }
+
+      if (search_term) {
+        query = {
+          ...query,
+          $or: [
+            { interrupt_type: { $regex: new RegExp(search_term, "i") } },
+            { device_id: { $regex: new RegExp(search_term, "i") } },
+            { factory_location: { $regex: new RegExp(search_term, "i") } },
+            { factory_name: { $regex: new RegExp(search_term, "i") } },
+            { company_id: { $regex: new RegExp(search_term, "i") } },
+            { state: { $regex: new RegExp(search_term, "i") } },
+          ],
+        };
+      }
+
+      query = { ...(await checkAccess({ query, req })) };
+
+      // One row per device — the most recent across gsm_timestamp / rtc_timestamp /
+      // createdAt. We sort by device_id then those keys desc and $first the group.
+      const aggregated = await DataModel.aggregate([
+        { $match: query },
+        { $sort: { device_id: 1, gsm_timestamp: -1, rtc_timestamp: -1, createdAt: -1 } },
+        { $group: { _id: "$device_id", doc: { $first: "$$ROOT" } } },
+        { $replaceRoot: { newRoot: "$doc" } },
+        { $sort: { factory_name: 1, company_id: 1 } },
+      ]);
+
+      const docs = aggregated.map((result) => {
+        const { _id, __v, ...rest } = result;
+        const modifiedResult = { id: _id, ...rest };
+        if (!isWithinCurrentYear(rest.gsm_timestamp)) {
+          modifiedResult.gsm_timestamp = modifiedResult.rtc_timestamp;
+        }
+        if (result?.gsm_lat && result?.gsm_lon) {
+          modifiedResult.gsm_map_url = `https://www.google.com/maps/place/${result.gsm_lat},${result.gsm_lon}`;
+        }
+        if (result?.gps_lat && result?.gps_lon) {
+          modifiedResult.gps_map_url = `https://www.google.com/maps/place/${result.gps_lat},${result.gps_lon}`;
+        }
+        return modifiedResult;
+      });
+
+      // Mirror the paginate response shape so the frontend can use the same
+      // hook plumbing as /data/.
+      const results = {
+        docs,
+        totalDocs: docs.length,
+        totalPages: 1,
+        page: 1,
+        limit: docs.length,
+      };
+
+      res.status(200).send({ success: true, results });
+    } catch (error) {
+      console.log(chalk.red("Error fetching latest data per device"), error);
+      processResponse({
+        req,
+        res,
+        success: false,
+        status: 500,
+        message: { en: "Error fetching latest data" },
+      });
+    }
+  },
   // fetch one data point
   fetchOne: async (req, res) => {
     try {
