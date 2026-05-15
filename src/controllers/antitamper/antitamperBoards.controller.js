@@ -128,6 +128,18 @@ const controller = {
 
   remove: async (req, res) => {
     try {
+      // Refuse to delete a board that is currently installed on a scale —
+      // the link would dangle. Unlink it from the scale first.
+      const linkedScale = await DeviceModel.findOne({
+        antitamper_board: req.params.id,
+        soft_deleted: { $ne: true },
+      }).select('company_id');
+      if (linkedScale) {
+        return res.status(409).send({
+          success: false,
+          message: `This board is currently installed on ${linkedScale.company_id || 'a scale'}. Unlink it before deleting.`,
+        });
+      }
       const board = await AntitamperBoardModel.findByIdAndUpdate(
         req.params.id,
         { soft_deleted: true },
