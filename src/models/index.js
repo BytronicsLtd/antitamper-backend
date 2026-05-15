@@ -10,3 +10,4 @@ require('./raw-data.model');
 require('./scales-dump.model');
 require('./user');
 require('./region.model');
+require('./antitamperBoard.model');

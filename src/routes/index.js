@@ -9,6 +9,7 @@ const alertsRoutes = require("./alerts/alerts.route");
 const testRoutes = require("./test/test.route");
 const pdaRoutes = require("./pda/pda.route");
 const invitationRoutes = require("./invitations/invitation.routes");
+const antitamperBoardRoutes = require("./antitamper/antitamperBoards.route");
 
 module.exports = ({ app }) => {
     deviceRoutes({ app });
@@ -22,5 +23,6 @@ module.exports = ({ app }) => {
     testRoutes({ app });
     pdaRoutes({ app });
     invitationRoutes({ app });
+    antitamperBoardRoutes({ app });
 };
   
