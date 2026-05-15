@@ -91,15 +91,17 @@ const RESOURCE_VERBS = {
     [R.FACTORY_SUPERVISOR]: [],
     [R.FACTORY_VIEWER]: [],
   },
+  // Everyone can read activity logs at minimum (their own); the page tabs
+  // and the backend controller scope what each role actually sees.
   activityLogs: {
     [R.SYS_ADMIN]: RO,
     [R.NATIONAL_MANAGER]: RO,
-    [R.NATIONAL_VIEWER]: [],
-    [R.REGIONAL_MANAGER]: [],
-    [R.REGIONAL_VIEWER]: [],
-    [R.FACTORY_ADMIN]: [],
-    [R.FACTORY_SUPERVISOR]: [],
-    [R.FACTORY_VIEWER]: [],
+    [R.NATIONAL_VIEWER]: RO,
+    [R.REGIONAL_MANAGER]: RO,
+    [R.REGIONAL_VIEWER]: RO,
+    [R.FACTORY_ADMIN]: RO,
+    [R.FACTORY_SUPERVISOR]: RO,
+    [R.FACTORY_VIEWER]: RO,
   },
 };
 
