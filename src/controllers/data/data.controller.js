@@ -134,15 +134,28 @@ const controller = {
       query = {
         ...(await checkAccess({ query, req })),
       };
-      const { page, size } = req.query;
+      const { page, size, sort } = req.query;
       const limit = size ? +size : 100;
       const offset = page ? (page - 1) * limit : 0;
+      // Whitelist sortable fields the UI can ask for; anything else falls
+      // back to newest-first by createdAt. Mirrors the alerts endpoint.
+      const SORTABLE = new Set([
+        'gsm_timestamp', '-gsm_timestamp',
+        'gps_timestamp', '-gps_timestamp',
+        'rtc_timestamp', '-rtc_timestamp',
+        'createdAt', '-createdAt',
+        'company_id', '-company_id',
+        'factory_name', '-factory_name',
+        'battery_voltage', '-battery_voltage',
+        'state', '-state',
+      ]);
+      const sortSpec = sort && SORTABLE.has(sort) ? sort : '-createdAt';
       const results = await DataModel.paginate(query, {
         page,
         limit,
         offset,
         select: ``,
-        sort: "-createdAt",
+        sort: sortSpec,
       });
       const docs = results.docs.map((result) => {
         // Destructure result._doc and rename _id to id
@@ -281,12 +294,42 @@ const controller = {
 
       // One row per device — the most recent across gsm_timestamp / rtc_timestamp /
       // createdAt. We sort by device_id then those keys desc and $first the group.
+      // Final ordering is driven by the UI's `sort` param (whitelisted); defaults
+      // to factory_name + company_id.
+      const SORTABLE_LATEST = {
+        gsm_timestamp: { gsm_timestamp: -1 },
+        '-gsm_timestamp': { gsm_timestamp: -1 },
+        gps_timestamp: { gps_timestamp: -1 },
+        '-gps_timestamp': { gps_timestamp: -1 },
+        rtc_timestamp: { rtc_timestamp: -1 },
+        '-rtc_timestamp': { rtc_timestamp: -1 },
+        createdAt: { createdAt: -1 },
+        '-createdAt': { createdAt: -1 },
+        company_id: { company_id: 1 },
+        '-company_id': { company_id: -1 },
+        factory_name: { factory_name: 1 },
+        '-factory_name': { factory_name: -1 },
+        battery_voltage: { battery_voltage: 1 },
+        '-battery_voltage': { battery_voltage: -1 },
+        state: { state: 1 },
+        '-state': { state: -1 },
+      };
+      const { sort } = req.query;
+      // Flip sign for the asc-prefixed (no leading "-") timestamp entries so
+      // ascending really means ascending.
+      const ascTimestamps = new Set(['gsm_timestamp', 'gps_timestamp', 'rtc_timestamp', 'createdAt']);
+      let finalSort = SORTABLE_LATEST[sort];
+      if (finalSort && ascTimestamps.has(sort)) {
+        finalSort = Object.fromEntries(Object.entries(finalSort).map(([k]) => [k, 1]));
+      }
+      if (!finalSort) finalSort = { factory_name: 1, company_id: 1 };
+
       const aggregated = await DataModel.aggregate([
         { $match: query },
         { $sort: { device_id: 1, gsm_timestamp: -1, rtc_timestamp: -1, createdAt: -1 } },
         { $group: { _id: "$device_id", doc: { $first: "$$ROOT" } } },
         { $replaceRoot: { newRoot: "$doc" } },
-        { $sort: { factory_name: 1, company_id: 1 } },
+        { $sort: finalSort },
       ]);
 
       const docs = aggregated.map((result) => {
