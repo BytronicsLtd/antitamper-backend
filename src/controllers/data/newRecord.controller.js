@@ -180,6 +180,13 @@ function validateInterrupts({ data, last_entry }) {
     new_data.alert_types = []; // set it to [] initially
     let battery_alert_added = false;
     try {
+        // Calibration switch reporting "on" while the enclosure is closed and the
+        // device is on is not physically expected (the switch shouldn't be
+        // reachable without opening the enclosure) — flag it independently of
+        // interrupt_types, since the firmware may not tag this as an interrupt.
+        if (data.state === "on" && data.enclosure === "closed" && data.calib_switch === "on") {
+            new_data.alert_types.push("calibration-anomaly");
+        }
         // Define priority order explicitly
         const priority_order = ["enclosure", "calibration switch", "battery_voltage", "state"];
         const availableTypes = data.interrupt_types?.split(",").map(type => type.trim()) || [];

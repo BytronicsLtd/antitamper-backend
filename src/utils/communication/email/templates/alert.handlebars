@@ -148,6 +148,10 @@
             {{#ifEquals alert_type "battery-voltage"}}
             <h1> ⏰ ALERT: Low battery voltage <br> </h1>
             {{/ifEquals}}
+
+            {{#ifEquals alert_type "calibration-anomaly"}}
+            <h1> ⚠️ ALERT: Calibration Switch Active With Enclosure Closed <br> </h1>
+            {{/ifEquals}}
         </div>
 
         <div class="device-info">
