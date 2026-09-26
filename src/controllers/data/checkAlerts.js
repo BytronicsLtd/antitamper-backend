@@ -76,7 +76,7 @@ const sendSMSAlerts = async ({ data, sms_receivers }) => {
                 alert_title = `Low battery voltage`
             }
             if (alert_type === 'calibration-anomaly') {
-                alert_title = `Calibration Switch Active With Enclosure Closed`
+                alert_title = `Calibration Switch Tampering Detected `
             }
             let message = `Alert! \n${alert_title}\nDevice: ${data.company_id}\nFactory: ${data.factory_name}\nTime: ${local_ke_date}\nBattery: ${data.battery_voltage?.toFixed(2)} V`
             const results = await sendSMS({ phone_numbers, message })
